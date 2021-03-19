@@ -13,11 +13,14 @@ block's POXL reward.  A batch of POXL tokens are only minted if at least one
 miner attempts to do so.
 
 The POXL token is mined in a two-phase process.  First, miners commit STX to the
-contract in a bid to "win" the current Stacks block's POXLs (the POXL coinbase
-is set at 500.000000 POXLs in perpetuity).  Second, after the token maturity
+contract in a bid to "win" the current Stacks block's POXLs by calling the
+`(mine-tokens)` public function.  The POXL coinbase is set at 500.000000 POXLs in perpetuity,
+but a batch is only minted if at least one miner attempts to mine.  Second, after the token maturity
 window passes (100 Stacks blocks), miners check to see if the VRF seed at
 the end of this window selected them to receive the POXLs.  If so, then the
-winning miner may claim the POXLs at any time.
+winning miner may claim the POXLs at any time afterwards.  Note that both the
+act of mining and then claiming the POXLs are required to increase the total POXL supply
+-- unclaimed POXLs are never minted.
 
 Like STX, these tokens can be Stacked to produce a STX yield.  The POXL holder
 calls `(stack-tokens)` to lock up their POXLs and earn the right to claim a 
