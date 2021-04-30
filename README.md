@@ -14,22 +14,22 @@
 
 This repository contains code to recreate the [Proof of Transfer consensus mechanism](https://docs.stacks.co/understand-stacks/proof-of-transfer) via a smart contract on the [Stacks blockchain](https://www.stacks.co/).
 
-The contract is further modified to support the creation of a CITY TOKEN, following the properties outlined below.
+The contract is further modified to support the creation of a 'citycoin', following the properties outlined below.
 
 ## Mining
 
-- for each Stacks block in the Stacks blockchain, miners can mine a fixed amount of CITY TOKENS
-- anyone can mine the CITY TOKEN by submitting STX to the contract
+- for each Stacks block in the Stacks blockchain, miners can mine a fixed amount of citycoins
+- anyone can mine the citycoin by submitting STX to the contract
 - the winning miner for a given Stacks block is selected by a VRF, weighted by the miner's STX bid compared to the total STX bid in a given Stacks block
-- the winning miner is eligible for a fixed amount of the CITY TOKEN as a reward
-- after 100 Stacks blocks, the winning miner may claim the CITY TOKEN at any time
-- both the act of mining then claiming the CITY TOKEN are required to increase the total supply, unclaimed CITY TOKENS are never minted
+- the winning miner is eligible for a fixed amount of the citycoin as a reward
+- after 100 Stacks blocks, the winning miner may claim the citycoin at any time
+- both the act of mining then claiming the citycoin are required to increase the total supply, unclaimed citycoins are never minted
 
 ## Stacking
 
-- anyone can lock up their CITY TOKENS and earn the right to claim a portion of all STX commited by miners over a given number of reward cycles
-- the STX rewards in a given reward cycle are determined by what fraction of CITY TOKENS are locked up compared to all other Stackers
-- the STX rewards will be distributed 70% to CITY TOKEN holders and 30% to a custodied STX account that represents the city treasury
+- anyone can lock up their citycoins and earn the right to claim a portion of all STX commited by miners over a given number of reward cycles
+- the STX rewards in a given reward cycle are determined by what fraction of citycoins are locked up compared to all other Stackers
+- the STX rewards will be distributed 70% to citycoin holders and 30% to a custodied STX account that represents the city treasury
 - the STX rewards by Stackers could then be Stacked again on the Stacks blockchain, yielding Bitcoin
 
 ## Code Requirements - Contract Modifications
@@ -59,7 +59,7 @@ A set of issues and project board will be created based on the tasks listed belo
   - custodied wallet address will be managed and secured by an Exchange
   - custodied wallet keys are only accessible to the respective city (mayor, treasurer, etc)
   - if Stacking is active:
-    - 70% of the miner commits are distributed to Stackers of the CITY TOKEN
+    - 70% of the miner commits are distributed to Stackers of the citycoin
     - 30% of the miner commits are distributed to the custodied wallet for the city ("THE BAG")
   - if Stacking is not active:
     - 100% of the miner commits are distributed to the custodied wallet for the city ("THE BAG")
@@ -81,13 +81,13 @@ A set of issues and project board will be created based on the tasks listed belo
 
 **PRs are welcome!**
 
-- [ ] the web UI enables mining of the CITY TOKEN
+- [ ] the web UI enables mining of the citycoin
   - [ ] a miner can submit STX to the contract using the Stacks Web Wallet
   - [ ] a miner can choose to submit for one or multiple blocks at a given rate
-  - [ ] a miner can see available CITY TOKEN rewards and claim them
+  - [ ] a miner can see available citycoin rewards and claim them
   - [ ] a miner can see their mining history, stored in Gaia
-- [ ] develop basic web UI that enables Stacking of the CITY TOKEN
-  - [ ] a Stacker can submit CITY TOKEN to the contract using the Stacks Web Wallet
+- [ ] develop basic web UI that enables Stacking of the citycoin
+  - [ ] a Stacker can submit citycoin to the contract using the Stacks Web Wallet
   - [ ] a Stacker can choose the number of reward cycles to participate in
   - [ ] a Stacker can see available STX rewards and claim them
   - [ ] a Stacker can see their Stacking history, stored in Gaia
@@ -109,7 +109,7 @@ Configurable options for the smart contract or the web UI should be listed as co
 ## References
 
 - [Stacks Proof of Transfer Whitepaper](https://gaia.blockstack.org/hub/1AxyPunHHAHiEffXWESKfbvmBpGQv138Fp/stacks.pdf)
-- [City Token Product Requirements Document](https://docs.google.com/document/d/10ZIX5K0vDfTeBSguT_rmG0Wz9CkuVax1adR_t1-z9UA/edit?usp=sharing)
+- [Citycoin Product Requirements Document](https://docs.google.com/document/d/10ZIX5K0vDfTeBSguT_rmG0Wz9CkuVax1adR_t1-z9UA/edit?usp=sharing)
 - [Clarity Language Reference](https://docs.stacks.co/references/language-overview)
 - [Build apps with Stacks](https://docs.stacks.co/build-apps/overview)
 
