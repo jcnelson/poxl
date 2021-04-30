@@ -1,14 +1,13 @@
-# Proof of Transfer Lite
+# Citycoins on Stacks
 
-- [Proof of Transfer Lite](#proof-of-transfer-lite)
-  - [Mining](#mining)
-  - [Stacking](#stacking)
-  - [Code Requirements - Contract Modifications](#code-requirements---contract-modifications)
-  - [Code Requirements - UI/UX](#code-requirements---uiux)
-  - [Code Quality](#code-quality)
-  - [Launch Requirements](#launch-requirements)
-  - [References](#references)
-  - [Original README content](#original-readme-content)
+- [Mining](#mining)
+- [Stacking](#stacking)
+- [Code Requirements - Contract Modifications](#code-requirements---contract-modifications)
+- [Code Requirements - UI/UX](#code-requirements---uiux)
+- [Code Quality](#code-quality)
+- [Launch Requirements](#launch-requirements)
+- [References](#references)
+- [Original README content](#original-readme-content)
     - [How to Use](#how-to-use)
     - [How to Develop](#how-to-develop)
 
