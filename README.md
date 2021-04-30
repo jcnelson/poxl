@@ -1,6 +1,6 @@
-# Citycoins on Stacks
+# City Coins on Stacks
 
-- [Citycoins on Stacks](#citycoins-on-stacks)
+- [City Coins on Stacks](#city-coins-on-stacks)
   - [Mining](#mining)
   - [Stacking](#stacking)
   - [Code Requirements - Contract Modifications](#code-requirements---contract-modifications)
