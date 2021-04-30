@@ -8,9 +8,9 @@
   - [Code Quality](#code-quality)
   - [Launch Requirements](#launch-requirements)
   - [References](#references)
-- [Original README content](#original-readme-content)
-  - [How to Use](#how-to-use)
-  - [How to Develop](#how-to-develop)
+  - [Original README content](#original-readme-content)
+    - [How to Use](#how-to-use)
+    - [How to Develop](#how-to-develop)
 
 This repository contains code to recreate the [Proof of Transfer consensus mechanism](https://docs.stacks.co/understand-stacks/proof-of-transfer) via a smart contract on the [Stacks blockchain](https://www.stacks.co/).
 
@@ -113,14 +113,14 @@ Configurable options for the smart contract or the web UI should be listed as co
 - [Clarity Language Reference](https://docs.stacks.co/references/language-overview)
 - [Build apps with Stacks](https://docs.stacks.co/build-apps/overview)
 
-# Original README content
+## Original README content
 
 A PoX-Lite Stackable Token (POXL).
 
 **This code is for educational and demonstration purposes only.  IT HAS NOT BEEN
 AUDITED.**
 
-## How to Use
+### How to Use
 
 Tokens are minted through a mining process.  Anyone can call the `(mine-tokens)`
 public function to commit STX to the contract in a bid to win the current Stacks
@@ -147,7 +147,7 @@ This contract confirms to the draft version of [SIP
 010](https://github.com/stacksgov/sips/pull/5/) for token transfers, making
 it possible to trade POXLs via a standard API.
 
-## How to Develop
+### How to Develop
 
 To run (and hack on) the tests, you will need to build and install `clarity-cli` from the
 [Stacks Blockchain](https://github.com/blockstack/stacks-blockchain) repo, and
