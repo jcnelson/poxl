@@ -1,13 +1,14 @@
 # Citycoins on Stacks
 
-- [Mining](#mining)
-- [Stacking](#stacking)
-- [Code Requirements - Contract Modifications](#code-requirements---contract-modifications)
-- [Code Requirements - UI/UX](#code-requirements---uiux)
-- [Code Quality](#code-quality)
-- [Launch Requirements](#launch-requirements)
-- [References](#references)
-- [Original README content](#original-readme-content)
+- [Citycoins on Stacks](#citycoins-on-stacks)
+  - [Mining](#mining)
+  - [Stacking](#stacking)
+  - [Code Requirements - Contract Modifications](#code-requirements---contract-modifications)
+  - [Code Requirements - UI/UX](#code-requirements---uiux)
+  - [Code Quality](#code-quality)
+  - [Launch Requirements](#launch-requirements)
+  - [References](#references)
+  - [Original README content](#original-readme-content)
     - [How to Use](#how-to-use)
     - [How to Develop](#how-to-develop)
 
@@ -39,8 +40,8 @@ A set of issues and project board will be created based on the tasks listed belo
 
 **PRs are welcome!**
 
-- [ ] implement the SIP-010 trait via `impl-trait`
-- [x] rename token to better illustrate goals of this contract
+- [ ] implement the [SIP-010 trait](https://github.com/stacksgov/sips/blob/hstove-feat/sip-10-ft/sips/sip-010/sip-010-fungible-token-standard.md) via `impl-trait`
+- [x] rename token to better illustrate goals of this contract in the readme
 - [ ] set up clear instructions for testing the contract, some options listed below
   - [ ] via clarity-cli (single caller, very fast)
   - [ ] via testnet (multiple callers, subject to varying block times)
