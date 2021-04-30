@@ -40,7 +40,7 @@ A set of issues and project board will be created based on the tasks listed belo
 **PRs are welcome!**
 
 - [ ] implement the SIP-010 trait via `impl-trait`
-- [ ] rename token to better illustrate goals of this contract
+- [x] rename token to better illustrate goals of this contract
 - [ ] set up clear instructions for testing the contract, some options listed below
   - [ ] via clarity-cli (single caller, very fast)
   - [ ] via testnet (multiple callers, subject to varying block times)
