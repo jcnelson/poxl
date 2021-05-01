@@ -14,7 +14,7 @@
 
 This repository contains code to recreate the [Proof of Transfer consensus mechanism](https://docs.stacks.co/understand-stacks/proof-of-transfer) via a smart contract on the [Stacks blockchain](https://www.stacks.co/).
 
-The contract is further modified to support the creation of a 'citycoin', following the properties outlined below.
+The contract is further modified to support the creation of a "city coin", following the properties outlined below and within the [Product Requirements Document](./citycoin-prd.md)
 
 ## Mining
 
@@ -72,6 +72,9 @@ A set of issues and project board will be created based on the tasks listed belo
 - [ ] add read-only getters around all contract info
   - will serve as data source for future contracts or tools
   - will allow for recreation of experiences like [stxmining.club](https://stxmining.club) and [stacking.club](https://stacking.club)
+- [ ] add function to allow miners to signal activation of mining, such that once a predetermined number of miners register:
+  - mining becomes available through the contract, and the first city coins are minted
+  - the token issuance schedule begins, following a similar halving structure to Bitcoin and Stacks
 
 ## Code Requirements - UI/UX
 
@@ -104,7 +107,8 @@ Configurable options for the smart contract or the web UI should be listed as co
 - [ ] successful legal review of policies and regulations around a fair launch and city acquisition of custodied tokens
 - [ ] contract deployed to testnet implementing and successfully demonstrating all points above
 - [ ] contract code audit by an independent 3rd party
-- [ ] successful deployment to mainnet :tada:
+- [ ] successful deployment to the Stacks blockchain mainnet
+- [ ] activation of the mining function by independent miners :tada:
 
 ## References
 
