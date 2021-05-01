@@ -39,7 +39,7 @@ Jason Schrader, Devops Engineer at [Freehold](https://joinfreehold.com)
 
 Shawn Mahon
 
-@pxydn, founder of [labs³](https://github.com/labs3)
+[@pxydn](https://github.com/pxydn), founder of [labs³](https://github.com/labs3), `PGP | A303 BCFE CA30 DDF9`
 
 ### Executive Summary
 
