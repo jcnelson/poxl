@@ -26,16 +26,10 @@ April 2021
   - [Token Economics](#token-economics)
     - [Fair and Open Launch](#fair-and-open-launch)
     - [Issuance Schedule](#issuance-schedule)
-    - [Token Value](#token-value)
-  - [Evaluation and Performance](#evaluation-and-performance)
+  - [Constraints](#constraints)
+    - [Legal Restrictions](#legal-restrictions)
     - [Security](#security)
-    - [Milestones and Timelines](#milestones-and-timelines)
   - [Future Applications](#future-applications)
-    - [Assumptions](#assumptions)
-    - [Constraints](#constraints)
-    - [Governance and KYC](#governance-and-kyc)
-  - [Citations](#citations)
-  - [Definitions](#definitions)
 
 ## General Information
 
@@ -176,6 +170,9 @@ Additional performance metrics that may be of use to both the user interfaces ab
 
 - current Bitcoin block and Stacks block
 - current Bitcoin price, Stacks price, and city coin price in USD
+- total market cap and trade value for the city coin
+- total value of the city's wallet overseen by a trusted third party custodian
+- when the city takes control of the city's wallet and associated funds
 - total spent by miners of the city coin in a given Stacks block
 - number of participating miners of the city coin in a given Stacks block
 - number of wins for each miner, identified by Stacks address
@@ -188,46 +185,50 @@ Additional performance metrics that may be of use to both the user interfaces ab
 
 ### Technical Requirements
 
+**Smart Contract**
 
+- the operations of mining and Stacking will be provided by the [city coin contract](./citycoin.clar)
+- one copy of the contract code above will be created for each city coin, and published to mainnet
+- the contract will be programmed using the [Clarity](https://clarity-lang.org) smart contract language
+
+**Integrations**
+
+- application integration with the Stacks blockchain will be provided by the [Stacks.js libraries](https://github.com/blockstack/stacks.js)
+- user identity and transaction signing will be provided by the [Stacks Web Wallet](https://hiro.so/wallet/install-web)
+- user data will be encrypted and stored in [Gaia](https://docs.stacks.co/build-apps/guides/data-storage)
+- Stacks blockchain information will be provided by a [Stacks API Node](https://github.com/blockstack/stacks-blockchain-api)
 
 ## Token Economics
 
 ### Fair and Open Launch
 
+The launch of a city coin will require at least 5 unique wallets to signal activation as part of a function in the smart contract, after which anyone is eligible to mine the city coins within a given Stacks block.
+
+There will be no city coins issued or distributed prior to the start of mining.
+
 ### Issuance Schedule
 
-### Token Value
+Miners receive coinbase rewards for mining the city coin.
 
-## Evaluation and Performance
+The reward amounts are:
+
+- 1000 city coins per block are released after the first 4 years of mining
+- 500 city coins are relased during the following 4 years
+- 250 city coins are relased during the following 4 years
+- 125 city coins are relased from then on indefinitely
+
+These "halvings" are synchronized with Bitcoin and Stacks halvings.
+
+## Constraints
+
+### Legal Restrictions
+
+This project requires legal review to ensure the city coins are not treated as a security under U.S. federal securities laws.
 
 ### Security
 
-audit
-
-### Milestones and Timelines
+This project requires an independent security audit.
 
 ## Future Applications
 
-2nd layer: Stacking STX --> BTC
-
-### Assumptions
-
-### Constraints
-
-### Governance and KYC
-
-## Citations
-
-## Definitions
-
-define: clarity
-define: stacks blockchain
-define: PoX (whitepaper, docs)
-define: fungible token
-define: SIP-010 standard
-define: other equivalant standards?
-define: mining
-define: stacking
-define: minting
-define: custodied funds (custodial / non-custodial)
-define: diminishing issuance schedule similar to that of Bitcoin and Stacks.
+TODO: add future possibilities and ideas here
