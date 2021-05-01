@@ -1,13 +1,12 @@
 (begin
     ;; first-block-height, reward-cycle-length, token-reward-maturity, max-reward-cycles
-    (unwrap-panic (configure u1 u5 u3 u32))
+    (unwrap-panic (configure u2 u5 u3 u32))
 )
 
 (define-public (list-tests)
     (begin
        (ok (list
            "unit-tests"
-           "block-4"
            "block-5"
            "block-6"
            "block-7"
@@ -15,6 +14,7 @@
            "block-9"
            "block-10"
            "block-11"
+           "block-12"
        ))
     )
 )
@@ -393,16 +393,16 @@
     )
 )
 
-(define-public (block-4)
+(define-public (block-5)
     (let (
         (rc (unwrap-panic (get-reward-cycle block-height)))
     )
     (begin
-        (print "block-4: mine and stack tokens")
+        (print "block-5: mine and stack tokens")
 
         (unwrap-panic (ft-mint? stackables u100 tx-sender))
 
-        (asserts! (is-eq u4 block-height)
+        (asserts! (is-eq u5 block-height)
             (err u0))
 
         (asserts! (is-eq u0 rc)
@@ -446,13 +446,13 @@
     ))
 )
 
-(define-public (block-5)
+(define-public (block-6)
     (let (
         (rc (unwrap-panic (get-reward-cycle block-height)))
     )
     (begin
-        (print "block-5")
-        (asserts! (is-eq u5 block-height)
+        (print "block-6")
+        (asserts! (is-eq u6 block-height)
             (err u0))
         (asserts! (is-eq u0 rc)
             (err u1))
@@ -470,14 +470,14 @@
     ))
 )
 
-(define-public (block-6)
+(define-public (block-7)
     (let (
         (rc (unwrap-panic (get-reward-cycle block-height)))
     )
     (begin
-        (print "block-6")
+        (print "block-7")
 
-        (asserts! (is-eq u6 block-height)
+        (asserts! (is-eq u7 block-height)
             (err u0))
         (asserts! (is-eq u1 rc)
             (err u1))
@@ -495,19 +495,19 @@
     ))
 )
 
-(define-public (block-7)
+(define-public (block-8)
     (let (
         (rc (unwrap-panic (get-reward-cycle block-height)))
     )
     (begin
-        (print "block-7")
+        (print "block-8")
 
-        (asserts! (is-eq u7 block-height)
+        (asserts! (is-eq u8 block-height)
             (err u0))
         (asserts! (is-eq u1 rc)
             (err u1))
         
-        (asserts! (is-eq (err ERR-IMMATURE-TOKEN-REWARD) (claim-token-reward u4))
+        (asserts! (is-eq (err ERR-IMMATURE-TOKEN-REWARD) (claim-token-reward u5))
             (err u2))
 
         (asserts! (is-eq (err ERR-NOTHING-TO-REDEEM) (claim-stacking-reward u1))
@@ -520,20 +520,20 @@
     ))
 )
 
-(define-public (block-8)
+(define-public (block-9)
     (let (
         (initial-balance (ft-get-balance stackables tx-sender))
         (rc (unwrap-panic (get-reward-cycle block-height)))
     )
     (begin
-        (print "block-8")
+        (print "block-9")
 
-        (asserts! (is-eq u8 block-height)
+        (asserts! (is-eq u9 block-height)
             (err u0))
         (asserts! (is-eq u1 rc)
             (err u1))
 
-        (asserts! (is-eq (ok true) (claim-token-reward u4))
+        (asserts! (is-eq (ok true) (claim-token-reward u5))
             (err u2))
 
         (asserts! (is-eq (+ initial-balance (get-coinbase-amount u4)) (ft-get-balance stackables tx-sender))
@@ -544,28 +544,6 @@
 
         (asserts! (is-eq (ok true) (mine-tokens u3))
             (err u5))
-
-        (ok u0)
-    ))
-)
-
-(define-public (block-9)
-    (let (
-        (rc (unwrap-panic (get-reward-cycle block-height)))
-    )
-    (begin
-        (print "block-9")
-
-        (asserts! (is-eq u9 block-height)
-            (err u0))
-        (asserts! (is-eq u1 rc)
-            (err u1))
-        
-        (asserts! (is-eq (err ERR-NOTHING-TO-REDEEM) (claim-stacking-reward u1))
-            (err u2))
-
-        (asserts! (is-eq (ok true) (mine-tokens u4))
-            (err u3))
 
         (ok u0)
     ))
@@ -582,6 +560,28 @@
             (err u0))
         (asserts! (is-eq u1 rc)
             (err u1))
+        
+        (asserts! (is-eq (err ERR-NOTHING-TO-REDEEM) (claim-stacking-reward u1))
+            (err u2))
+
+        (asserts! (is-eq (ok true) (mine-tokens u4))
+            (err u3))
+
+        (ok u0)
+    ))
+)
+
+(define-public (block-11)
+    (let (
+        (rc (unwrap-panic (get-reward-cycle block-height)))
+    )
+    (begin
+        (print "block-11")
+
+        (asserts! (is-eq u11 block-height)
+            (err u0))
+        (asserts! (is-eq u1 rc)
+            (err u1))
 
         (asserts! (is-eq (err ERR-NOTHING-TO-REDEEM) (claim-stacking-reward u1))
             (err u2))
@@ -593,15 +593,15 @@
     ))
 )
 
-(define-public (block-11)
+(define-public (block-12)
     (let (
         (rc (unwrap-panic (get-reward-cycle block-height)))
         (stx-before (stx-get-balance tx-sender))
     )
     (begin
-        (print "block-11")
+        (print "block-12")
 
-        (asserts! (is-eq u11 block-height)
+        (asserts! (is-eq u12 block-height)
             (err u0))
         (asserts! (is-eq u2 rc)
             (err u1))

@@ -624,6 +624,7 @@
 )
 
 ;;;;;;;;;;;;;;;;;;;;; SIP 010 ;;;;;;;;;;;;;;;;;;;;;;
+(impl-trait 'SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.sip-10-ft-standard.ft-trait)
 
 (define-public (transfer (amount uint) (from principal) (to principal))
     (begin
