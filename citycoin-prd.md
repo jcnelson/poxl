@@ -47,7 +47,7 @@ The city coin will not have its own blockchain, but rather will exist on the Sta
 
 The city coin will not have an initial coin offering (ICO), but instead will be fairly mined in competition with anyone who wishes to interact with the contract, and following a diminishing issuance schedule similar to that of Bitcoin and Stacks.
 
-When miners submit a transaction to the contract, 30% of the mining rewards will be sent to the designated city's wallet overseen by a trusted third party custodian. The reamining 70% of the mining rewards will be distributed to the city's coin holders who lock their tokens in support of the initiative.
+When miners submit a transaction to the contract, 30% of the STX spent will be sent to the designated city's wallet overseen by a trusted third party custodian. The remaining 70% of the spent STX will be distributed to the city's coin holders who lock their tokens in support of the initiative.
 
 ### Objective, Vision and Goals
 
