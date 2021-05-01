@@ -33,11 +33,13 @@ April 2021
 
 ## General Information
 
-### Author
+### Contributors
 
 Jason Schrader, Devops Engineer at [Freehold](https://joinfreehold.com)
 
 Shawn Mahon
+
+@pxydn, founder of [labs³](https://github.com/labs3)
 
 ### Executive Summary
 
