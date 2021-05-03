@@ -23,7 +23,7 @@ Configurable options for the smart contract or the web UI should be listed as co
 
 ## Testing
 
-To test the contract, use clarity-cli ([setup instructions here](./setup-clarity-cli.md)):
+To test the contract, use `clarity-cli` ([setup instructions here](./setup-clarity-cli.md)) and the bash script in the `./tests/` directory:
 
 ```bash
 cd tests/ && ./run-tests.sh
