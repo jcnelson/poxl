@@ -71,7 +71,7 @@ This step is necessary to make `clarity-cli` available from any directory as wel
 You can use any text editor to edit the file, nano is a quick and easy option:
 
 ```bash
-nano ~/.bashrc
+nano "$HOME"/.bashrc
 ```
 
 Add the following text at the bottom:
@@ -87,8 +87,6 @@ Load the changes in your current shell:
 ```bash
 source "$HOME"/.bashrc
 ```
-
-
 
 ### Testing it all worked
 
