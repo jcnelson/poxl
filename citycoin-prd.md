@@ -11,7 +11,7 @@ April 2021
 - [Product Requirements Document](#product-requirements-document)
   - [Table of Contents](#table-of-contents)
   - [General Information](#general-information)
-    - [Author](#author)
+    - [Contributors](#contributors)
     - [Executive Summary](#executive-summary)
     - [Objective, Vision and Goals](#objective-vision-and-goals)
     - [Purpose and Scope](#purpose-and-scope)
@@ -214,6 +214,7 @@ Miners receive coinbase rewards for mining the city coin.
 
 The reward amounts are:
 
+- 2466 city coins per block are released during the first 10,000 Stacks blocks of mining
 - 1000 city coins per block are released after the first 4 years of mining
 - 500 city coins are relased during the following 4 years
 - 250 city coins are relased during the following 4 years
