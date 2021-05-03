@@ -51,7 +51,7 @@ source "$HOME"/.cargo/env
 git clone git@github.com:blockstack/stacks-blockchain.git
 ```
 
-**Note:** if you are not using ssh with GitHub, use the HTTPS URL instead.
+***Note:** if you are not using ssh with GitHub, use the HTTPS URL instead.*
 
 ```bash
 git clone https://github.com/blockstack/stacks-blockchain.git
@@ -68,13 +68,27 @@ cargo build --workspace --release --bin clarity-cli
 
 This step is necessary to make `clarity-cli` available from any directory as well as in the test scripts.
 
+You can use any text editor to edit the file, nano is a quick and easy option:
+
 ```bash
 nano ~/.bashrc
+```
+
+Add the following text at the bottom:
+
+```bash
 export PATH="$HOME/path/to/stacks-blockchain/target/release:$PATH"
+```
+
+***Note:** replace `/path/to` with the path to the `stacks-blockchain` directory on your machine.*
+
+Load the changes in your current shell:
+
+```bash
 source "$HOME"/.bashrc
 ```
 
-**Note:** replace `/path/to` with the path to the `stacks-blockchain` directory on your machine.]
+
 
 ### Testing it all worked
 
