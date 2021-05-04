@@ -9,6 +9,10 @@ contract_addr="SPP5ERW9P30ZQ9S7KGEBH042E7EJHWDT2Z5K086D"
 contract_id="${contract_addr}.${contract_name}"
 tx_sender="S1G2081040G2081040G2081040G208105NK8PE5"
 
+sip10_contract="${script_dir}/sip-10-ft-standard.clar"
+sip10_contract_addr="SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE"
+sip10_contract_id="${sip10_contract_addr}.sip-10-ft-standard"
+
 specific_test="$1"
 
 set -ueo pipefail
@@ -53,6 +57,9 @@ for contract_test in $(ls ${script_dir}/test-*.clar); do
 
    echo "Tests begin at line $(wc -l "$contract" | cut -d ' ' -f 1)"
    cat "$contract" "$contract_test" > "$test_dir/contract-with-tests.clar"
+
+   echo "Instatiate SIP-10 contract"
+   clarity-cli launch "${sip10_contract_id}" "${sip10_contract}" "${test_dir}"
 
    echo "Instantiate $contract_id"
    clarity-cli launch "$contract_id" "$test_dir/contract-with-tests.clar" "$test_dir"
