@@ -21,7 +21,7 @@ test_header() {
    echo -e "
 ==========================
    Run test ${test_name}
-==========================="
+=========================="
 }
 
 run_test() {
@@ -62,12 +62,9 @@ for contract_test in $(ls ${script_dir}/test-*.clar); do
       grep 'Transaction executed and committed. Returned: ' | \
       sed -r -e 's/Transaction executed and committed. Returned: \((.+)\)/\1/g' -e 's/"//g')"
 
-   echo "$tests"
-   set -- $tests
+   echo "Tests: ${tests}"
 
-   testname=""
-   for i in $(seq 1 $#); do
-      eval "test_name=$(echo "\$""$i")"
-      run_test "$test_name" "$test_dir"
+   for test_name in $tests; do
+      run_test "${test_name}" "${test_dir}"
    done
 done
