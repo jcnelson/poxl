@@ -636,10 +636,10 @@
 )
 
 (define-public (get-name)
-    (ok "PoX-lite Stackable Token"))
+    (ok "Citycoin"))
 
 (define-public (get-symbol)
-    (ok "POXL"))
+    (ok "CYCN"))
 
 (define-public (get-decimals)
     (ok u6))
