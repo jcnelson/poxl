@@ -21,6 +21,9 @@
 (define-constant FIRST-STACKING-BLOCK u1)           ;; Stacks block height when Stacking is available
 (define-constant REWARD-CYCLE-LENGTH u500)          ;; how long a reward cycle is
 (define-constant MAX-REWARD-CYCLES u32)             ;; how many reward cycles a Stacker can Stack their tokens for
+(define-constant THE_BAG principal ')               ;; the custodied wallet for the city
+(define-constant STACKING_ACTIVE_STACKER_MULTIPLYER 0.7)
+(define-constant STACKING_ACTIVE_BAG_MULTIPLYER 0.3)
 
 ;; NOTE: must be as long as MAX-REWARD-CYCLES
 (define-constant REWARD-CYCLE-INDEXES (list u0 u1 u2 u3 u4 u5 u6 u7 u8 u9 u10 u11 u12 u13 u14 u15 u16 u17 u18 u19 u20 u21 u22 u23 u24 u25 u26 u27 u28 u29 u30 u31))
@@ -136,8 +139,11 @@
     { amount-token: uint }
 )
 
+(define-read-only (stacking-is-active) 
+    (>= (block-height) (FIRST-STACKING-BLOCK)) true false)
+
 ;; The fungible token that can be Stacked.
-(define-fungible-token stackables)
+(define-fungible-token citycoin)
 
 ;; Function for deciding how many tokens to mint, depending on when they were mined.
 ;; Tailor to your own needs.
@@ -568,7 +574,15 @@
         (try! (can-mine-tokens tx-sender block-height amount-ustx miner-rec))
 
         (try! (set-tokens-mined tx-sender block-height amount-ustx))
-        (unwrap-panic (stx-transfer? amount-ustx tx-sender (as-contract tx-sender)))
+
+        (if (stacking-is-active)
+            (begin 
+                (unwrap-panic (stx-transfer? STACKING_ACTIVE_STACKER_MULTIPLYER tx-sender (as-contract tx-sender)))
+                (unwrap-panic (stx-transfer? STACKING_ACTIVE_BAG_MULTIPLYER tx-sender THE_BAG))
+            )
+            (unwrap-panic (stx-transfer? amount-ustx tx-sender THE_BAG))
+            )
+        
 
         (ok true)
     ))
