@@ -1,0 +1,10 @@
+[project]
+name = "citycoin"
+
+[contracts.sip-10-ft-standard]
+path = "contracts/clarinet/sip-10-ft-standard.clar"
+depends_on = []
+
+[contracts.citycoin]
+path = "contracts/clarinet/citycoin.clar"
+depends_on = ["sip-10-ft-standard"]

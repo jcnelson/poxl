@@ -1,15 +1,17 @@
 #!/bin/bash
 
 script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+contracts_dir_rel="${script_dir}/../contracts"
+contracts_dir=$(readlink -e "$contracts_dir_rel")
 contract_name="citycoin"
 
-contract="${script_dir}/../${contract_name}.clar"
+contract="${contracts_dir}/${contract_name}.clar"
 initial_allocations="${script_dir}/initial-balances.json"
 contract_addr="SPP5ERW9P30ZQ9S7KGEBH042E7EJHWDT2Z5K086D"
 contract_id="${contract_addr}.${contract_name}"
 tx_sender="S1G2081040G2081040G2081040G208105NK8PE5"
 
-sip10_contract="${script_dir}/sip-10-ft-standard.clar"
+sip10_contract="${contracts_dir}/sip-10-ft-standard.clar"
 sip10_contract_addr="SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE"
 sip10_contract_id="${sip10_contract_addr}.sip-10-ft-standard"
 
@@ -17,7 +19,10 @@ specific_test="$1"
 
 set -ueo pipefail
 
-which clarity-cli >/dev/null 2>&1 || ( echo >&2 "No clarity-cli in PATH"; exit 1 )
+if ! command -v clarity-cli &> /dev/null; then
+    echo "ERROR: clarity-cli could not be found"
+    exit 1
+fi
 
 test_header() {
    local test_name=$1

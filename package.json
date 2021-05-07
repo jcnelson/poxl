@@ -1,0 +1,13 @@
+{
+  "name": "citycoin",
+  "version": "0.0.0",
+  "description": "",
+  "scripts": {
+    "test": "npm run clarinet:test",
+    "test:native": "./tests/run-tests.sh",
+    "clarinet:check": "npm run clarinet:prepare && clarinet check",
+    "clarinet:test": "npm run clarinet:prepare && clarinet test",
+    "clarinet:console": "npm run clarinet:prepare && clarinet console",
+    "clarinet:prepare": "./scripts/clarinet-prepare.sh"
+  }
+}
