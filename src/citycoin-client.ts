@@ -34,18 +34,16 @@ export class CityCoinClient {
    * @param amount 
    * @param recipient 
    */
-  ftMint(amount: number, recipient: Account) {
-    const block = this.chain.mineBlock([
-      Tx.contractCall(
-        this.contractName,
-        "ft-mint",
-        [
-          types.uint(amount),
-          types.principal(recipient.address)
-        ],
-        this.deployer.address
-      )
-    ]);
+  ftMint(amount: number, recipient: Account): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "ft-mint",
+      [
+        types.uint(amount),
+        types.principal(recipient.address)
+      ],
+      this.deployer.address
+    );
   }
 
   // read only functions

@@ -89,7 +89,9 @@ describe('[CityCoin]', () => {
       });
 
       it("should return 100", () => {
-        client.ftMint(100, wallet_1);
+        chain.mineBlock([
+          client.ftMint(100, wallet_1)
+        ]);
 
         const result = client.getBalanceOf(wallet_1).result;
 
