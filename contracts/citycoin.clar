@@ -1,7 +1,4 @@
 ;; citycoin implmentation of the PoX-lite contract, MVP.
-;;
-;; This is alpha-quality code.  Tests are included in the tests/ directory, but this code is unaudited.
-;; DO NOT USE IN PRODUCTION.
 
 ;; error codes
 (define-constant ERR-NO-WINNER u0)
@@ -138,7 +135,7 @@
 )
 
 ;; The fungible token that can be Stacked.
-(define-fungible-token stackables)
+(define-fungible-token citycoins)
 
 ;; Function for deciding how many tokens to mint, depending on when they were mined.
 ;; Tailor to your own needs.
@@ -178,7 +175,7 @@
             (ok
                 (let (
                     (token-info (get-tokens-per-cycle cur-reward-cycle))
-                    (total-ft-supply (ft-get-supply stackables))
+                    (total-ft-supply (ft-get-supply citycoins))
                     (total-ustx-supply (stx-get-balance (as-contract tx-sender)))
                 )
                 {
@@ -198,7 +195,7 @@
 
 ;; Produce the new tokens for the given claimant, who won the tokens at the given Stacks block height.
 (define-private (mint-coinbase (recipient principal) (stacks-block-ht uint))
-    (ft-mint? stackables (get-coinbase-amount stacks-block-ht) recipient)
+    (ft-mint? citycoins (get-coinbase-amount stacks-block-ht) recipient)
 )
 
 ;; Getter to obtain the list of miners and uSTX commitments at a given Stacks block height,
@@ -410,7 +407,7 @@
         (asserts! (> amount-tokens u0)
             (err ERR-CANNOT-STACK))
 
-        (asserts! (<= amount-tokens (ft-get-balance stackables stacker-id))
+        (asserts! (<= amount-tokens (ft-get-balance citycoins stacker-id))
             (err ERR-INSUFFICIENT-BALANCE))
 
         (ok true)
@@ -547,7 +544,7 @@
     (begin
         (try! (can-stack-tokens tx-sender amount-tokens block-height start-stacks-ht lock-period))
 
-        (unwrap! (ft-transfer? stackables amount-tokens tx-sender (as-contract tx-sender))
+        (unwrap! (ft-transfer? citycoins amount-tokens tx-sender (as-contract tx-sender))
             (err ERR-INSUFFICIENT-BALANCE))
 
         (fold stack-tokens-closure REWARD-CYCLE-INDEXES
@@ -631,12 +628,12 @@
         (asserts! (is-eq from tx-sender)
             (err ERR-UNAUTHORIZED))
 
-        (ft-transfer? stackables amount from to)
+        (ft-transfer? citycoins amount from to)
     )
 )
 
 (define-public (get-name)
-    (ok "Citycoin"))
+    (ok "citycoins"))
 
 (define-public (get-symbol)
     (ok "CYCN"))
@@ -645,7 +642,7 @@
     (ok u6))
 
 (define-public (get-balance-of (user principal))
-    (ok (ft-get-balance stackables user)))
+    (ok (ft-get-balance citycoins user)))
 
 (define-public (get-total-supply)
     (ok (stx-get-balance (as-contract tx-sender))))
