@@ -26,10 +26,6 @@ April 2021
   - [Token Economics](#token-economics)
     - [Fair and Open Launch](#fair-and-open-launch)
     - [Issuance Schedule](#issuance-schedule)
-  - [Constraints](#constraints)
-    - [Legal Restrictions](#legal-restrictions)
-    - [Security](#security)
-  - [Future Applications](#future-applications)
 
 ## General Information
 
@@ -39,7 +35,7 @@ Jason Schrader, Devops Engineer at [Freehold](https://joinfreehold.com)
 
 Shawn Mahon
 
-[@pxydn](https://github.com/pxydn), founder of [labs³](https://github.com/labs3), `PGP | A303 BCFE CA30 DDF9`
+[@asteriabtc](https://github.com/asteriabtc), founder of [Syvita Guild](https://github.com/syvita), `PGP | A303 BCFE CA30 DDF9`
 
 ### Executive Summary
 
@@ -87,18 +83,18 @@ For example, both Mayor Suarez of Miami and Mayor Conger of Tennessee are openly
 
 One challenge to mining or holding Bitcoin is that it does not produce yield, and market fluctuations can greatly affect the balance sheet. Mining Bitcoin is a competitive market dominated by large players, such that the capital requirement to start mining, the break-even point, and the power consumption are all considerations a city would need to resolve.
 
-The Stacks blockchain is a Layer 1 blockchain connected to Bitcoin, in which miners spend Bitcoin to bid for and win a fixed amount of Stacks tokens. Stackers have the option to lock up tokens for a specified amount of time, and in turn, receive a portion of the Bitcoin yield that comes from miners, proportionate to the amount Stacked. The average APY as of writing this document is 10%.
+The Stacks blockchain is a Layer 1 blockchain connected to Bitcoin, in which miners spend Bitcoin to bid for and win a fixed amount of Stacks tokens. Stackers have the option to lock up tokens for a specified amount of time, and in turn, receive a portion of the Bitcoin yield that comes from miners, proportionate to the amount Stacked. The average APY as of writing this document is 10% and additional statistics can be seen on [Stacking.Club](https://stacking.club).
 
 Taking this concept a level further, a new token (the "city coin") could be created on the Stacks blockchain, following the SIP-010 fungible token standard, such that the token can be mined and Stacked per the methods stated above except a portion would be redirected to the city's wallet overseen by a trusted third party custodian.
 
 References:
 
-https://bitcointreasuries.org/
-https://www.coindesk.com/microstrategy-ceo-bitcoin-better-than-antiquated-gold
-https://www.coindesk.com/miami-mayor-wants-city-to-become-bitcoin-mining-hub
-https://www.coindesk.com/jackson-tennessee-bitcoin-mayor-scott-conger
-https://corporatefinanceinstitute.com/resources/knowledge/other/bitcoin-mining/]
-https://stacking.club
+- https://bitcointreasuries.org/
+- https://www.coindesk.com/microstrategy-ceo-bitcoin-better-than-antiquated-gold
+- https://www.coindesk.com/miami-mayor-wants-city-to-become-bitcoin-mining-hub
+- https://www.coindesk.com/jackson-tennessee-bitcoin-mayor-scott-conger
+- https://corporatefinanceinstitute.com/resources/knowledge/other/bitcoin-mining/
+- https://stacking.club
 
 ## Core Functionality
 
@@ -210,28 +206,16 @@ There will be no city coins issued or distributed prior to the start of mining.
 
 ### Issuance Schedule
 
-Miners receive coinbase rewards for mining the city coin.
+Miners receive coinbase rewards for mining the city coin outlined in the table below, and the "halvings" of the block reward are synchronized with Bitcoin and Stacks.
 
-The reward amounts are:
+| Time Period | Reward | Notes |
+| --- | --- | --- |
+| First 10,000 BTC Blocks | 250,000 city coins | approx. 3 months |
+| until BTC Block 840,000 | 100,000 city coins | 2021-2024 |
+| after BTC Block 840,000 | 50,000 city coins | 2024-2028 | 
+| after BTC Block 1,050,000 | 25,000 city coins | 2028-2032 | 
+| after BTC Block 1,260,000 | 12,500 city coins | 2032-2036 |
+| after BTC Block 1,470,000 | 6,250 city coins | 2036-2040 |
+| after BTC Block 1,680,000 | 3,125 city coins | 2040-2044, continues indefinitely |
 
-- 2466 city coins per block are released during the first 10,000 Stacks blocks of mining
-- 1000 city coins per block are released after the first 4 years of mining
-- 500 city coins are relased during the following 4 years
-- 250 city coins are relased during the following 4 years
-- 125 city coins are relased from then on indefinitely
-
-These "halvings" are synchronized with Bitcoin and Stacks halvings.
-
-## Constraints
-
-### Legal Restrictions
-
-This project requires legal review to ensure the city coins are not treated as a security under U.S. federal securities laws.
-
-### Security
-
-This project requires an independent security audit.
-
-## Future Applications
-
-TODO: add future possibilities and ideas here
+After the final halving at BTC Block 1,680,000, the total supply is estimated to be `37,188,250,000` and will increase indefinitely by `164,062,500`	per year.
