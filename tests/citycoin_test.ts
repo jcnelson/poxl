@@ -58,10 +58,10 @@ describe('[CityCoin]', () => {
     });
 
     describe("get-name()", () => {
-      it("should return 'Citycoin'", () => {
+      it("should return 'citycoins'", () => {
         const result = client.getName().result;
 
-        result.expectOk().expectAscii("Citycoin");
+        result.expectOk().expectAscii("citycoins");
       });
     });
 
