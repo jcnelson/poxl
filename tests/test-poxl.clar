@@ -400,7 +400,7 @@
     (begin
         (print "block-5: mine and stack tokens")
 
-        (unwrap-panic (ft-mint? stackables u100 tx-sender))
+        (unwrap-panic (ft-mint? citycoins u100 tx-sender))
 
         (asserts! (is-eq u5 block-height)
             (err u0))
@@ -522,7 +522,7 @@
 
 (define-public (block-9)
     (let (
-        (initial-balance (ft-get-balance stackables tx-sender))
+        (initial-balance (ft-get-balance citycoins tx-sender))
         (rc (unwrap-panic (get-reward-cycle block-height)))
     )
     (begin
@@ -536,7 +536,7 @@
         (asserts! (is-eq (ok true) (claim-token-reward u5))
             (err u2))
 
-        (asserts! (is-eq (+ initial-balance (get-coinbase-amount u4)) (ft-get-balance stackables tx-sender))
+        (asserts! (is-eq (+ initial-balance (get-coinbase-amount u4)) (ft-get-balance citycoins tx-sender))
             (err u3))
 
         (asserts! (is-eq (err ERR-NOTHING-TO-REDEEM) (claim-stacking-reward u1))
