@@ -5,6 +5,7 @@
   "scripts": {
     "test": "npm run clarinet:test",
     "test:native": "./tests/run-tests.sh",
+    "test:all": "npm test; npm run test:native",
     "clarinet:check": "npm run clarinet:prepare && clarinet check",
     "clarinet:test": "npm run clarinet:prepare && clarinet test",
     "clarinet:console": "npm run clarinet:prepare && clarinet console",
