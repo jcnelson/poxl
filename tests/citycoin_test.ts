@@ -499,7 +499,7 @@ describe('[CityCoin]', () => {
         const receipt = block.receipts[0];
 
         receipt.result.expectErr().expectUint(ErrCode.ERR_CANNOT_MINE);
-      
+
         assertEquals(receipt.events.length, 0)
       });
 
@@ -511,7 +511,7 @@ describe('[CityCoin]', () => {
         const receipt = block.receipts[0];
 
         receipt.result.expectErr().expectUint(ErrCode.ERR_INSUFFICIENT_BALANCE);
-      
+
         assertEquals(receipt.events.length, 0)
       })
 
@@ -535,10 +535,10 @@ describe('[CityCoin]', () => {
 
         // check return value
         block.receipts[0].result.expectOk().expectBool(true);
-        
+
         // check number of events
         assertEquals(block.receipts[0].events.length, 1)
-        
+
         // checke event details
         block.receipts[0].events.expectSTXTransferEvent(
           amount,
@@ -546,6 +546,105 @@ describe('[CityCoin]', () => {
           client.getContractAddress()
         );
       });
+    });
+
+    describe("claim-stacking-reward()", () => {
+      beforeEach(() => {
+        setupCleanEnv();
+      });
+
+      it("throws ERR_NOTHIG_TO_REDEEM error when stacker didn't stack at all", () => {
+        const block = chain.mineBlock([
+          client.claimStackingRewad(0, wallet_1)
+        ]);
+
+        const receipt = block.receipts[0];
+
+        receipt.result.expectErr().expectUint(ErrCode.ERR_NOTHING_TO_REDEEM);
+        assertEquals(receipt.events.length, 0);
+      });
+
+      it("throws ERR_NOTHING_TO_REDEEM error, when stacker want to redeem same reward second time", () => {
+        const miner = wallet_1;
+        const stacker = wallet_2;
+
+        // add tokens and stack them at the next cycle
+        chain.mineBlock([
+          client.ftMint(5000, stacker),
+          client.stackTokens(5000, 5, 1, stacker),
+        ]);
+
+        // advance chain forward to jump into 1st staking cycle
+        chain.mineEmptyBlock(500);
+
+        // mine some tokes
+        chain.mineBlock([
+          client.mineTokens(50000, miner),
+        ]);
+
+        // advance chain forward to jump into 2nd staking cycle
+        chain.mineEmptyBlock(500);
+
+        // claim first time
+        chain.mineBlock([
+          client.claimStackingRewad(1, stacker),
+        ]);
+
+        // try to claim second time
+        const block = chain.mineBlock([
+          client.claimStackingRewad(1, stacker),
+        ]);
+
+        const receipt = block.receipts[0];
+
+        receipt.result.expectErr().expectUint(ErrCode.ERR_NOTHING_TO_REDEEM);
+        assertEquals(receipt.events.length, 0);
+      });
+
+
+      it("suceeds and causes one stx_transfer_event event", () => {
+        const miner_1 = wallet_1;
+        const miner_2 = wallet_2
+        const stacker = wallet_3;
+        const minerCommitment = 2000;
+
+        // add tokens and stack them at the next cycle
+        chain.mineBlock([
+          client.ftMint(5000, stacker),
+          client.stackTokens(5000, 5, 1, stacker),
+        ]);
+
+        // advance chain forward to jump into 1st staking cycle
+        chain.mineEmptyBlock(500);
+
+        // mine some tokes
+        chain.mineBlock([
+          client.mineTokens(minerCommitment, miner_1),
+          client.mineTokens(minerCommitment, miner_2)
+        ]);
+
+        // advance chain forward to jump into 2nd staking cycle
+        chain.mineEmptyBlock(500);
+
+        const block = chain.mineBlock([
+          client.claimStackingRewad(1, stacker)
+        ]);
+
+        const receipt = block.receipts[0];
+
+        // check return valu
+        receipt.result.expectOk().expectBool(true);
+
+        // check evens count
+        assertEquals(receipt.events.length, 1);
+
+        // checke event details
+        receipt.events.expectSTXTransferEvent(
+          minerCommitment * 2,
+          client.getContractAddress(),
+          stacker.address
+        )
+      })
     });
   });
 });
