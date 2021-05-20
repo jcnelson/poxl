@@ -13,10 +13,12 @@
 (define-constant ERR-ROUND-FULL u9)
 (define-constant ERR-NOTHING-TO-REDEEM u10)
 (define-constant ERR-CANNOT-MINE u11)
+(define-constant ERR-MINER-ALREADY-REGISTERED u12)
+(define-constant ERR-MINING-ACTIVATION-TRESHOLD-REACHED u13)
 
 ;; Tailor to your needs.
 (define-constant TOKEN-REWARD-MATURITY u100)        ;; how long a miner must wait before claiming their minted tokens
-(define-constant FIRST-STACKING-BLOCK u1)           ;; Stacks block height when Stacking is available
+(define-constant FIRST-STACKING-BLOCK u340282366920938463463374607431768211455)           ;; Stacks block height when Stacking is available
 (define-constant REWARD-CYCLE-LENGTH u500)          ;; how long a reward cycle is
 (define-constant MAX-REWARD-CYCLES u32)             ;; how many reward cycles a Stacker can Stack their tokens for
 
@@ -136,6 +138,44 @@
 
 ;; The fungible token that can be Stacked.
 (define-fungible-token citycoins)
+
+(define-constant MINING-ACTIVATION-TRESHOLD u1)  ;; how many miners have to register to kickoff countdown to mining activation
+(define-constant MINING-ACTIVATION-DELAY u100)   ;; how many blocks after last miner registration mining will be activated   
+
+(define-data-var signalingMinersNonce uint u0)
+
+(define-map SignalingMiners
+    { miner: principal }
+    { id: uint }
+)
+
+(define-public (register-miner)
+    (let
+        (
+            (newId (+ u1 (var-get signalingMinersNonce)))
+        )
+        (asserts! (is-none (map-get? SignalingMiners {miner: tx-sender}))
+            (err ERR-MINER-ALREADY-REGISTERED))
+
+        (asserts! (<= newId MINING-ACTIVATION-TRESHOLD)
+            (err ERR-MINING-ACTIVATION-TRESHOLD-REACHED))
+        
+        (map-set SignalingMiners
+            {miner: tx-sender}
+            {id: newId}
+        )
+        
+        (var-set signalingMinersNonce newId)
+
+        (if (is-eq newId MINING-ACTIVATION-TRESHOLD) 
+            (begin
+                (var-set first-stacking-block (+ block-height MINING-ACTIVATION-DELAY))
+                (ok true)
+            )
+            (ok true)
+        )
+    )
+)
 
 ;; Function for deciding how many tokens to mint, depending on when they were mined.
 ;; Tailor to your own needs.
