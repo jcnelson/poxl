@@ -45,6 +45,9 @@ export class CityCoinClient {
     return result;
   }
 
+  public getContractAddress(): string {
+    return `${this.deployer.address}.${this.contractName}`;
+  }
   /**
    * Mints token to make testing easier.
    * 

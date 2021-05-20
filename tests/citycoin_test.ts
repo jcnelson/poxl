@@ -436,6 +436,58 @@ describe('[CityCoin]', () => {
           result.expectUint(expectedValue);
         });
       });
+    })
+  });
+
+  describe("Public functions:", () => {
+    describe("stack-tokens()", () => {
+      beforeEach(() => {
+        setupCleanEnv();
+      })
+
+      it("throws ERR_STACKING_NOT_AVAILABLE error", () => {
+        const block = chain.mineBlock([
+          client.stackTokens(100, 0, 1, wallet_1)
+        ]);
+
+        block.receipts[0].result.expectErr().expectUint(ErrCode.ERR_STACKING_NOT_AVALIABLE);
+        assertEquals(block.receipts[0].events.length, 0);
+      });
+
+      it("throws ERR_INSUFFICIENT_BALANCE error", () => {
+        const block = chain.mineBlock([
+          client.stackTokens(100, 5, 1, wallet_1)
+        ]);
+
+        block.receipts[0].result.expectErr().expectUint(ErrCode.ERR_INSUFFICIENT_BALANCE);
+        assertEquals(block.receipts[0].events.length, 0);
+      });
+
+      it("succeedes and causes one ft_transfer_event", () => {
+        const block = chain.mineBlock([
+          client.ftMint(100, wallet_1),
+          client.stackTokens(100, 5, 1, wallet_1)
+        ]);
+
+        const expectedEvent = {
+          type: "ft_transfer_event"
+        }
+
+        // check return value
+        block.receipts[1].result.expectOk().expectBool(true);
+
+        // check number of events 
+        assertEquals(block.receipts[0].events.length, 1);
+
+        // checke events
+        block.receipts[1].events.expectFungibleTokenTransferEvent(
+          100,
+          wallet_1.address,
+          client.getContractAddress(),
+          "citycoins"
+        );
+
+      });
     });
   });
 });
