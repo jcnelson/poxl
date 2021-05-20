@@ -469,10 +469,6 @@ describe('[CityCoin]', () => {
           client.stackTokens(100, 5, 1, wallet_1)
         ]);
 
-        const expectedEvent = {
-          type: "ft_transfer_event"
-        }
-
         // check return value
         block.receipts[1].result.expectOk().expectBool(true);
 
@@ -487,6 +483,68 @@ describe('[CityCoin]', () => {
           "citycoins"
         );
 
+      });
+    });
+
+    describe("mine-tokesn()", () => {
+      beforeEach(() => {
+        setupCleanEnv();
+      });
+
+      it("throws ERR_CANNOT_MINE error when miner wants to commit 0 ustx", () => {
+        const block = chain.mineBlock([
+          client.mineTokens(0, wallet_1)
+        ]);
+
+        const receipt = block.receipts[0];
+
+        receipt.result.expectErr().expectUint(ErrCode.ERR_CANNOT_MINE);
+      
+        assertEquals(receipt.events.length, 0)
+      });
+
+      it("throws ERR_INSUFFICIENT_BALANCE error when mier wants to commit more than he have", () => {
+        const block = chain.mineBlock([
+          client.mineTokens(wallet_1.balance + 1, wallet_1)
+        ]);
+
+        const receipt = block.receipts[0];
+
+        receipt.result.expectErr().expectUint(ErrCode.ERR_INSUFFICIENT_BALANCE);
+      
+        assertEquals(receipt.events.length, 0)
+      })
+
+      it("throws ERR_ALREADY_MINED error when minner wants mine twice at the same block", () => {
+        const block = chain.mineBlock([
+          client.mineTokens(10, wallet_1),
+          client.mineTokens(10, wallet_1),
+        ]);
+
+        const receipt_err = block.receipts[1];
+
+        receipt_err.result.expectErr().expectUint(ErrCode.ERR_ALREADY_MINED);
+        assertEquals(receipt_err.events.length, 0)
+      })
+
+      it("succeedes and causes one stx_transfer_event", () => {
+        const amount = 20000;
+        const block = chain.mineBlock([
+          client.mineTokens(amount, wallet_1),
+        ]);
+
+        // check return value
+        block.receipts[0].result.expectOk().expectBool(true);
+        
+        // check number of events
+        assertEquals(block.receipts[0].events.length, 1)
+        
+        // checke event details
+        block.receipts[0].events.expectSTXTransferEvent(
+          amount,
+          wallet_1.address,
+          client.getContractAddress()
+        );
       });
     });
   });
