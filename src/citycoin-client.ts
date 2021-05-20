@@ -7,6 +7,23 @@ export interface Result {
   events: []
 }
 
+export enum ErrCode {
+  ERR_NO_WINNER = 0,
+  ERR_NO_SUCH_MINER,
+  ERR_IMMATURE_TOKEN_REWARD,
+  ERR_UNAUTHORIZED,
+  ERR_ALREADY_CLAIMED,
+  ERR_STACKING_NOT_AVALIABLE,
+  ERR_CANNOT_STACK,
+  ERR_INSUFFICIENT_BALANCE,
+  ERR_ALREADY_MINED,
+  ERR_ROUND_FULL,
+  ERR_NOTHING_TO_REDEEM,
+  ERR_CANNOT_MINE,
+}
+
+export const FIRST_STACKING_BLOCK = 1;
+export const REWARD_CYCLE_LENGTH = 500;
 export class CityCoinClient {
   contractName: string = "citycoin"
   chain: Chain;
@@ -77,44 +94,130 @@ export class CityCoinClient {
     return this.callReadOnlyFn("get-pox-lite-info");
   }
 
-  getBlockCommitTotal(): Result {
-    throw Error("not implemented");
+  getBlockCommitTotal(miners: MinersList): Result {
+    return this.callReadOnlyFn(
+      "get-block-commit-total",
+      [
+        miners.convert()
+      ]
+    );
   }
 
-  getBlockWinner(): Result {
-    throw Error("not implemented");
+  getBlockWinner(randomSampleUint: number, miners: MinersList): Result {
+    return this.callReadOnlyFn(
+      "get-block-winner",
+      [
+        types.uint(randomSampleUint),
+        miners.convert()
+      ]
+    )
   }
 
-  hasMinedInList(): Result {
-    throw Error("not implemented");
+  hasMinedInList(miner: Account, miners: MinersList): Result {
+    return this.callReadOnlyFn(
+      "has-mined-in-list",
+      [
+        types.principal(miner.address),
+        miners.convert()
+      ]
+    );
   }
 
-  canClaimTokens(): Result {
-    throw Error("not implemented");
+  canClaimTokens(
+    claimer: Account,
+    claimerStacksBlockHeight: number,
+    randomSample: number,
+    minersRec: MinersRec,
+    currentStacksBlock: number
+  ): Result {
+    return this.callReadOnlyFn(
+      'can-claim-tokens',
+      [
+        types.principal(claimer.address),
+        types.uint(claimerStacksBlockHeight),
+        types.uint(randomSample),
+        minersRec.convert(),
+        types.uint(currentStacksBlock)
+      ]
+    );
   }
 
-  canMineTokens(): Result {
-    throw Error("not implementes");
+  canMineTokens(
+    minerId: Account,
+    stacksBlockHeight: number,
+    amountUstx: number,
+    minersRec: MinersRec
+  ): Result {
+    return this.callReadOnlyFn(
+      "can-mine-tokens",
+      [
+        types.principal(minerId.address),
+        types.uint(stacksBlockHeight),
+        types.uint(amountUstx),
+        minersRec.convert()
+      ]
+    );
   }
 
-  canStackTokens(): Result {
-    throw Error("not implemented");
+  canStackTokens(
+    stackerId: Account,
+    amountTokens: number,
+    nowStacksHeight: number,
+    startStacksHeight: number,
+    lockPeriod: number
+  ): Result {
+    return this.callReadOnlyFn(
+      "can-stack-tokens",
+      [
+        types.principal(stackerId.address),
+        types.uint(amountTokens),
+        types.uint(nowStacksHeight),
+        types.uint(startStacksHeight),
+        types.uint(lockPeriod)
+      ]
+    );
   }
 
-  getEntitledStackingReward(): Result {
-    throw Error("not implemented");
+  getEntitledStackingReward(
+    stackerId: Account,
+    targetRewardCycle: number,
+    currentBlockHeight: number
+  ): Result {
+    return this.callReadOnlyFn(
+      "get-entitled-stacking-reward",
+      [
+        types.principal(stackerId.address),
+        types.uint(targetRewardCycle),
+        types.uint(currentBlockHeight)
+      ],
+    )
   }
 
-  getRewardCycle(): Result {
-    throw Error("not implemented");
+  getRewardCycle(stacksBlockHeight: number): Result {
+    return this.callReadOnlyFn(
+      "get-reward-cycle",
+      [
+        types.uint(stacksBlockHeight)
+      ]
+    )
   }
 
-  getFirstBlockHeightInRewardCycle(): Result {
-    throw Error("not implemented");
+  getFirstBlockHeightInRewardCycle(rewardCycle: number): Result {
+    return this.callReadOnlyFn(
+      "get-first-block-height-in-reward-cycle",
+      [
+        types.uint(rewardCycle)
+      ]
+    );
   }
 
-  getRandomUintAtBlock(): Result {
-    throw Error("not implemented");
+  getRandomUintAtBlock(stacksBlock: number): Result {
+    return this.callReadOnlyFn(
+      "get-random-uint-at-block",
+      [
+        types.uint(stacksBlock)
+      ]
+    );
   }
 
   // public functions
@@ -154,16 +257,22 @@ export class CityCoinClient {
     );
   }
 
-  claimStackingRewad() {
-    throw Error("not implemented");
+  claimStackingRewad(targetRewardCycle: number, sender: Account): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "claim-stacking-reward",
+      [
+        types.uint(targetRewardCycle)
+      ],
+      sender.address
+    );
   }
 
-  
   // SIP-010 functions
 
   transfer(amount: number, from: Account, to: Account, sender: Account): Tx {
     return Tx.contractCall(
-      this.contractName, 
+      this.contractName,
       "transfer",
       [
         types.uint(amount),
@@ -198,5 +307,52 @@ export class CityCoinClient {
 
   getTokenUri(): Result {
     return this.callReadOnlyFn("get-token-uri");
+  }
+}
+
+export interface MinerCommit {
+  miner: Account,
+  amountUstx: number
+}
+
+export class MinersList extends Array<MinerCommit> {
+  convert(): string {
+    if (this.length > 32) {
+      throw new Error("Miners list can't have more than 32 elements.")
+    }
+
+    let miners = this.map(minerCommit => {
+      return types.tuple({
+        "miner": types.principal(minerCommit.miner.address),
+        "amount-ustx": types.uint(minerCommit.amountUstx)
+      });
+    });
+
+    return types.list(miners)
+  }
+
+  getFormatted(index: number) {
+    let item = this[index];
+    return {
+      "miner": item.miner.address,
+      "amount-ustx": types.uint(item.amountUstx)
+    }
+  }
+}
+
+export class MinersRec {
+  miners: MinersList;
+  claimed: boolean;
+
+  constructor(miners: MinersList, claimed: boolean) {
+    this.claimed = claimed;
+    this.miners = miners;
+  }
+
+  convert(): string {
+    return types.tuple({
+      miners: this.miners.convert(),
+      claimed: types.bool(this.claimed)
+    });
   }
 }
