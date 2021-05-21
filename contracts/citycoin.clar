@@ -14,7 +14,7 @@
 (define-constant ERR-NOTHING-TO-REDEEM u10)
 (define-constant ERR-CANNOT-MINE u11)
 (define-constant ERR-MINER-ALREADY-REGISTERED u12)
-(define-constant ERR-MINING-ACTIVATION-TRESHOLD-REACHED u13)
+(define-constant ERR-MINING-ACTIVATION-THRESHOLD-REACHED u13)
 
 ;; Tailor to your needs.
 (define-constant TOKEN-REWARD-MATURITY u100)        ;; how long a miner must wait before claiming their minted tokens
@@ -139,7 +139,7 @@
 ;; The fungible token that can be Stacked.
 (define-fungible-token citycoins)
 
-(define-constant MINING-ACTIVATION-TRESHOLD u1)  ;; how many miners have to register to kickoff countdown to mining activation
+(define-constant MINING-ACTIVATION-TRHESHOLD u1)  ;; how many miners have to register to kickoff countdown to mining activation
 (define-constant MINING-ACTIVATION-DELAY u100)   ;; how many blocks after last miner registration mining will be activated   
 
 (define-data-var signalingMinersNonce uint u0)
@@ -157,8 +157,8 @@
         (asserts! (is-none (map-get? SignalingMiners {miner: tx-sender}))
             (err ERR-MINER-ALREADY-REGISTERED))
 
-        (asserts! (<= newId MINING-ACTIVATION-TRESHOLD)
-            (err ERR-MINING-ACTIVATION-TRESHOLD-REACHED))
+        (asserts! (<= newId MINING-ACTIVATION-THRESHOLD)
+            (err ERR-MINING-ACTIVATION-THRESHOLD-REACHED))
         
         (map-set SignalingMiners
             {miner: tx-sender}
@@ -167,7 +167,7 @@
         
         (var-set signalingMinersNonce newId)
 
-        (if (is-eq newId MINING-ACTIVATION-TRESHOLD) 
+        (if (is-eq newId MINING-ACTIVATION-THRESHOLD) 
             (begin
                 (var-set first-stacking-block (+ block-height MINING-ACTIVATION-DELAY))
                 (ok true)
