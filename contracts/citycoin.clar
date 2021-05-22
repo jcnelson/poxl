@@ -140,9 +140,9 @@
 ;; Function for deciding how many tokens to mint, depending on when they were mined.
 (define-read-only (get-coinbase-amount)
     ;; assuming new constant ERR-MINING-NOT-ACTIVATED u14
-    ;; assuming miningActive false until set true by miner registration and activation
+    ;; assuming miningIsActive false until set true by miner registration and activation
     ;; assuming miningActivationBurnBlockHeight set by miner registration and activation
-    (if not (miningActive)
+    (if not (miningIsActive)
         ERR-MINING-NOT-ACTIVATED
         (if (< (- burn-block-height miningActivationBurnBlockHeight) u10000)
             u250000
