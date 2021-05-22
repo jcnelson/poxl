@@ -1,6 +1,6 @@
 # Product Requirements Document
 
-City Coins on Stacks
+CityCoins on Stacks
 
 Draft v0.1
 
@@ -39,11 +39,11 @@ Shawn Mahon
 
 ### Executive Summary
 
-The city coin will leverage the properties of the Proof of Transfer (PoX) consensus mechanism of the Stacks blockchain, programmed through a smart contract in Clarity, as a way to generate new funding and wealth building opportunities for the city, its inhabitants, and its supporters.
+The CityCoin will leverage the properties of the Proof of Transfer (PoX) consensus mechanism of the Stacks blockchain, programmed through a smart contract in Clarity, as a way to generate new funding and wealth building opportunities for the city, its inhabitants, and its supporters.
 
-The city coin will not have its own blockchain, but rather will exist on the Stacks blockchain as a fungible token adhering to the SIP-010 standard. The Stacks blockchain is a layer one blockchain that settles on top of the Bitcoin blockchain, inheriting its security.
+The CityCoin will not have its own blockchain, but rather will exist on the Stacks blockchain as a fungible token adhering to the SIP-010 standard. The Stacks blockchain is a layer one blockchain that settles on top of the Bitcoin blockchain, inheriting its security.
 
-The city coin will not have an initial coin offering (ICO), but instead will be fairly mined in competition with anyone who wishes to interact with the contract, and following a diminishing issuance schedule similar to that of Bitcoin and Stacks.
+The CityCoin will not have an initial coin offering (ICO), but instead will be fairly mined in competition with anyone who wishes to interact with the contract, and following a diminishing issuance schedule similar to that of Bitcoin and Stacks.
 
 When miners submit a transaction to the contract, 30% of the STX spent will be sent to the designated city's wallet overseen by a trusted third party custodian. The remaining 70% of the spent STX will be distributed to the city's coin holders who lock their tokens in support of the initiative.
 
@@ -51,15 +51,15 @@ When miners submit a transaction to the contract, 30% of the STX spent will be s
 
 **Objective:** to create a smart contract that simulates Proof of Transfer (PoX) to reward token holders and contribute to a general fund for the respective city
 
-**Vision:** to signal support for a city is as simple as mining or buying the associated city coin, and holding the city coin generates revenue to both the city coin holders and the city itself
+**Vision:** to signal support for a city is as simple as mining or buying the associated CityCoin, and holding the CityCoin generates revenue to both the CityCoin holders and the city itself
 
 **Goal:** to enable a global market that can create a stronger, healthier, and more sustainable local economy
 
 ### Purpose and Scope
 
-Starting with the two pilot cities of Miami and San Francisco, fairly launch a city coin for each that can be "mined" by spending Stacks tokens, as well as locked (or "Stacked") to generate yield in Stacks tokens.
+Starting with the two pilot cities of Miami and San Francisco, fairly launch a CityCoin for each that can be "mined" by spending Stacks tokens, as well as locked (or "Stacked") to generate yield in Stacks tokens.
 
-As miners compete to mint new city coins, a portion of the Stacks tokens that miners spend are deposited into an account custodied by a top-tier exchange, and available for the city leaders to take control of at any time.
+As miners compete to mint new CityCoins, a portion of the Stacks tokens that miners spend are deposited into an account custodied by a top-tier exchange, and available for the city leaders to take control of at any time.
 
 There are no time restrictions for city leaders to take control of the funds, nor any usage restrictions for city leaders to decide how the funds should be spent.
 
@@ -69,11 +69,11 @@ This enables a global market in which participants can show support for a city w
 
 **City Leaders:** provide a new source of funding and encourage constituent participation in designated use of funds
 
-**Citizens:** provide a method to invest directly in the city through mining of the city coin, purchase of the city coin, and holding/Stacking of the city coin
+**Citizens:** provide a method to invest directly in the city through mining of the CityCoin, purchase of the CityCoin, and holding/Stacking of the CityCoin
 
-**Corporations:** provide a method to invest directly in the city through mining of the city coin, purchase of the city coin, and holding/Stacking of the city coin
+**Corporations:** provide a method to invest directly in the city through mining of the CityCoin, purchase of the CityCoin, and holding/Stacking of the CityCoin
 
-**External Supporters:** provide a method to invest directly in the city through mining of the city coin, purchase of the city coin, and holding/Stacking of the city coin
+**External Supporters:** provide a method to invest directly in the city through mining of the CityCoin, purchase of the CityCoin, and holding/Stacking of the CityCoin
 
 ### Market Assessment and Target Demographics
 
@@ -85,7 +85,7 @@ One challenge to mining or holding Bitcoin is that it does not produce yield, an
 
 The Stacks blockchain is a Layer 1 blockchain connected to Bitcoin, in which miners spend Bitcoin to bid for and win a fixed amount of Stacks tokens. Stackers have the option to lock up tokens for a specified amount of time, and in turn, receive a portion of the Bitcoin yield that comes from miners, proportionate to the amount Stacked. The average APY as of writing this document is 10% and additional statistics can be seen on [Stacking.Club](https://stacking.club).
 
-Taking this concept a level further, a new token (the "city coin") could be created on the Stacks blockchain, following the SIP-010 fungible token standard, such that the token can be mined and Stacked per the methods stated above except a portion would be redirected to the city's wallet overseen by a trusted third party custodian.
+Taking this concept a level further, a new token (the "CityCoin") could be created on the Stacks blockchain, following the SIP-010 fungible token standard, such that the token can be mined and Stacked per the methods stated above except a portion would be redirected to the city's wallet overseen by a trusted third party custodian.
 
 References:
 
@@ -100,45 +100,45 @@ References:
 
 ### Mining
 
-The act of mining a city coin is defined by someone sending Stacks tokens (STX) to the smart contract created for the city, using the following criteria.
+The act of mining a CityCoin is defined by someone sending Stacks tokens (STX) to the smart contract created for the city, using the following criteria.
 
 - anyone can participate as a miner by sending Stacks tokens (STX) to the smart contract created for the city
 - the Stacks tokens (STX) spent by miners will be distributed:
-  - 70% to city coin holders who lock up their tokens through Stacking
+  - 70% to CityCoin holders who lock up their tokens through Stacking
   - 30% to the city's wallet overseen by a trusted third party custodian
-- for each block in the Stacks blockchain, miners can mine a fixed amount of the city coin
-  - the amount of city coins rewarded through mining will follow a diminishing issuance schedule
+- for each block in the Stacks blockchain, miners can mine a fixed amount of the CityCoin
+  - the amount of CityCoins rewarded through mining will follow a diminishing [issuance schedule](#issuance-schedule)
 - the winning miner for a given Stacks block is selected by a verifiable random function (VRF)
   - the VRF is weighted by the miner's STX bid compared to the total STX bid of other miners in a given Stacks block
-  - after a maturity window (100 Stacks blocks), winning miners can claim the city coins as a reward at any time from the smart contract
-- both the act of mining then claiming the city coin are required to increase the total supply of the city coins
-  - unclaimed city coins are never minted, and do not affect the total supply
+  - after a maturity window (100 Stacks blocks), winning miners can claim the CityCoins as a reward at any time from the smart contract
+- both the act of mining then claiming the CityCoin are required to increase the total supply of the CityCoins
+  - unclaimed CityCoins are never minted, and do not affect the total supply
 
 ### Stacking
 
-The act of Stacking a city coin is defined by someone sending the city coins to the smart contract created for the city, using the following criteria.
+The act of Stacking a CityCoin is defined by someone sending the CityCoins to the smart contract created for the city, using the following criteria.
 
-- anyone can participate as a Stacker by sending city coins to the smart contract created for the city
-- a "reward cycle" is defined by the number of Stacks blocks the Stacker intends to lock their city coins for
+- anyone can participate as a Stacker by sending CityCoins to the smart contract created for the city
+- a "reward cycle" is defined by the number of Stacks blocks the Stacker intends to lock their CityCoins for
   - if desired, Stackers can select to participate in more than one reward cycle
-- Stackers will select the number of reward cycles to lock up the city coins when submitting their transaction to the smart contract
-  - while locked, the city coins are held by the smart contract until the reward cycle passes
-  - by locking the city coins, Stackers are eligible to receive a portion of the Stacks tokens (STX) spent by miners
-  - the Stacks token (STX) rewards in a given reward cycle are determined by what fraction of city coins are locked up compared to all other Stackers in the same reward cycle
-  - after the locking period, city coins are unlocked and Stackers can reclaim their city coins from the smart contract
-  - after the locking period, Stackers can claim their Stacks tokens (STX) rewards
+- Stackers will select the number of reward cycles to lock up the CityCoins when submitting their transaction to the smart contract
+  - while locked, the CityCoins are held by the smart contract until the reward cycle passes
+  - by locking the CityCoins, Stackers are eligible to receive a portion of the Stacks tokens (STX) spent by miners
+  - the Stacks token (STX) rewards in a given reward cycle are determined by what fraction of CityCoins are locked up compared to all other Stackers in the same reward cycle
+  - after the locking period, CityCoins are unlocked and Stackers can reclaim their CityCoins from the smart contract
+  - after the locking period, if eligible, Stackers can claim their Stacks tokens (STX) rewards
 
 In addition to the functions above, the Stacks token (STX) rewards can be Stacked again on the Stacks blockchain, yielding Bitcoin at 10% APY.
 
 ### Trading and Open Markets
 
-The city coins will be listed and available for trading on centralized and decentralized exchanges.
+The CityCoins will be listed and available for trading on centralized and decentralized exchanges.
 
 ### Usability
 
-In consideration of enabling anyone to participate in mining or Stacking city coins, the following criteria will be implemented to interface with the smart contract.
+In consideration of enabling anyone to participate in mining or Stacking CityCoins, the following criteria will be implemented to interface with the smart contract.
 
-- the average block times for the Stacks blockchain mirror that of the Bitcoin blockchain, at an average of 1 block every 10 minutes
+**Note:** the average block times for the Stacks blockchain mirror that of the Bitcoin blockchain, at an average of 1 block every 10 minutes
 
 **Mining**
 
@@ -146,7 +146,8 @@ A user interface for mining should be easy to configure, use and understand, suc
 
 - a miner can submit Stacks tokens (STX) to the contract using the Stacks Web Wallet
 - a miner can choose to submit for one or multiple blocks at a given rate
-- a miner can see available city coin rewards based on their address and claim them
+- a miner can choose to stop mining if mining for multiple blocks at a given rate
+- a miner can see available CityCoin rewards based on their address and claim them
 - a miner can see current and historical mining statitistics, their mining activity, and their mining history
 - all user data is stored in [Gaia](https://docs.stacks.co/build-apps/guides/data-storage), and only accessible to the user
 
@@ -154,10 +155,10 @@ A user interface for mining should be easy to configure, use and understand, suc
 
 A user interface for Stacking should be easy to configure, use and understand, such that:
 
-- a Stacker can obtain city coins through mining or purchasing them through an exchange
-- a Stacker can submit city coins to the contract using the Stacks Web Wallet
+- a Stacker can obtain CityCoins through mining or purchasing them through an exchange
+- a Stacker can submit CityCoins to the contract using the Stacks Web Wallet
 - a Stacker can choose the number of reward cycles to participate in
-- a Stacker can see the status of their city coins based on their address, and claim any that are unlocked from the smart contract
+- a Stacker can see the status of their CityCoins based on their address, and claim any that are unlocked from the smart contract
 - a Stacker can see the available Stacks token (STX) rewards based on their address, and claim them from the smart contract
 - a Stacker can see current and historical stacking statitistics, their stacking activity, and their stacking history
 - all user data is stored in [Gaia](https://docs.stacks.co/build-apps/guides/data-storage), and only accessible to the user
@@ -167,26 +168,26 @@ A user interface for Stacking should be easy to configure, use and understand, s
 Additional performance metrics that may be of use to both the user interfaces above and/or a public-facing website are listed below, inspired by [stxmining.club](https://stxmining.club) and [stacking.club](https://stacking.club).
 
 - current Bitcoin block and Stacks block
-- current Bitcoin price, Stacks price, and city coin price in USD
-- total market cap and trade value for the city coin
+- current Bitcoin price, Stacks price, and CityCoin price in USD
+- total market cap and trade value for the CityCoin
 - total value of the city's wallet overseen by a trusted third party custodian
 - when the city takes control of the city's wallet and associated funds
-- total spent by miners of the city coin in a given Stacks block
-- number of participating miners of the city coin in a given Stacks block
+- total spent by miners of the CityCoin in a given Stacks block
+- number of participating miners of the CityCoin in a given Stacks block
 - number of wins for each miner, identified by Stacks address
 - total spend for each miner, identified by Stacks address
 - average spend for each miner, identified by Stacks address
 - current reward cycle, date it started, and date estimated to end
-- total value locked by Stackers of the city coin in a given reward cycle
-- number of participating Stackers of the city coin in a given reward cycle
+- total value locked by Stackers of the CityCoin in a given reward cycle
+- number of participating Stackers of the CityCoin in a given reward cycle
 - total rewards and average slot rewards for Stackers in a given reward cycle
 
 ### Technical Requirements
 
 **Smart Contract**
 
-- the operations of mining and Stacking will be provided by the [city coin contract](./citycoin.clar)
-- one copy of the contract code above will be created for each city coin, and published to mainnet
+- the operations of mining and Stacking will be provided by the [CityCoin contract](./contracts/citycoin.clar)
+- one copy of the contract code above will be created for each CityCoin, and published to mainnet
 - the contract will be programmed using the [Clarity](https://clarity-lang.org) smart contract language
 
 **Integrations**
@@ -200,22 +201,22 @@ Additional performance metrics that may be of use to both the user interfaces ab
 
 ### Fair and Open Launch
 
-The launch of a city coin will require at least 5 unique wallets to signal activation as part of a function in the smart contract, after which anyone is eligible to mine the city coins within a given Stacks block.
+The launch of a CityCoin will require at least 5 unique wallets to signal activation as part of a function in the smart contract, after which anyone is eligible to mine the CityCoins within a given Stacks block.
 
-There will be no city coins issued or distributed prior to the start of mining.
+There will be no CityCoins issued or distributed prior to the start of mining.
 
 ### Issuance Schedule
 
-Miners receive coinbase rewards for mining the city coin outlined in the table below, and the "halvings" of the block reward are synchronized with Bitcoin and Stacks.
+Miners receive coinbase rewards for mining the CityCoin outlined in the table below, and the "halvings" of the block reward are synchronized with Bitcoin and Stacks.
 
 | Time Period | Reward | Notes |
 | --- | --- | --- |
-| First 10,000 BTC Blocks | 250,000 city coins | approx. 3 months |
-| until BTC Block 840,000 | 100,000 city coins | 2021-2024 |
-| after BTC Block 840,000 | 50,000 city coins | 2024-2028 | 
-| after BTC Block 1,050,000 | 25,000 city coins | 2028-2032 | 
-| after BTC Block 1,260,000 | 12,500 city coins | 2032-2036 |
-| after BTC Block 1,470,000 | 6,250 city coins | 2036-2040 |
-| after BTC Block 1,680,000 | 3,125 city coins | 2040-2044, continues indefinitely |
+| First 10,000 BTC Blocks | 250,000 CityCoins | approx. 3 months |
+| until BTC Block 840,000 | 100,000 CityCoins | 2021-2024 |
+| after BTC Block 840,000 | 50,000 CityCoins | 2024-2028 | 
+| after BTC Block 1,050,000 | 25,000 CityCoins | 2028-2032 | 
+| after BTC Block 1,260,000 | 12,500 CityCoins | 2032-2036 |
+| after BTC Block 1,470,000 | 6,250 CityCoins | 2036-2040 |
+| after BTC Block 1,680,000 | 3,125 CityCoins | 2040-2044, continues indefinitely |
 
 After the final halving at BTC Block 1,680,000, the total supply is estimated to be `37,188,250,000` and will increase indefinitely by `164,062,500`	per year.
