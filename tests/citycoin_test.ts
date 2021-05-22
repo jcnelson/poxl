@@ -723,5 +723,48 @@ describe('[CityCoin]', () => {
         )
       })
     });
+
+    describe("register-miner", () => {
+      it("succeeds with (ok true)", () => {
+        setupCleanEnv();
+
+        const block = chain.mineBlock([
+          client.registerMiner(wallet_1)
+        ]);
+
+        const receipt = block.receipts[0];
+
+        receipt.result.expectOk().expectBool(true);
+        assertEquals(receipt.events.length, 0);
+      });
+
+      it("fails with ERR_MINER_ALREADY_REGISTERED error when miner wants to register second time", () => {
+        setupCleanEnv();
+
+        const block = chain.mineBlock([
+          client.registerMiner(wallet_1),
+          client.registerMiner(wallet_1)
+        ]);
+
+        const receipt = block.receipts[1];
+
+        receipt.result.expectErr().expectUint(ErrCode.ERR_MINER_ALREADY_REGISTERED);
+        assertEquals(receipt.events.length, 0);
+      });
+
+      it("fails with ERR_MINING_ACTIVATION_THRESHOLD_REACHED error when miner wants to register after reaching activation threshold", () => {
+        setupCleanEnv();
+
+        const block = chain.mineBlock([
+          client.registerMiner(wallet_1),
+          client.registerMiner(wallet_2)
+        ]);
+
+        const receipt = block.receipts[1];
+
+        receipt.result.expectErr().expectUint(ErrCode.ERR_MINING_ACTIVATION_THRESHOLD_REACHED);
+        assertEquals(receipt.events.length, 0);
+      })
+    });
   });
 });
