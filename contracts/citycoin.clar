@@ -640,7 +640,7 @@
     (ok "CYCN"))
 
 (define-public (get-decimals)
-    (ok u6))
+    (ok u0))
 
 (define-public (get-balance-of (user principal))
     (ok (ft-get-balance citycoins user)))

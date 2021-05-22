@@ -83,10 +83,10 @@ describe('[CityCoin]', () => {
     });
 
     describe("get-decimals()", () => {
-      it("should return 6", () => {
+      it("should return 0", () => {
         const result = client.getDecimals().result;
 
-        result.expectOk().expectUint(6);
+        result.expectOk().expectUint(0);
       });
     });
 
