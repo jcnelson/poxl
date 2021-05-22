@@ -90,6 +90,9 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; Mining configuration
+(define-data-var mining-is-active bool false)       ;; is mining activated yet via miner registrations
+
 ;; Stacking configuration, as data vars (so it's easy to test).
 (define-data-var first-stacking-block uint FIRST-STACKING-BLOCK)
 (define-data-var reward-cycle-length uint REWARD-CYCLE-LENGTH)
