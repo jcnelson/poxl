@@ -147,22 +147,27 @@
     ;; assuming new constant ERR-MINING-NOT-ACTIVATED u14
     ;; assuming mining-is-active false until set true by miner registration and activation
     ;; assuming mining-activation-burn-block-height set by miner registration and activation
-    (if not (mining-is-active)
-        (err ERR-MINING-NOT-ACTIVATED)
-        (if (< (- burn-block-height mining-activation-burn-block-height) u10000)
-            u250000
+    (begin
+
+        (asserts! (var-get mining-is-active)
+            (err ERR-MINING-NOT-ACTIVATED)
+        )
+
+        (if (< (- burn-block-height (var-get mining-activation-burn-block-height)) u10000)
+            (ok u250000)
             (if (< burn-block-height u840000)
-                u100000
+                (ok u100000)
                 (if (< burn-block-height u1050000)
-                    u50000
+                    (ok u50000)
                     (if (< burn-block-height u1260000)
-                        u25000
+                        (ok u25000)
                         (if (< burn-block-height u1470000)
-                            u12500
+                            (ok u12500)
                             (if (< burn-block-height u1680000)
-                                u6250
+                                (ok u6250)
                                 (if (>= burn-block-height u1680000)
-                                    u3125
+                                    (ok u3125)
+                                    (ok u0)
                                 )
                             )
                         )
@@ -170,6 +175,7 @@
                 )
             )
         )
+
     )
 )
 
