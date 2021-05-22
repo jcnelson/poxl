@@ -141,10 +141,10 @@
 (define-read-only (get-coinbase-amount)
     ;; assuming new constant ERR-MINING-NOT-ACTIVATED u14
     ;; assuming miningActive false until set true by miner registration and activation
-    ;; assuming miningActivationHeight set by miner registration and activation
+    ;; assuming miningActivationBurnBlockHeight set by miner registration and activation
     (if not (miningActive)
         ERR-MINING-NOT-ACTIVATED
-        (if (< (- burn-block-height miningActivationHeight) u10000)
+        (if (< (- burn-block-height miningActivationBurnBlockHeight) u10000)
             u250000
             (if (< burn-block-height u840000)
                 u100000
