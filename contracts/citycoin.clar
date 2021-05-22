@@ -228,11 +228,22 @@
 
 ;; Produce the new tokens for the given claimant, who won the tokens at the given Stacks block height.
 (define-private (mint-coinbase (recipient principal) (stacks-block-ht uint))
-    (match (get-coinbase-amount)
-        value (ft-mint? citycoins value recipient)
-        err-value (err err-value)
-    )
-    ;; (ft-mint? citycoins (get-coinbase-amount) recipient)
+    ;; TODO update stacks-block-ht to burn-block-ht stored in miners tx
+    ;;   works with clarinet for now because values are equal
+    ;;   will need to be resolved before deployment as values will differ
+
+    (ft-mint? citycoins (unwrap-panic (get-coinbase-amount stacks-block-ht)) recipient)
+    ;; crashes Clarinet
+    ;; was producing: Analysis error: expecting 3 arguments, got 2
+
+    ;;(match (get-coinbase-amount stacks-block-ht)
+    ;;    value (ft-mint? citycoins value recipient)
+    ;;    err-value (err err-value)
+    ;;)
+    ;; crashes Clarinet
+
+    ;; (ft-mint? citycoins (get-coinbase-amount stacks-block-ht) recipient)
+    ;; Error: expecting expression of type 'uint', found '(response uint uint)'
 )
 
 ;; Getter to obtain the list of miners and uSTX commitments at a given Stacks block height,
