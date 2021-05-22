@@ -438,9 +438,6 @@
         (asserts! (< now-stacks-ht start-stacks-ht)
             (err ERR-CANNOT-STACK))
 
-        (asserts! (< cur-reward-cycle start-reward-cycle)
-            (err ERR-CANNOT-STACK))
-
         (asserts! (and (> lock-period u0) (<= lock-period max-lockup))
             (err ERR-CANNOT-STACK))
 
