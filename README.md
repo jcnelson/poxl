@@ -1,12 +1,12 @@
-# City Coins on Stacks
+# CityCoins on Stacks
 
 ## Abstract
 
-Support a city by mining, buying, or holding their citycoin, all while generating yield in STX and BTC.
+Support a city by mining, buying, or holding their CityCoin, all while generating yield in STX and BTC.
 
 Coming *very* soon!
 
-- [City Coins on Stacks](#city-coins-on-stacks)
+- [CityCoins on Stacks](#citycoins-on-stacks)
   - [Abstract](#abstract)
   - [Contributing](#contributing)
   - [Testing](#testing)
@@ -17,15 +17,15 @@ Coming *very* soon!
 
 ## Contributing
 
-For more information on the project, its goals, and technical deatils, please review the [Product Requirements Document](./citycoin-prd.md).
+For more information on the project, its goals, and technical details, please review the [Product Requirements Document](./citycoin-prd.md).
 
 PRs are welcome! Please see the [open issues](https://github.com/citycoins/citycoin/issues) and comment if interested, or submit a PR for review.
 
 All code submitted should be thoroughly commented and tested where applicable. Configurable options for the smart contract or the web UI should be listed as constants.
 
-- Website: https://citystacks.co ([repo](https://github.com/citycoins/citystacks.co))
-- App UI: TBD ([repo](https://github.com/citycoins/citystacks-tools))
-- Smart Contract Template: [citycoin.clar](./citycoin.clar)
+- Website: https://citycoins.co
+- App UI Template: deployed at subdomain per city, e.g. https://miami.citycoins.co ([repo](https://github.com/citycoins/citycoin-ui))
+- Smart Contract Template: [citycoin.clar](./contracts/citycoin.clar)
 
 ## Testing
 
@@ -43,16 +43,7 @@ This will run a set of unit tests and return their output.
 
 ### clarinet
 
-To test the contract using `clarinet`, first [install the tool](https://github.com/lgalabru/clarinet#installation) to make it available.
-
-A bash script is provided to prepare the tests as part of `clarinet:prepare` by executing the following steps:
-
-1. copies all contract files from `./contracts` to `./contracts/clarinet`
-2. modify address used in impl-trait by replacing them with different address. ie:
-`(impl-trait 'SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.sip-10-ft-standard.ft-trait)`
-is converted to:
-`(impl-trait 'ST1HTBVD3JG9C05J7HBJTHGR0GGW7KXW28M5JS8QE.sip-10-ft-standard.ft-trait)`
-3. appends at the end of file content of test add-on file with the same name, stored in `./contracts/test_addons`
+To test the contract using `clarinet`, first [install the tool](https://github.com/lgalabru/clarinet#installation) to make it available on your system.
 
 The following commands are used to run the tests:
 
@@ -61,6 +52,15 @@ The following commands are used to run the tests:
 - `npm run clarinet:check`
 - `npm run clarinet:console`
 - `npm test:native`
+
+A bash script is provided to prepare the tests as part of `clarinet:prepare`, and executes the following steps:
+
+1. copies all contract files from `./contracts` to `./contracts/clarinet`
+2. modifies address used in impl-trait by replacing it with a different address. e.g.
+`(impl-trait 'SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.sip-10-ft-standard.ft-trait)`
+is converted to:
+`(impl-trait 'ST1HTBVD3JG9C05J7HBJTHGR0GGW7KXW28M5JS8QE.sip-10-ft-standard.ft-trait)`
+3. appends at the end of file content of test add-on file with the same name, stored in `./contracts/test_addons`
 
 **Note:** `clarinet:test`, `clarinet:check`, and `clarinet:console` automatically execute `clarinet:prepare`.
 
@@ -78,4 +78,5 @@ Some quick definitions and additional resources related to the technology behind
 
 - [Stacks 2.0 Whitepaper](https://gaia.blockstack.org/hub/1AxyPunHHAHiEffXWESKfbvmBpGQv138Fp/stacks.pdf)
 - [Clarity Language Reference](https://docs.stacks.co/references/language-overview)
+- [Clarity Function Reference](https://docs.stacks.co/references/language-functions)
 - [Build apps with Stacks](https://docs.stacks.co/build-apps/overview)
