@@ -43,13 +43,13 @@ The CityCoin will leverage the properties of the Proof of Transfer (PoX) consens
 
 The CityCoin will not have its own blockchain, but rather will exist on the Stacks blockchain as a fungible token adhering to the SIP-010 standard. The Stacks blockchain is a layer one blockchain that settles on top of the Bitcoin blockchain, inheriting its security.
 
-The CityCoin will not have an initial coin offering (ICO), but instead will be fairly mined in competition with anyone who wishes to interact with the contract, and following a diminishing issuance schedule similar to that of Bitcoin and Stacks.
+The CityCoin will not have an initial coin offering (ICO), but instead will be fairly mined in competition with anyone who wishes to interact with the contract, and following a diminishing issuance schedule similar to that of Bitcoin and Stacks. Mining of the CityCoin will not begin until the [activation threshold](#fair-and-open-launch) is reached.
 
-When miners submit a transaction to the contract, 30% of the STX spent will be sent to the designated city's wallet overseen by a trusted third party custodian. The remaining 70% of the spent STX will be distributed to the city's coin holders who lock their tokens in support of the initiative.
+When miners submit a transaction to the contract, 30% of the STX spent will be sent to the designated city's wallet overseen by a trusted third party custodian. The remaining 70% of the spent STX will be distributed to the CityCoin holders who lock their CityCoins in support of the initiative.
 
 ### Objective, Vision and Goals
 
-**Objective:** to create a smart contract that simulates Proof of Transfer (PoX) to reward token holders and contribute to a general fund for the respective city
+**Objective:** to create a smart contract that simulates Proof of Transfer (PoX) to reward CityCoin holders and contribute to a general fund for the respective city
 
 **Vision:** to signal support for a city is as simple as mining or buying the associated CityCoin, and holding the CityCoin generates revenue to both the CityCoin holders and the city itself
 
@@ -59,7 +59,7 @@ When miners submit a transaction to the contract, 30% of the STX spent will be s
 
 Starting with the two pilot cities of Miami and San Francisco, fairly launch a CityCoin for each that can be "mined" by spending Stacks tokens, as well as locked (or "Stacked") to generate yield in Stacks tokens.
 
-As miners compete to mint new CityCoins, a portion of the Stacks tokens that miners spend are deposited into an account custodied by a top-tier exchange, and available for the city leaders to take control of at any time.
+As miners compete to mint new CityCoins, a portion of the Stacks tokens that miners spend are deposited into a custodied wallet on the Stacks blockchain, and available for the city leaders to take control of at any time.
 
 There are no time restrictions for city leaders to take control of the funds, nor any usage restrictions for city leaders to decide how the funds should be spent.
 
@@ -83,9 +83,9 @@ For example, both Mayor Suarez of Miami and Mayor Conger of Tennessee are openly
 
 One challenge to mining or holding Bitcoin is that it does not produce yield, and market fluctuations can greatly affect the balance sheet. Mining Bitcoin is a competitive market dominated by large players, such that the capital requirement to start mining, the break-even point, and the power consumption are all considerations a city would need to resolve.
 
-The Stacks blockchain is a Layer 1 blockchain connected to Bitcoin, in which miners spend Bitcoin to bid for and win a fixed amount of Stacks tokens. Stackers have the option to lock up tokens for a specified amount of time, and in turn, receive a portion of the Bitcoin yield that comes from miners, proportionate to the amount Stacked. The average APY as of writing this document is 10% and additional statistics can be seen on [Stacking.Club](https://stacking.club).
+The Stacks blockchain is a Layer 1 blockchain connected to Bitcoin, in which miners spend Bitcoin to bid for and win a fixed amount of Stacks tokens. Stackers have the option to lock up Stacks tokens for a specified amount of time, and in turn, receive a portion of the Bitcoin yield that comes from miners proportionate to the amount Stacked. The average APY as of writing this document is 10% and additional statistics can be seen on [Stacking.Club](https://stacking.club).
 
-Taking this concept a level further, a new token (the "CityCoin") could be created on the Stacks blockchain, following the SIP-010 fungible token standard, such that the token can be mined and Stacked per the methods stated above except a portion would be redirected to the city's wallet overseen by a trusted third party custodian.
+Taking this concept a level further, a new token (the "CityCoin") could be created on the Stacks blockchain, following the SIP-010 fungible token standard, such that the CityCoins can be mined and Stacked per the methods stated above except a portion would be redirected to the city's wallet overseen by a trusted third party custodian.
 
 References:
 
@@ -104,7 +104,7 @@ The act of mining a CityCoin is defined by someone sending Stacks tokens (STX) t
 
 - anyone can participate as a miner by sending Stacks tokens (STX) to the smart contract created for the city
 - the Stacks tokens (STX) spent by miners will be distributed:
-  - 70% to CityCoin holders who lock up their tokens through Stacking
+  - 70% to CityCoin holders who lock up their CityCoins through Stacking
   - 30% to the city's wallet overseen by a trusted third party custodian
 - for each block in the Stacks blockchain, miners can mine a fixed amount of the CityCoin
   - the amount of CityCoins rewarded through mining will follow a diminishing [issuance schedule](#issuance-schedule)
@@ -219,4 +219,4 @@ Miners receive coinbase rewards for mining the CityCoin outlined in the table be
 | after BTC Block 1,470,000 | 6,250 CityCoins | 2036-2040 |
 | after BTC Block 1,680,000 | 3,125 CityCoins | 2040-2044, continues indefinitely |
 
-After the final halving at BTC Block 1,680,000, the total supply is estimated to be `37,188,250,000` and will increase indefinitely by `164,062,500`	per year.
+After the final halving at BTC Block 1,680,000, the total supply is estimated to be `37,188,250,000` and will increase indefinitely by `164,062,500` per year.
