@@ -139,22 +139,26 @@
 
 ;; Function for deciding how many tokens to mint, depending on when they were mined.
 (define-read-only (get-coinbase-amount)
-    ;; do we need to check that mining is active?
-    ;; assuming MINING-ACTIVATION-HEIGHT set by miner registration and activation
-    (if (< (burn-block-height - MINING-ACTIVATION-HEIGHT) u10000)
-        u250000
-        (if (< burn-block-height u840000)
-            u100000
-            (if (< burn-block-height u1050000)
-                u50000
-                (if (< burn-block-height u1260000)
-                    u25000
-                    (if (< burn-block-height u1470000)
-                        u12500
-                        (if (< burn-block-height u1680000)
-                            u6250
-                            (if (>= burn-block-height u1680000)
-                                u3125
+    ;; assuming new constant ERR-MINING-NOT-ACTIVATED u14
+    ;; assuming miningActive false until set true by miner registration and activation
+    ;; assuming miningActivationHeight set by miner registration and activation
+    (if not (miningActive)
+        ERR-MINING-NOT-ACTIVATED
+        (if (< (burn-block-height - miningActivationHeight) u10000)
+            u250000
+            (if (< burn-block-height u840000)
+                u100000
+                (if (< burn-block-height u1050000)
+                    u50000
+                    (if (< burn-block-height u1260000)
+                        u25000
+                        (if (< burn-block-height u1470000)
+                            u12500
+                            (if (< burn-block-height u1680000)
+                                u6250
+                                (if (>= burn-block-height u1680000)
+                                    u3125
+                                )
                             )
                         )
                     )
