@@ -13,7 +13,7 @@ export enum ErrCode {
   ERR_IMMATURE_TOKEN_REWARD,
   ERR_UNAUTHORIZED,
   ERR_ALREADY_CLAIMED,
-  ERR_STACKING_NOT_AVALIABLE,
+  ERR_STACKING_NOT_AVAILABLE,
   ERR_CANNOT_STACK,
   ERR_INSUFFICIENT_BALANCE,
   ERR_ALREADY_MINED,
@@ -260,7 +260,7 @@ export class CityCoinClient {
     );
   }
 
-  claimStackingRewad(targetRewardCycle: number, sender: Account): Tx {
+  claimStackingReward(targetRewardCycle: number, sender: Account): Tx {
     return Tx.contractCall(
       this.contractName,
       "claim-stacking-reward",

@@ -161,7 +161,7 @@ describe('[CityCoin]', () => {
     });
 
     describe("getBlockWinner()", () => {
-      it("should select correct winer", () => {
+      it("should select correct winner", () => {
         const miners = new MinersList();
         miners.push(
           { miner: wallet_1, amountUstx: 1 },
@@ -289,7 +289,7 @@ describe('[CityCoin]', () => {
       it("throws ERR_STACKING_NOT_AVAILABLE error", () => {
         const result = client.canMineTokens(wallet_3, 0, 10, minersRec).result;
 
-        result.expectErr().expectUint(ErrCode.ERR_STACKING_NOT_AVALIABLE);
+        result.expectErr().expectUint(ErrCode.ERR_STACKING_NOT_AVAILABLE);
       });
 
       it("throws ERR_ROUND_FULL error", () => {
@@ -341,7 +341,7 @@ describe('[CityCoin]', () => {
         })
       });
 
-      it("throws ERR_CANNOT_STACK error if amoutToken = 0", () => {
+      it("throws ERR_CANNOT_STACK error if amountToken = 0", () => {
         const nowStacksHeight = 502;
         const startStacksHeight = 510;
         const amountToken = 0;
@@ -375,7 +375,7 @@ describe('[CityCoin]', () => {
         result.expectUint(0);
       });
 
-      it("returns 1000 if miners commited only 1000ustx and there is only one stacker", () => {
+      it("returns 1000 if miners committed only 1000ustx and there is only one stacker", () => {
         const stacker = wallet_1;
         const miner = wallet_2;
         const minerCommitment = 1000;
@@ -387,15 +387,15 @@ describe('[CityCoin]', () => {
           client.stackTokens(5000, 5, targetRewardCycle, stacker),
         ]);
 
-        // move chain forward to jump into 1st staking cycle
+        // move chain forward to jump into 1st stacking cycle
         chain.mineEmptyBlock(500);
 
-        // mine some tokes
+        // mine some tokens
         chain.mineBlock([
           client.mineTokens(minerCommitment, miner)
         ]);
 
-        // move chain forward to jump into 2nd staking cycle
+        // move chain forward to jump into 2nd stacking cycle
         const block = chain.mineEmptyBlock(500);
 
         const result = client.getEntitledStackingReward(stacker, targetRewardCycle, block.block_height).result;
@@ -450,7 +450,7 @@ describe('[CityCoin]', () => {
           client.stackTokens(100, 0, 1, wallet_1)
         ]);
 
-        block.receipts[0].result.expectErr().expectUint(ErrCode.ERR_STACKING_NOT_AVALIABLE);
+        block.receipts[0].result.expectErr().expectUint(ErrCode.ERR_STACKING_NOT_AVAILABLE);
         assertEquals(block.receipts[0].events.length, 0);
       });
 
@@ -463,7 +463,7 @@ describe('[CityCoin]', () => {
         assertEquals(block.receipts[0].events.length, 0);
       });
 
-      it("succeedes and causes one ft_transfer_event", () => {
+      it("succeeds and causes one ft_transfer_event", () => {
         const block = chain.mineBlock([
           client.ftMint(100, wallet_1),
           client.stackTokens(100, 5, 1, wallet_1)
@@ -475,7 +475,7 @@ describe('[CityCoin]', () => {
         // check number of events 
         assertEquals(block.receipts[0].events.length, 1);
 
-        // checke events
+        // check events
         block.receipts[1].events.expectFungibleTokenTransferEvent(
           100,
           wallet_1.address,
@@ -486,7 +486,7 @@ describe('[CityCoin]', () => {
       });
     });
 
-    describe("mine-tokesn()", () => {
+    describe("mine-tokens()", () => {
       beforeEach(() => {
         setupCleanEnv();
       });
@@ -503,7 +503,7 @@ describe('[CityCoin]', () => {
         assertEquals(receipt.events.length, 0)
       });
 
-      it("throws ERR_INSUFFICIENT_BALANCE error when mier wants to commit more than he have", () => {
+      it("throws ERR_INSUFFICIENT_BALANCE error when miner wants to commit more than they have", () => {
         const block = chain.mineBlock([
           client.mineTokens(wallet_1.balance + 1, wallet_1)
         ]);
@@ -515,7 +515,7 @@ describe('[CityCoin]', () => {
         assertEquals(receipt.events.length, 0)
       })
 
-      it("throws ERR_ALREADY_MINED error when minner wants mine twice at the same block", () => {
+      it("throws ERR_ALREADY_MINED error when miner wants mine twice at the same block", () => {
         const block = chain.mineBlock([
           client.mineTokens(10, wallet_1),
           client.mineTokens(10, wallet_1),
@@ -527,7 +527,7 @@ describe('[CityCoin]', () => {
         assertEquals(receipt_err.events.length, 0)
       })
 
-      it("succeedes and causes one stx_transfer_event", () => {
+      it("succeeds and causes one stx_transfer_event", () => {
         const amount = 20000;
         const block = chain.mineBlock([
           client.mineTokens(amount, wallet_1),
@@ -539,7 +539,7 @@ describe('[CityCoin]', () => {
         // check number of events
         assertEquals(block.receipts[0].events.length, 1)
 
-        // checke event details
+        // check event details
         block.receipts[0].events.expectSTXTransferEvent(
           amount,
           wallet_1.address,
@@ -553,9 +553,9 @@ describe('[CityCoin]', () => {
         setupCleanEnv();
       });
 
-      it("throws ERR_NOTHIG_TO_REDEEM error when stacker didn't stack at all", () => {
+      it("throws ERR_NOTHING_TO_REDEEM error when stacker didn't stack at all", () => {
         const block = chain.mineBlock([
-          client.claimStackingRewad(0, wallet_1)
+          client.claimStackingReward(0, wallet_1)
         ]);
 
         const receipt = block.receipts[0];
@@ -574,25 +574,25 @@ describe('[CityCoin]', () => {
           client.stackTokens(5000, 5, 1, stacker),
         ]);
 
-        // advance chain forward to jump into 1st staking cycle
+        // advance chain forward to jump into 1st stacking cycle
         chain.mineEmptyBlock(500);
 
-        // mine some tokes
+        // mine some tokens
         chain.mineBlock([
           client.mineTokens(50000, miner),
         ]);
 
-        // advance chain forward to jump into 2nd staking cycle
+        // advance chain forward to jump into 2nd stacking cycle
         chain.mineEmptyBlock(500);
 
         // claim first time
         chain.mineBlock([
-          client.claimStackingRewad(1, stacker),
+          client.claimStackingReward(1, stacker),
         ]);
 
         // try to claim second time
         const block = chain.mineBlock([
-          client.claimStackingRewad(1, stacker),
+          client.claimStackingReward(1, stacker),
         ]);
 
         const receipt = block.receipts[0];
@@ -602,7 +602,7 @@ describe('[CityCoin]', () => {
       });
 
 
-      it("suceeds and causes one stx_transfer_event event", () => {
+      it("succeeds and causes one stx_transfer_event event", () => {
         const miner_1 = wallet_1;
         const miner_2 = wallet_2
         const stacker = wallet_3;
@@ -614,31 +614,31 @@ describe('[CityCoin]', () => {
           client.stackTokens(5000, 5, 1, stacker),
         ]);
 
-        // advance chain forward to jump into 1st staking cycle
+        // advance chain forward to jump into 1st stacking cycle
         chain.mineEmptyBlock(500);
 
-        // mine some tokes
+        // mine some tokens
         chain.mineBlock([
           client.mineTokens(minerCommitment, miner_1),
           client.mineTokens(minerCommitment, miner_2)
         ]);
 
-        // advance chain forward to jump into 2nd staking cycle
+        // advance chain forward to jump into 2nd stacking cycle
         chain.mineEmptyBlock(500);
 
         const block = chain.mineBlock([
-          client.claimStackingRewad(1, stacker)
+          client.claimStackingReward(1, stacker)
         ]);
 
         const receipt = block.receipts[0];
 
-        // check return valu
+        // check return value
         receipt.result.expectOk().expectBool(true);
 
-        // check evens count
+        // check events count
         assertEquals(receipt.events.length, 1);
 
-        // checke event details
+        // check event details
         receipt.events.expectSTXTransferEvent(
           minerCommitment * 2,
           client.getContractAddress(),
