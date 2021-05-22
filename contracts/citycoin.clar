@@ -138,9 +138,30 @@
 (define-fungible-token citycoins)
 
 ;; Function for deciding how many tokens to mint, depending on when they were mined.
-;; Tailor to your own needs.
 (define-read-only (get-coinbase-amount (stacks-block-ht uint))
-    u500000000
+    ;; do we need to check that mining is active?
+    ;; assuming MINING-ACTIVATION-HEIGHT set by miner registration and activation
+    (if (< (burn-block-height - MINING-ACTIVATION-HEIGHT) u10000)
+        u250000
+        (if (< burn-block-height u840000)
+            u100000
+            (if (< burn-block-height u1050000)
+                u50000
+                (if (< burn-block-height u1260000)
+                    u25000
+                    (if (< burn-block-height u1470000)
+                        u12500
+                        (if (< burn-block-height u1680000)
+                            u6250
+                            (if (>= burn-block-height u1680000)
+                                u3125
+                            )
+                        )
+                    )
+                )
+            )
+        )
+    )
 )
 
 ;; Getter for getting the list of miners and uSTX committments for a given block.
