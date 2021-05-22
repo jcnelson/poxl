@@ -231,7 +231,11 @@
 
 ;; Produce the new tokens for the given claimant, who won the tokens at the given Stacks block height.
 (define-private (mint-coinbase (recipient principal) (stacks-block-ht uint))
-    (ft-mint? citycoins (get-coinbase-amount stacks-block-ht) recipient)
+    (match (get-coinbase-amount)
+        value (ft-mint? citycoins value recipient)
+        err-value (err err-value)
+    )
+    ;; (ft-mint? citycoins (get-coinbase-amount) recipient)
 )
 
 ;; Getter to obtain the list of miners and uSTX commitments at a given Stacks block height,
