@@ -26,6 +26,7 @@ April 2021
   - [Token Economics](#token-economics)
     - [Fair and Open Launch](#fair-and-open-launch)
     - [Issuance Schedule](#issuance-schedule)
+    - [Citations](#citations)
 
 ## General Information
 
@@ -86,15 +87,6 @@ One challenge to mining or holding Bitcoin is that it does not produce yield, an
 The Stacks blockchain is a Layer 1 blockchain connected to Bitcoin, in which miners spend Bitcoin to bid for and win a fixed amount of Stacks tokens. Stackers have the option to lock up Stacks tokens for a specified amount of time, and in turn, receive a portion of the Bitcoin yield that comes from miners proportionate to the amount Stacked. The average APY as of writing this document is 10% and additional statistics can be seen on [Stacking.Club](https://stacking.club).
 
 Taking this concept a level further, a new token (the "CityCoin") could be created on the Stacks blockchain, following the SIP-010 fungible token standard, such that the CityCoins can be mined and Stacked per the methods stated above except a portion would be redirected to the city's wallet overseen by a trusted third party custodian.
-
-References:
-
-- https://bitcointreasuries.org/
-- https://www.coindesk.com/microstrategy-ceo-bitcoin-better-than-antiquated-gold
-- https://www.coindesk.com/miami-mayor-wants-city-to-become-bitcoin-mining-hub
-- https://www.coindesk.com/jackson-tennessee-bitcoin-mayor-scott-conger
-- https://corporatefinanceinstitute.com/resources/knowledge/other/bitcoin-mining/
-- https://stacking.club
 
 ## Core Functionality
 
@@ -220,3 +212,14 @@ Miners receive coinbase rewards for mining the CityCoin outlined in the table be
 | after BTC Block 1,680,000 | 3,125 CityCoins | 2040-2044, continues indefinitely |
 
 After the final halving at BTC Block 1,680,000, the total supply is estimated to be `37,188,250,000` and will increase indefinitely by `164,062,500` per year.
+
+### Citations
+
+- Coinkite Inc. (n.d.). Bitcoin Treasuries in Publicly Traded and Private Companies - List of large holders. Bitcoin Treasuries. Retrieved April 30, 2021, from https://bitcointreasuries.org/
+- Corporate Finance Institute. (2020, July 17). Bitcoin Mining. https://corporatefinanceinstitute.com/resources/knowledge/other/bitcoin-mining/
+- Crawley, J. (2021, March 29). Miami Mayor Wants City to Become Bitcoin Mining Hub. CoinDesk. https://www.coindesk.com/miami-mayor-wants-city-to-become-bitcoin-mining-hub
+- Hood, C. (2021, April 23). Jackson, Tennessee, in ‘Prime Position’ to Be a Bitcoin Leader, Says Mayor. CoinDesk. https://www.coindesk.com/jackson-tennessee-bitcoin-mayor-scott-conger
+- Nelson, D. (2020, November 10). MicroStrategy CEO Explains Why Bitcoin Is “a Million Times Better” Than “Antiquated” Gold. CoinDesk. https://www.coindesk.com/microstrategy-ceo-bitcoin-better-than-antiquated-gold
+- Osmonson, T., & Stoever, H. (n.d.). Earn BTC by Stacking STX. Stacking.Club. Retrieved April 30, 2021, from https://stacking.club
+
+Thank you to [Scribbr](https://www.scribbr.com/apa-citation-generator/) for making the APA citations much easier!
