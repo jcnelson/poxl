@@ -144,7 +144,7 @@
     ;; assuming miningActivationHeight set by miner registration and activation
     (if not (miningActive)
         ERR-MINING-NOT-ACTIVATED
-        (if (< (burn-block-height - miningActivationHeight) u10000)
+        (if (< (- burn-block-height miningActivationHeight) u10000)
             u250000
             (if (< burn-block-height u840000)
                 u100000
