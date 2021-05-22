@@ -139,7 +139,7 @@
 ;; The fungible token that can be Stacked.
 (define-fungible-token citycoins)
 
-(define-constant MINING-ACTIVATION-TRHESHOLD u1)  ;; how many miners have to register to kickoff countdown to mining activation
+(define-constant MINING-ACTIVATION-THRESHOLD u1)  ;; how many miners have to register to kickoff countdown to mining activation
 (define-constant MINING-ACTIVATION-DELAY u100)   ;; how many blocks after last miner registration mining will be activated   
 
 (define-data-var signalingMinersNonce uint u0)
