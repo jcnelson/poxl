@@ -142,9 +142,9 @@
 (define-constant MINING-ACTIVATION-THRESHOLD u1)  ;; how many miners have to register to kickoff countdown to mining activation
 (define-constant MINING-ACTIVATION-DELAY u100)   ;; how many blocks after last miner registration mining will be activated   
 
-(define-data-var signalingMinersNonce uint u0)
+(define-data-var signaling-miners-nonce uint u0)
 
-(define-map SignalingMiners
+(define-map signaling-miners
     { miner: principal }
     { id: uint }
 )
@@ -152,22 +152,22 @@
 (define-public (register-miner)
     (let
         (
-            (newId (+ u1 (var-get signalingMinersNonce)))
+            (new-id (+ u1 (var-get signaling-miners-nonce)))
         )
-        (asserts! (is-none (map-get? SignalingMiners {miner: tx-sender}))
+        (asserts! (is-none (map-get? signaling-miners {miner: tx-sender}))
             (err ERR-MINER-ALREADY-REGISTERED))
 
-        (asserts! (<= newId MINING-ACTIVATION-THRESHOLD)
+        (asserts! (<= new-id MINING-ACTIVATION-THRESHOLD)
             (err ERR-MINING-ACTIVATION-THRESHOLD-REACHED))
         
-        (map-set SignalingMiners
+        (map-set signaling-miners
             {miner: tx-sender}
-            {id: newId}
+            {id: new-id}
         )
         
-        (var-set signalingMinersNonce newId)
+        (var-set signaling-miners-nonce new-id)
 
-        (if (is-eq newId MINING-ACTIVATION-THRESHOLD) 
+        (if (is-eq new-id MINING-ACTIVATION-THRESHOLD) 
             (begin
                 (var-set first-stacking-block (+ block-height MINING-ACTIVATION-DELAY))
                 (ok true)
