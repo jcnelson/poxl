@@ -1,4 +1,4 @@
-# City Coins on Stacks
+# CityCoins on Stacks
 
 ## Abstract
 
@@ -6,7 +6,7 @@ Support a city by mining, buying, or holding their CityCoin, all while generatin
 
 Coming *very* soon!
 
-- [City Coins on Stacks](#city-coins-on-stacks)
+- [CityCoins on Stacks](#citycoins-on-stacks)
   - [Abstract](#abstract)
   - [Contributing](#contributing)
   - [Testing](#testing)
