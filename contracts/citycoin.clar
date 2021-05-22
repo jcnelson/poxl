@@ -13,6 +13,7 @@
 (define-constant ERR-ROUND-FULL u9)
 (define-constant ERR-NOTHING-TO-REDEEM u10)
 (define-constant ERR-CANNOT-MINE u11)
+(define-constant ERR-MINING-NOT-ACTIVATED u14)
 
 ;; Tailor to your needs.
 (define-constant TOKEN-REWARD-MATURITY u100)        ;; how long a miner must wait before claiming their minted tokens
@@ -91,7 +92,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Mining configuration
-(define-data-var mining-is-active bool false)       ;; is mining activated yet via miner registrations
+(define-data-var mining-is-active bool false)                   ;; is mining activated yet via miner registrations
+(define-data-var mining-activation-burn-block-height uint u0)   ;; block height set by mining activation function
 
 ;; Stacking configuration, as data vars (so it's easy to test).
 (define-data-var first-stacking-block uint FIRST-STACKING-BLOCK)
@@ -146,7 +148,7 @@
     ;; assuming mining-is-active false until set true by miner registration and activation
     ;; assuming mining-activation-burn-block-height set by miner registration and activation
     (if not (mining-is-active)
-        ERR-MINING-NOT-ACTIVATED
+        (err ERR-MINING-NOT-ACTIVATED)
         (if (< (- burn-block-height mining-activation-burn-block-height) u10000)
             u250000
             (if (< burn-block-height u840000)
