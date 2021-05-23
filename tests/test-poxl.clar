@@ -528,6 +528,8 @@
     (begin
         (print "block-9")
 
+        (var-set mining-is-active true)
+
         (asserts! (is-eq u9 block-height)
             (err u0))
         (asserts! (is-eq u1 rc)
