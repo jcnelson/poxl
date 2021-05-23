@@ -16,7 +16,8 @@ import {
   ErrCode,
   FIRST_STACKING_BLOCK,
   REWARD_CYCLE_LENGTH,
-  MINING_ACTIVATION_DELAY
+  MINING_ACTIVATION_DELAY,
+  MINING_HALVING_BLOCKS
 } from "../src/citycoin-client.ts"
 
 describe('[CityCoin]', () => {
@@ -147,48 +148,46 @@ describe('[CityCoin]', () => {
 
     describe("get-coinbase-amount()", () => {
 
-      it("returns u0 if mining is not activated", () => {
-        setupCleanEnv();
-        
-        const result = client.getCoinbaseAmount(0).result;
-
-        result.expectUint(0);
-      });
-
       it("returns correct coinbase amount based on burn block height", () => {
         setupCleanEnv();
 
-        // simulated activation height based on manually selected BTC block height
-        const activationThreshold = 684600;
-
-        // move chain forward 1 block before target threshold
-        chain.mineEmptyBlock(activationThreshold - 1);
-
-        // activate mining at target threshold
+        // activate mining
         chain.mineBlock([
           client.registerMiner(wallet_3)
         ]);
-        
-        // burn block heights correlated with expected coinbase values
-        const burnBlockHeights = [684601, 694600, 840000, 1050000, 1260000, 1470000, 1680000, 1680001];
-        const coinbaseExpectedValues = [250000, 100000, 50000, 25000, 12500, 6250, 3125, 3125];
 
-        // evaluate each burn block height against its expected result
-        burnBlockHeights.forEach((burnBlockHeight, burnBlockHeightIndex) => {
+        // advance chain to block where mining is active
+        const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
+        const startHeight = block.block_height - 1;
 
-          if (burnBlockHeightIndex === 0) {
-            chain.mineEmptyBlock(burnBlockHeight - activationThreshold);
-          } else {
-            chain.mineEmptyBlock(burnBlockHeight - burnBlockHeights[burnBlockHeightIndex - 1])
+        const testData = [
+          {blockHeight: startHeight - 1, reward: 0},          // prior mining activation
+          {blockHeight: startHeight, reward: 250000},         // at mining activation
+          {blockHeight: startHeight + 1, reward: 250000},     // first block after mining activation block (bonus reward)
+          {blockHeight: startHeight + 10000, reward: 250000}, // 1000th block after mining activation block (last bonus reward)
+          {blockHeight: startHeight + 10001, reward: 100000}, // 1001st block after mining activation block (first standard reward)
+          {blockHeight: startHeight + MINING_HALVING_BLOCKS, reward: 100000},              // 1st halving
+          {blockHeight: startHeight + MINING_HALVING_BLOCKS + 1, reward: 50000},           // after 1st halving
+          {blockHeight: startHeight + (MINING_HALVING_BLOCKS * 2), reward: 50000},         // 2nd halving
+          {blockHeight: startHeight + (MINING_HALVING_BLOCKS * 2) + 1, reward: 25000},     // after 2nd halving
+          {blockHeight: startHeight + (MINING_HALVING_BLOCKS * 3), reward: 25000},         // 3rd halving
+          {blockHeight: startHeight + (MINING_HALVING_BLOCKS * 3) + 1, reward: 12500},     // after 3rd halving
+          {blockHeight: startHeight + (MINING_HALVING_BLOCKS * 4), reward: 12500},         // 4th halving
+          {blockHeight: startHeight + (MINING_HALVING_BLOCKS * 4) + 1, reward: 6250},      // after 4th halving
+          {blockHeight: startHeight + (MINING_HALVING_BLOCKS * 5), reward: 6250},          // 5th halving
+          {blockHeight: startHeight + (MINING_HALVING_BLOCKS * 5) + 1, reward: 3125},      // after 5th halving
+          {blockHeight: startHeight + (MINING_HALVING_BLOCKS * 5) + 1234, reward: 3125},   // after 5th halving
+        ]
+
+        testData.forEach(t => {
+          let result = client.getCoinbaseAmount(t.blockHeight).result;
+          
+          try {
+            result.expectUint(t.reward);
+          } catch (error) {
+            throw new Error(`Failed to return correct coinbase amount at block ${t.blockHeight}\n${error}`);
           }
-
-          const expectedValue = coinbaseExpectedValues[burnBlockHeightIndex];
-
-          const result = client.getCoinbaseAmount(burnBlockHeight).result;
-
-          result.expectUint(expectedValue);
         });
-
       });
     });
 
