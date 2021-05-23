@@ -144,7 +144,7 @@
 (define-fungible-token citycoins)
 
 (define-constant MINING-ACTIVATION-THRESHOLD u1)  ;; how many miners have to register to kickoff countdown to mining activation
-(define-constant MINING-ACTIVATION-DELAY u100)   ;; how many blocks after last miner registration mining will be activated   
+(define-constant MINING-ACTIVATION-DELAY u500)    ;; how many blocks after last miner registration mining will be activated, equal to one reward cycle
 
 (define-data-var signaling-miners-nonce uint u0)
 
@@ -174,6 +174,7 @@
         (if (is-eq new-id MINING-ACTIVATION-THRESHOLD) 
             (begin
                 (var-set first-stacking-block (+ block-height MINING-ACTIVATION-DELAY))
+                (var-set mining-activation-burn-block-height burn-block-height)
                 (ok true)
             )
             (ok true)
