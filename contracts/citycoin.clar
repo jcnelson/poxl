@@ -180,23 +180,29 @@
 
 ;; Function for deciding how many tokens to mint, depending on when they were mined.
 (define-read-only (get-coinbase-amount (miner-block-height uint))
-    (begin
+    (let
+        (
+            ;; set a new variable to make things easier to read
+            (activation-block-height (var-get first-stacking-block))
+        )
 
         ;; determine if mining was active, return 0 if not
-        (asserts! (>= miner-block-height (var-get first-stacking-block)) u0)
+        (asserts! (>= miner-block-height activation-block-height) u0)
 
         ;; evaluate current block height against issuance schedule and return correct coinbase amount
         ;; halvings occur every 210,000 blocks for 1,050,000 Stacks blocks
         ;; then mining continues indefinitely with 3,125 CityCoins as the reward
 
-        (if (<= (- miner-block-height (var-get first-stacking-block)) u10000)
-            u250000 ;; bonus reward first 10,000 blocks
-            u100000 ;; standard reward remaining 210,000 blocks
+        (asserts! (> miner-block-height activation-block-height)
+            (if (<= (- miner-block-height activation-block-height) u10000)
+                u250000 ;; bonus reward first 10,000 blocks
+                u100000 ;; standard reward remaining 200,000 blocks until 1st halving
+            )
         )
-        (asserts! (> miner-block-height (+ (var-get first-stacking-block) MINING-HALVING-BLOCKS)) u50000)        ;; between 1st and 2nd halving u50000
-        (asserts! (> miner-block-height (+ (var-get first-stacking-block) (* u2 MINING-HALVING-BLOCKS))) u25000) ;; between 2nd and 3rd halving u25000
-        (asserts! (> miner-block-height (+ (var-get first-stacking-block) (* u3 MINING-HALVING-BLOCKS))) u12500) ;; between 3rd and 4th halving u12500
-        (asserts! (> miner-block-height (+ (var-get first-stacking-block) (* u4 MINING-HALVING-BLOCKS))) u6250)  ;; between 4th and 5th halving u6250
+        (asserts! (> miner-block-height (+ activation-block-height MINING-HALVING-BLOCKS)) u50000)        ;; between 1st and 2nd halving u50000
+        (asserts! (> miner-block-height (+ activation-block-height (* u2 MINING-HALVING-BLOCKS))) u25000) ;; between 2nd and 3rd halving u25000
+        (asserts! (> miner-block-height (+ activation-block-height (* u3 MINING-HALVING-BLOCKS))) u12500) ;; between 3rd and 4th halving u12500
+        (asserts! (> miner-block-height (+ activation-block-height (* u4 MINING-HALVING-BLOCKS))) u6250)  ;; between 4th and 5th halving u6250
 
         ;; default value after 5th halving
         u3250

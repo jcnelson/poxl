@@ -161,8 +161,8 @@ describe('[CityCoin]', () => {
         const startHeight = block.block_height - 1;
 
         const testData = [
-          {blockHeight: startHeight - 1, reward: 0},          // prior mining activation
-          {blockHeight: startHeight, reward: 250000},         // at mining activation
+          {blockHeight: startHeight - 1, reward: 0},          // prior to mining activation (no reward)
+          {blockHeight: startHeight, reward: 250000},         // at mining activation (bonus reward)
           {blockHeight: startHeight + 1, reward: 250000},     // first block after mining activation block (bonus reward)
           {blockHeight: startHeight + 10000, reward: 250000}, // 1000th block after mining activation block (last bonus reward)
           {blockHeight: startHeight + 10001, reward: 100000}, // 1001st block after mining activation block (first standard reward)
@@ -188,7 +188,7 @@ describe('[CityCoin]', () => {
             result.expectUint(t.reward);
             console.log(`  success at block ${t.blockHeight} with reward ${t.reward}`)
           } catch (error) {
-            throw new Error(`failed to return correct coinbase amount at block ${t.blockHeight}\n${error}`);
+            throw new Error(`Failed to return correct coinbase amount at block ${t.blockHeight}\n${error}`);
           }
         });
 
