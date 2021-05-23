@@ -72,9 +72,9 @@ export class CityCoinClient {
 
   // read only functions
 
-  getCoinbaseAmount(stacksBlockHeight: number): Result {
+  getCoinbaseAmount(burnBlockHeight: number): Result {
     return this.callReadOnlyFn("get-coinbase-amount", [
-      types.uint(stacksBlockHeight)
+      types.uint(burnBlockHeight)
     ]);
   }
 

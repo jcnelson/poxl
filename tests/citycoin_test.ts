@@ -145,6 +145,53 @@ describe('[CityCoin]', () => {
   describe("Read only functions:", () => {
     setupCleanEnv();
 
+    describe("get-coinbase-amount()", () => {
+
+      it("returns u0 if mining is not activated", () => {
+        setupCleanEnv();
+        
+        const result = client.getCoinbaseAmount(0).result;
+
+        result.expectUint(0);
+      });
+
+      it("returns correct coinbase amount based on burn block height", () => {
+        setupCleanEnv();
+
+        // simulated activation height based on manually selected BTC block height
+        const activationThreshold = 684600;
+
+        // move chain forward 1 block before target threshold
+        chain.mineEmptyBlock(activationThreshold - 1);
+
+        // activate mining at target threshold
+        chain.mineBlock([
+          client.registerMiner(wallet_3)
+        ]);
+        
+        // burn block heights correlated with expected coinbase values
+        const burnBlockHeights = [684601, 694600, 840000, 1050000, 1260000, 1470000, 1680000, 1680001];
+        const coinbaseExpectedValues = [250000, 100000, 50000, 25000, 12500, 6250, 3125, 3125];
+
+        // evaluate each burn block height against its expected result
+        burnBlockHeights.forEach((burnBlockHeight, burnBlockHeightIndex) => {
+
+          if (burnBlockHeightIndex === 0) {
+            chain.mineEmptyBlock(burnBlockHeight - activationThreshold);
+          } else {
+            chain.mineEmptyBlock(burnBlockHeight - burnBlockHeights[burnBlockHeightIndex - 1])
+          }
+
+          const expectedValue = coinbaseExpectedValues[burnBlockHeightIndex];
+
+          const result = client.getCoinbaseAmount(burnBlockHeight).result;
+
+          result.expectUint(expectedValue);
+        });
+
+      });
+    });
+
     describe("get-block-commit-total()", () => {
       it("should return 0 when miners list is empty", () => {
         const miners = new MinersList();
