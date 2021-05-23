@@ -93,11 +93,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Mining configuration
-(define-constant MINING-ACTIVATION-THRESHOLD u1)            ;; how many miners have to register to kickoff countdown to mining activation
-(define-constant MINING-ACTIVATION-DELAY u150)              ;; how many blocks after last miner registration mining will be activated (~24hrs)
-(define-data-var mining-is-active bool false)               ;; is mining activated yet via miner registrations
-(define-data-var mining-activation-block-height uint u0)    ;; block height set by mining activation function
-(define-data-var signaling-miners-nonce uint u0)            ;; number of miners who signaled activation
+(define-constant MINING-ACTIVATION-THRESHOLD u1)     ;; how many miners have to register to kickoff countdown to mining activation
+(define-constant MINING-ACTIVATION-DELAY u150)       ;; how many blocks after last miner registration mining will be activated (~24hrs)
+(define-constant MINING-HALVING-BLOCKS u210000)      ;; how many blocks until the next halving occurs
+(define-data-var signaling-miners-nonce uint u0)     ;; number of miners who signaled activation
 
 ;; Stacking configuration, as data vars (so it's easy to test).
 (define-data-var first-stacking-block uint FIRST-STACKING-BLOCK)
@@ -172,7 +171,6 @@
         (if (is-eq new-id MINING-ACTIVATION-THRESHOLD) 
             (begin
                 (var-set first-stacking-block (+ block-height MINING-ACTIVATION-DELAY))
-                (var-set mining-activation-block-height (+ block-height MINING-ACTIVATION-DELAY))
                 (ok true)
             )
             (ok true)
@@ -184,32 +182,25 @@
 (define-read-only (get-coinbase-amount (miner-block-height uint))
     (begin
 
-        (asserts! (var-get mining-is-active)
-            u0
+        ;; determine if mining was active, return 0 if not
+        (asserts! (>= miner-block-height (var-get first-stacking-block)) u0)
+
+        ;; evaluate current block height against issuance schedule and return correct coinbase amount
+        ;; halvings occur every 210,000 blocks for 1,050,000 Stacks blocks
+        ;; then mining continues indefinitely with 3,125 CityCoins as the reward
+
+        (if (<= (- miner-block-height (var-get first-stacking-block)) u10000)
+            u250000 ;; bonus reward first 10,000 blocks
+            u100000 ;; standard reward remaining 210,000 blocks
         )
 
-        (if (< (- miner-burn-block-height (var-get mining-activation-burn-block-height)) u10000)
-            u250000
-            (if (< miner-burn-block-height u840000)
-                u100000
-                (if (< miner-burn-block-height u1050000)
-                    u50000
-                    (if (< miner-burn-block-height u1260000)
-                        u25000
-                        (if (< miner-burn-block-height u1470000)
-                            u12500
-                            (if (< miner-burn-block-height u1680000)
-                                u6250
-                                (if (>= miner-burn-block-height u1680000)
-                                    u3125
-                                    u0     ;; shouldn't hit this code path, but 0 just in case
-                                )
-                            )
-                        )
-                    )
-                )
-            )
-        )
+        (asserts! (> miner-block-height (+ (var-get first-stacking-block) MINING-HALVING-BLOCKS)) u50000)        ;; between 1st and 2nd halving u50000
+        (asserts! (> miner-block-height (+ (var-get first-stacking-block) (* u2 MINING-HALVING-BLOCKS))) u25000) ;; between 2nd and 3rd halving u25000
+        (asserts! (> miner-block-height (+ (var-get first-stacking-block) (* u3 MINING-HALVING-BLOCKS))) u12500) ;; between 3rd and 4th halving u12500
+        (asserts! (> miner-block-height (+ (var-get first-stacking-block) (* u4 MINING-HALVING-BLOCKS))) u6250)  ;; between 4th and 5th halving u6250
+
+        ;; default value after 5th halving
+        u3250
 
     )
 )
