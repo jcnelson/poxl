@@ -94,7 +94,7 @@
 
 ;; Mining configuration
 (define-data-var mining-is-active bool false)                   ;; is mining activated yet via miner registrations
-(define-data-var mining-activation-burn-block-height uint u0)   ;; block height set by mining activation function
+(define-data-var mining-activation-block-height uint u0)        ;; block height set by mining activation function
 
 ;; Stacking configuration, as data vars (so it's easy to test).
 (define-data-var first-stacking-block uint FIRST-STACKING-BLOCK)
@@ -144,7 +144,7 @@
 (define-fungible-token citycoins)
 
 (define-constant MINING-ACTIVATION-THRESHOLD u1)  ;; how many miners have to register to kickoff countdown to mining activation
-(define-constant MINING-ACTIVATION-DELAY u500)    ;; how many blocks after last miner registration mining will be activated, equal to one reward cycle
+(define-constant MINING-ACTIVATION-DELAY u150)    ;; how many blocks after last miner registration mining will be activated (~24hrs)
 
 (define-data-var signaling-miners-nonce uint u0)
 
@@ -174,7 +174,7 @@
         (if (is-eq new-id MINING-ACTIVATION-THRESHOLD) 
             (begin
                 (var-set first-stacking-block (+ block-height MINING-ACTIVATION-DELAY))
-                (var-set mining-activation-burn-block-height burn-block-height)
+                (var-set mining-activation-block-height (+ block-height MINING-ACTIVATION-DELAY))
                 (ok true)
             )
             (ok true)
@@ -183,7 +183,7 @@
 )
 
 ;; Function for deciding how many tokens to mint, depending on when they were mined.
-(define-read-only (get-coinbase-amount (miner-burn-block-height uint))
+(define-read-only (get-coinbase-amount (miner-block-height uint))
     (begin
 
         (asserts! (var-get mining-is-active)
@@ -268,9 +268,6 @@
 
 ;; Produce the new tokens for the given claimant, who won the tokens at the given Stacks block height.
 (define-private (mint-coinbase (recipient principal) (stacks-block-ht uint))
-    ;; TODO update stacks-block-ht to burn-block-ht stored in miners tx
-    ;;   works with clarinet for now because values are equal
-    ;;   will need to be resolved before deployment as values will differ
     (ft-mint? citycoins (get-coinbase-amount stacks-block-ht) recipient)
 )
 
