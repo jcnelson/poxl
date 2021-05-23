@@ -13,11 +13,13 @@
 (define-constant ERR-ROUND-FULL u9)
 (define-constant ERR-NOTHING-TO-REDEEM u10)
 (define-constant ERR-CANNOT-MINE u11)
+(define-constant ERR-MINER-ALREADY-REGISTERED u12)
+(define-constant ERR-MINING-ACTIVATION-THRESHOLD-REACHED u13)
 (define-constant ERR-MINING-NOT-ACTIVATED u14)
 
 ;; Tailor to your needs.
 (define-constant TOKEN-REWARD-MATURITY u100)        ;; how long a miner must wait before claiming their minted tokens
-(define-constant FIRST-STACKING-BLOCK u1)           ;; Stacks block height when Stacking is available
+(define-constant FIRST-STACKING-BLOCK u340282366920938463463374607431768211455)           ;; Stacks block height when Stacking is available
 (define-constant REWARD-CYCLE-LENGTH u500)          ;; how long a reward cycle is
 (define-constant MAX-REWARD-CYCLES u32)             ;; how many reward cycles a Stacker can Stack their tokens for
 
@@ -141,6 +143,44 @@
 
 ;; The fungible token that can be Stacked.
 (define-fungible-token citycoins)
+
+(define-constant MINING-ACTIVATION-THRESHOLD u1)  ;; how many miners have to register to kickoff countdown to mining activation
+(define-constant MINING-ACTIVATION-DELAY u100)   ;; how many blocks after last miner registration mining will be activated   
+
+(define-data-var signaling-miners-nonce uint u0)
+
+(define-map signaling-miners
+    { miner: principal }
+    { id: uint }
+)
+
+(define-public (register-miner)
+    (let
+        (
+            (new-id (+ u1 (var-get signaling-miners-nonce)))
+        )
+        (asserts! (is-none (map-get? signaling-miners {miner: tx-sender}))
+            (err ERR-MINER-ALREADY-REGISTERED))
+
+        (asserts! (<= new-id MINING-ACTIVATION-THRESHOLD)
+            (err ERR-MINING-ACTIVATION-THRESHOLD-REACHED))
+        
+        (map-set signaling-miners
+            {miner: tx-sender}
+            {id: new-id}
+        )
+        
+        (var-set signaling-miners-nonce new-id)
+
+        (if (is-eq new-id MINING-ACTIVATION-THRESHOLD) 
+            (begin
+                (var-set first-stacking-block (+ block-height MINING-ACTIVATION-DELAY))
+                (ok true)
+            )
+            (ok true)
+        )
+    )
+)
 
 ;; Function for deciding how many tokens to mint, depending on when they were mined.
 (define-read-only (get-coinbase-amount (miner-burn-block-height uint))
