@@ -24,7 +24,7 @@ export enum ErrCode {
   ERR_MINING_ACTIVATION_THRESHOLD_REACHED
 }
 
-export const MINING_ACTIVATION_DELAY = 100;
+export const MINING_ACTIVATION_DELAY = 500;
 export const FIRST_STACKING_BLOCK = 1 + MINING_ACTIVATION_DELAY;
 export const REWARD_CYCLE_LENGTH = 500;
 export class CityCoinClient {
