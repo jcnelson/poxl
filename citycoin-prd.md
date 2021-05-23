@@ -213,7 +213,7 @@ The issuance schedule does not begin until mining is activated by miners, and on
 | Next 210,000 Stacks Blocks | 6,250 CityCoins | approx. 4 years |
 | After 1,050,000 Stacks Blocks | 3,125 CityCoins | continues indefinitely |
 
-After the final halving at 1,050,000 Stacks blocks past the Stacks block height recorded at activation, the total supply is estimated to be `37,188,250,000` and will increase indefinitely by `164,062,500` per year.
+After the final halving at 1,050,000 Stacks blocks past the Stacks block height recorded at activation, the total supply is estimated to be `42,187,500,000` and will increase indefinitely by `164,062,500` per year.
 
 ### Citations
 
