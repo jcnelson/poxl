@@ -94,7 +94,7 @@
 
 ;; Mining configuration
 (define-constant MINING-ACTIVATION-THRESHOLD u1)     ;; how many miners have to register to kickoff countdown to mining activation
-(define-constant MINING-ACTIVATION-DELAY u150)       ;; how many blocks after last miner registration mining will be activated (~24hrs)
+(define-constant MINING-ACTIVATION-DELAY u100)       ;; how many blocks after last miner registration mining will be activated (~24hrs)
 (define-constant MINING-HALVING-BLOCKS u210000)      ;; how many blocks until the next halving occurs
 (define-data-var signaling-miners-nonce uint u0)     ;; number of miners who signaled activation
 
@@ -193,7 +193,6 @@
             u250000 ;; bonus reward first 10,000 blocks
             u100000 ;; standard reward remaining 210,000 blocks
         )
-
         (asserts! (> miner-block-height (+ (var-get first-stacking-block) MINING-HALVING-BLOCKS)) u50000)        ;; between 1st and 2nd halving u50000
         (asserts! (> miner-block-height (+ (var-get first-stacking-block) (* u2 MINING-HALVING-BLOCKS))) u25000) ;; between 2nd and 3rd halving u25000
         (asserts! (> miner-block-height (+ (var-get first-stacking-block) (* u3 MINING-HALVING-BLOCKS))) u12500) ;; between 3rd and 4th halving u12500

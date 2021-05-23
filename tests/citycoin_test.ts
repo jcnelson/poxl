@@ -148,7 +148,7 @@ describe('[CityCoin]', () => {
 
     describe("get-coinbase-amount()", () => {
 
-      it("returns correct coinbase amount based on burn block height", () => {
+      it("returns correct coinbase amount based on Stacks block height", () => {
         setupCleanEnv();
 
         // activate mining
@@ -179,15 +179,19 @@ describe('[CityCoin]', () => {
           {blockHeight: startHeight + (MINING_HALVING_BLOCKS * 5) + 1234, reward: 3125},   // after 5th halving
         ]
 
+        console.log(`\n  mining activated at block ${startHeight}`)
+
         testData.forEach(t => {
           let result = client.getCoinbaseAmount(t.blockHeight).result;
           
           try {
             result.expectUint(t.reward);
+            console.log(`  success at block ${t.blockHeight} with reward ${t.reward}`)
           } catch (error) {
-            throw new Error(`Failed to return correct coinbase amount at block ${t.blockHeight}\n${error}`);
+            throw new Error(`failed to return correct coinbase amount at block ${t.blockHeight}\n${error}`);
           }
         });
+
       });
     });
 
