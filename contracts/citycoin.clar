@@ -193,19 +193,19 @@
         ;; halvings occur every 210,000 blocks for 1,050,000 Stacks blocks
         ;; then mining continues indefinitely with 3,125 CityCoins as the reward
 
-        (asserts! (> miner-block-height activation-block-height)
+        (asserts! (> miner-block-height (+ activation-block-height MINING-HALVING-BLOCKS))
             (if (<= (- miner-block-height activation-block-height) u10000)
                 u250000 ;; bonus reward first 10,000 blocks
                 u100000 ;; standard reward remaining 200,000 blocks until 1st halving
             )
         )
-        (asserts! (> miner-block-height (+ activation-block-height MINING-HALVING-BLOCKS)) u50000)        ;; between 1st and 2nd halving u50000
-        (asserts! (> miner-block-height (+ activation-block-height (* u2 MINING-HALVING-BLOCKS))) u25000) ;; between 2nd and 3rd halving u25000
-        (asserts! (> miner-block-height (+ activation-block-height (* u3 MINING-HALVING-BLOCKS))) u12500) ;; between 3rd and 4th halving u12500
-        (asserts! (> miner-block-height (+ activation-block-height (* u4 MINING-HALVING-BLOCKS))) u6250)  ;; between 4th and 5th halving u6250
+        (asserts! (> miner-block-height (+ activation-block-height (* u2 MINING-HALVING-BLOCKS))) u50000)        ;; between 1st and 2nd halving u50000
+        (asserts! (> miner-block-height (+ activation-block-height (* u3 MINING-HALVING-BLOCKS))) u25000) ;; between 2nd and 3rd halving u25000
+        (asserts! (> miner-block-height (+ activation-block-height (* u4 MINING-HALVING-BLOCKS))) u12500) ;; between 3rd and 4th halving u12500
+        (asserts! (> miner-block-height (+ activation-block-height (* u5 MINING-HALVING-BLOCKS))) u6250)  ;; between 4th and 5th halving u6250
 
         ;; default value after 5th halving
-        u3250
+        u3125
 
     )
 )
