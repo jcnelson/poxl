@@ -93,8 +93,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Mining configuration
-(define-data-var mining-is-active bool false)                   ;; is mining activated yet via miner registrations
-(define-data-var mining-activation-block-height uint u0)        ;; block height set by mining activation function
+(define-constant MINING-ACTIVATION-THRESHOLD u1)            ;; how many miners have to register to kickoff countdown to mining activation
+(define-constant MINING-ACTIVATION-DELAY u150)              ;; how many blocks after last miner registration mining will be activated (~24hrs)
+(define-data-var mining-is-active bool false)               ;; is mining activated yet via miner registrations
+(define-data-var mining-activation-block-height uint u0)    ;; block height set by mining activation function
+(define-data-var signaling-miners-nonce uint u0)            ;; number of miners who signaled activation
 
 ;; Stacking configuration, as data vars (so it's easy to test).
 (define-data-var first-stacking-block uint FIRST-STACKING-BLOCK)
@@ -142,11 +145,6 @@
 
 ;; The fungible token that can be Stacked.
 (define-fungible-token citycoins)
-
-(define-constant MINING-ACTIVATION-THRESHOLD u1)  ;; how many miners have to register to kickoff countdown to mining activation
-(define-constant MINING-ACTIVATION-DELAY u150)    ;; how many blocks after last miner registration mining will be activated (~24hrs)
-
-(define-data-var signaling-miners-nonce uint u0)
 
 (define-map signaling-miners
     { miner: principal }
