@@ -15,7 +15,6 @@
 (define-constant ERR-CANNOT-MINE u11)
 (define-constant ERR-MINER-ALREADY-REGISTERED u12)
 (define-constant ERR-MINING-ACTIVATION-THRESHOLD-REACHED u13)
-(define-constant ERR-MINING-NOT-ACTIVATED u14)
 
 ;; Tailor to your needs.
 (define-constant TOKEN-REWARD-MATURITY u100)        ;; how long a miner must wait before claiming their minted tokens
@@ -187,24 +186,24 @@
     (begin
 
         (asserts! (var-get mining-is-active)
-            (err ERR-MINING-NOT-ACTIVATED)
+            u0
         )
 
         (if (< (- miner-burn-block-height (var-get mining-activation-burn-block-height)) u10000)
-            (ok u250000)
+            u250000
             (if (< miner-burn-block-height u840000)
-                (ok u100000)
+                u100000
                 (if (< miner-burn-block-height u1050000)
-                    (ok u50000)
+                    u50000
                     (if (< miner-burn-block-height u1260000)
-                        (ok u25000)
+                        u25000
                         (if (< miner-burn-block-height u1470000)
-                            (ok u12500)
+                            u12500
                             (if (< miner-burn-block-height u1680000)
-                                (ok u6250)
+                                u6250
                                 (if (>= miner-burn-block-height u1680000)
-                                    (ok u3125)
-                                    (ok u0) ;; shouldn't hit this code path, but 0 just in case
+                                    u3125
+                                    u0     ;; shouldn't hit this code path, but 0 just in case
                                 )
                             )
                         )
@@ -271,19 +270,7 @@
     ;; TODO update stacks-block-ht to burn-block-ht stored in miners tx
     ;;   works with clarinet for now because values are equal
     ;;   will need to be resolved before deployment as values will differ
-
-    (ft-mint? citycoins (unwrap-panic (get-coinbase-amount stacks-block-ht)) recipient)
-    ;; crashes Clarinet
-    ;; was producing: Analysis error: expecting 3 arguments, got 2
-
-    ;;(match (get-coinbase-amount stacks-block-ht)
-    ;;    value (ft-mint? citycoins value recipient)
-    ;;    err-value (err err-value)
-    ;;)
-    ;; crashes Clarinet
-
-    ;; (ft-mint? citycoins (get-coinbase-amount stacks-block-ht) recipient)
-    ;; Error: expecting expression of type 'uint', found '(response uint uint)'
+    (ft-mint? citycoins (get-coinbase-amount stacks-block-ht) recipient)
 )
 
 ;; Getter to obtain the list of miners and uSTX commitments at a given Stacks block height,
