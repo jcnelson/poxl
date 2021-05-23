@@ -20,9 +20,12 @@ export enum ErrCode {
   ERR_ROUND_FULL,
   ERR_NOTHING_TO_REDEEM,
   ERR_CANNOT_MINE,
+  ERR_MINER_ALREADY_REGISTERED,
+  ERR_MINING_ACTIVATION_THRESHOLD_REACHED
 }
 
-export const FIRST_STACKING_BLOCK = 1;
+export const MINING_ACTIVATION_DELAY = 100;
+export const FIRST_STACKING_BLOCK = 1 + MINING_ACTIVATION_DELAY;
 export const REWARD_CYCLE_LENGTH = 500;
 export class CityCoinClient {
   contractName: string = "citycoin"
@@ -48,6 +51,7 @@ export class CityCoinClient {
   public getContractAddress(): string {
     return `${this.deployer.address}.${this.contractName}`;
   }
+
   /**
    * Mints token to make testing easier.
    * 
@@ -269,6 +273,15 @@ export class CityCoinClient {
       ],
       sender.address
     );
+  }
+
+  registerMiner(sender: Account): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "register-miner",
+      [],
+      sender.address
+    )
   }
 
   // SIP-010 functions
