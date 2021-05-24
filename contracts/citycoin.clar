@@ -174,13 +174,16 @@
         (var-set signaling-miners-nonce new-id)
 
         (if (is-eq new-id MINING-ACTIVATION-THRESHOLD) 
-            (begin
-                (var-set first-stacking-block (+ block-height MINING-ACTIVATION-DELAY))
-                (var-set coinbase-threshold-1 (+ (var-get first-stacking-block) MINING-HALVING-BLOCKS))
-                (var-set coinbase-threshold-2 (+ (var-get first-stacking-block) (* u2 MINING-HALVING-BLOCKS)))
-                (var-set coinbase-threshold-3 (+ (var-get first-stacking-block) (* u3 MINING-HALVING-BLOCKS)))
-                (var-set coinbase-threshold-4 (+ (var-get first-stacking-block) (* u4 MINING-HALVING-BLOCKS)))
-                (var-set coinbase-threshold-5 (+ (var-get first-stacking-block) (* u5 MINING-HALVING-BLOCKS)))
+            (let
+                (
+                    (first-stacking-block-val (+ block-height MINING-ACTIVATION-DELAY))
+                )
+                (var-set first-stacking-block first-stacking-block-val)
+                (var-set coinbase-threshold-1 (+ first-stacking-block-val MINING-HALVING-BLOCKS))
+                (var-set coinbase-threshold-2 (+ first-stacking-block-val (* u2 MINING-HALVING-BLOCKS)))
+                (var-set coinbase-threshold-3 (+ first-stacking-block-val (* u3 MINING-HALVING-BLOCKS)))
+                (var-set coinbase-threshold-4 (+ first-stacking-block-val (* u4 MINING-HALVING-BLOCKS)))
+                (var-set coinbase-threshold-5 (+ first-stacking-block-val (* u5 MINING-HALVING-BLOCKS)))
                 (ok true)
             )
             (ok true)
