@@ -193,25 +193,27 @@ Additional performance metrics that may be of use to both the user interfaces ab
 
 ### Fair and Open Launch
 
-The launch of a CityCoin will require at least 5 unique wallets to signal activation as part of a function in the smart contract, after which anyone is eligible to mine the CityCoins within a given Stacks block.
+The launch of a CityCoin will require at least 5 unique wallets to signal activation as part of a function in the smart contract, after which a countdown begins and anyone is eligible to mine the CityCoins within a given Stacks block.
 
-There will be no CityCoins issued or distributed prior to the start of mining.
+There are no CityCoins issued or distributed prior to the start of mining.
 
 ### Issuance Schedule
 
-Miners receive coinbase rewards for mining the CityCoin outlined in the table below, and the "halvings" of the block reward are synchronized with Bitcoin and Stacks.
+Miners receive coinbase rewards for mining the CityCoin outlined in the table below. The "halvings" occur at intervals similar to Bitcoin and Stacks, every 210,000 blocks, and there is a 10,000 block bonus reward for early miners.
+
+The issuance schedule does not begin until mining is activated by miners, and once it begins, the current block height of the Stacks blockchain is recorded in the contract. From there, the issuance continues as follows:
 
 | Time Period | Reward | Notes |
 | --- | --- | --- |
-| First 10,000 BTC Blocks | 250,000 CityCoins | approx. 3 months |
-| until BTC Block 840,000 | 100,000 CityCoins | 2021-2024 |
-| after BTC Block 840,000 | 50,000 CityCoins | 2024-2028 | 
-| after BTC Block 1,050,000 | 25,000 CityCoins | 2028-2032 | 
-| after BTC Block 1,260,000 | 12,500 CityCoins | 2032-2036 |
-| after BTC Block 1,470,000 | 6,250 CityCoins | 2036-2040 |
-| after BTC Block 1,680,000 | 3,125 CityCoins | 2040-2044, continues indefinitely |
+| First 10,000 Stacks Blocks | 250,000 CityCoins | approx. 3 months |
+| Next 200,000 Stacks Blocks | 100,000 CityCoins | approx. 4 years, minus bonus period |
+| Next 210,000 Stacks Blocks | 50,000 CityCoins | approx. 4 years | 
+| Next 210,000 Stacks Blocks | 25,000 CityCoins | approx. 4 years | 
+| Next 210,000 Stacks Blocks | 12,500 CityCoins | approx. 4 years |
+| Next 210,000 Stacks Blocks | 6,250 CityCoins | approx. 4 years |
+| After 1,050,000 Stacks Blocks | 3,125 CityCoins | continues indefinitely |
 
-After the final halving at BTC Block 1,680,000, the total supply is estimated to be `37,188,250,000` and will increase indefinitely by `164,062,500` per year.
+After the final halving at 1,050,000 Stacks blocks past the Stacks block height recorded at activation, the total supply is estimated to be `42,187,500,000` and will increase indefinitely by `164,062,500` per year.
 
 ### Citations
 

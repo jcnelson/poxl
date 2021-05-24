@@ -16,7 +16,8 @@ import {
   ErrCode,
   FIRST_STACKING_BLOCK,
   REWARD_CYCLE_LENGTH,
-  MINING_ACTIVATION_DELAY
+  MINING_ACTIVATION_DELAY,
+  MINING_HALVING_BLOCKS
 } from "../src/citycoin-client.ts"
 
 describe('[CityCoin]', () => {
@@ -84,10 +85,10 @@ describe('[CityCoin]', () => {
     });
 
     describe("get-decimals()", () => {
-      it("should return 6", () => {
+      it("should return 0", () => {
         const result = client.getDecimals().result;
 
-        result.expectOk().expectUint(6);
+        result.expectOk().expectUint(0);
       });
     });
 
@@ -144,6 +145,55 @@ describe('[CityCoin]', () => {
 
   describe("Read only functions:", () => {
     setupCleanEnv();
+
+    describe("get-coinbase-amount()", () => {
+
+      it("returns correct coinbase amount based on Stacks block height", () => {
+        setupCleanEnv();
+
+        // activate mining
+        chain.mineBlock([
+          client.registerMiner(wallet_3)
+        ]);
+
+        // advance chain to block where mining is active
+        const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
+        const startHeight = block.block_height - 1;
+
+        const testData = [
+          {blockHeight: startHeight - 1, reward: 0},          // prior to mining activation (no reward)
+          {blockHeight: startHeight, reward: 250000},         // at mining activation (bonus reward)
+          {blockHeight: startHeight + 1, reward: 250000},     // first block after mining activation block (bonus reward)
+          {blockHeight: startHeight + 10000, reward: 250000}, // 1000th block after mining activation block (last bonus reward)
+          {blockHeight: startHeight + 10001, reward: 100000}, // 1001st block after mining activation block (first standard reward)
+          {blockHeight: startHeight + MINING_HALVING_BLOCKS, reward: 100000},              // 1st halving
+          {blockHeight: startHeight + MINING_HALVING_BLOCKS + 1, reward: 50000},           // after 1st halving
+          {blockHeight: startHeight + (MINING_HALVING_BLOCKS * 2), reward: 50000},         // 2nd halving
+          {blockHeight: startHeight + (MINING_HALVING_BLOCKS * 2) + 1, reward: 25000},     // after 2nd halving
+          {blockHeight: startHeight + (MINING_HALVING_BLOCKS * 3), reward: 25000},         // 3rd halving
+          {blockHeight: startHeight + (MINING_HALVING_BLOCKS * 3) + 1, reward: 12500},     // after 3rd halving
+          {blockHeight: startHeight + (MINING_HALVING_BLOCKS * 4), reward: 12500},         // 4th halving
+          {blockHeight: startHeight + (MINING_HALVING_BLOCKS * 4) + 1, reward: 6250},      // after 4th halving
+          {blockHeight: startHeight + (MINING_HALVING_BLOCKS * 5), reward: 6250},          // 5th halving
+          {blockHeight: startHeight + (MINING_HALVING_BLOCKS * 5) + 1, reward: 3125},      // after 5th halving
+          {blockHeight: startHeight + (MINING_HALVING_BLOCKS * 5) + 1234, reward: 3125},   // after 5th halving
+        ]
+
+        console.log(`\n  mining activated at block ${startHeight}`)
+
+        testData.forEach(t => {
+          let result = client.getCoinbaseAmount(t.blockHeight).result;
+          
+          try {
+            result.expectUint(t.reward);
+            console.log(`  success at block ${t.blockHeight} with reward ${t.reward}`)
+          } catch (error) {
+            throw new Error(`Failed to return correct coinbase amount at block ${t.blockHeight}\n${error}`);
+          }
+        });
+
+      });
+    });
 
     describe("get-block-commit-total()", () => {
       it("should return 0 when miners list is empty", () => {

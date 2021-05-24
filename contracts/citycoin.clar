@@ -92,6 +92,17 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; Mining configuration
+(define-constant MINING-ACTIVATION-THRESHOLD u1)     ;; how many miners have to register to kickoff countdown to mining activation
+(define-constant MINING-ACTIVATION-DELAY u100)       ;; how many blocks after last miner registration mining will be activated (~24hrs)
+(define-constant MINING-HALVING-BLOCKS u210000)      ;; how many blocks until the next halving occurs
+(define-data-var coinbase-threshold-1 uint u0)       ;; block height of the 1st halving, set by register-miner
+(define-data-var coinbase-threshold-2 uint u0)       ;; block height of the 2nd halving, set by register-miner
+(define-data-var coinbase-threshold-3 uint u0)       ;; block height of the 3rd halving, set by register-miner
+(define-data-var coinbase-threshold-4 uint u0)       ;; block height of the 4th halving, set by register-miner
+(define-data-var coinbase-threshold-5 uint u0)       ;; block height of the 5th halving, set by register-miner
+(define-data-var signaling-miners-nonce uint u0)     ;; number of miners who signaled activation
+
 ;; Stacking configuration, as data vars (so it's easy to test).
 (define-data-var first-stacking-block uint FIRST-STACKING-BLOCK)
 (define-data-var reward-cycle-length uint REWARD-CYCLE-LENGTH)
@@ -139,11 +150,6 @@
 ;; The fungible token that can be Stacked.
 (define-fungible-token citycoins)
 
-(define-constant MINING-ACTIVATION-THRESHOLD u1)  ;; how many miners have to register to kickoff countdown to mining activation
-(define-constant MINING-ACTIVATION-DELAY u100)   ;; how many blocks after last miner registration mining will be activated   
-
-(define-data-var signaling-miners-nonce uint u0)
-
 (define-map signaling-miners
     { miner: principal }
     { id: uint }
@@ -168,8 +174,16 @@
         (var-set signaling-miners-nonce new-id)
 
         (if (is-eq new-id MINING-ACTIVATION-THRESHOLD) 
-            (begin
-                (var-set first-stacking-block (+ block-height MINING-ACTIVATION-DELAY))
+            (let
+                (
+                    (first-stacking-block-val (+ block-height MINING-ACTIVATION-DELAY))
+                )
+                (var-set first-stacking-block first-stacking-block-val)
+                (var-set coinbase-threshold-1 (+ first-stacking-block-val MINING-HALVING-BLOCKS))
+                (var-set coinbase-threshold-2 (+ first-stacking-block-val (* u2 MINING-HALVING-BLOCKS)))
+                (var-set coinbase-threshold-3 (+ first-stacking-block-val (* u3 MINING-HALVING-BLOCKS)))
+                (var-set coinbase-threshold-4 (+ first-stacking-block-val (* u4 MINING-HALVING-BLOCKS)))
+                (var-set coinbase-threshold-5 (+ first-stacking-block-val (* u5 MINING-HALVING-BLOCKS)))
                 (ok true)
             )
             (ok true)
@@ -178,9 +192,35 @@
 )
 
 ;; Function for deciding how many tokens to mint, depending on when they were mined.
-;; Tailor to your own needs.
-(define-read-only (get-coinbase-amount (stacks-block-ht uint))
-    u500000000
+(define-read-only (get-coinbase-amount (miner-block-height uint))
+    (let
+        (
+            ;; set a new variable to make things easier to read
+            (activation-block-height (var-get first-stacking-block))
+        )
+
+        ;; determine if mining was active, return 0 if not
+        (asserts! (>= miner-block-height activation-block-height) u0)
+
+        ;; evaluate current block height against issuance schedule and return correct coinbase amount
+        ;; halvings occur every 210,000 blocks for 1,050,000 Stacks blocks
+        ;; then mining continues indefinitely with 3,125 CityCoins as the reward
+
+        (asserts! (> miner-block-height (var-get coinbase-threshold-1))
+            (if (<= (- miner-block-height activation-block-height) u10000)
+                u250000 ;; bonus reward first 10,000 blocks
+                u100000 ;; standard reward remaining 200,000 blocks until 1st halving
+            )
+        )
+        (asserts! (> miner-block-height (var-get coinbase-threshold-2)) u50000) ;; between 1st and 2nd halving u50000
+        (asserts! (> miner-block-height (var-get coinbase-threshold-3)) u25000) ;; between 2nd and 3rd halving u25000
+        (asserts! (> miner-block-height (var-get coinbase-threshold-4)) u12500) ;; between 3rd and 4th halving u12500
+        (asserts! (> miner-block-height (var-get coinbase-threshold-5)) u6250)  ;; between 4th and 5th halving u6250
+
+        ;; default value after 5th halving
+        u3125
+
+    )
 )
 
 ;; Getter for getting the list of miners and uSTX committments for a given block.
@@ -680,7 +720,7 @@
     (ok "CYCN"))
 
 (define-public (get-decimals)
-    (ok u6))
+    (ok u0))
 
 (define-public (get-balance-of (user principal))
     (ok (ft-get-balance citycoins user)))
