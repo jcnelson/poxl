@@ -111,10 +111,11 @@ export class CityCoinClient {
     );
   }
 
-  getBlockWinner(randomSampleUint: number, miners: MinersList): Result {
+  getBlockWinner(stacksBlockHeight: number, randomSampleUint: number, miners: MinersList): Result {
     return this.callReadOnlyFn(
-      "get-block-winner",
+      "get-block-winner-imp",
       [
+        types.uint(stacksBlockHeight),
         types.uint(randomSampleUint),
         miners.convert()
       ]

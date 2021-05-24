@@ -219,17 +219,31 @@ describe('[CityCoin]', () => {
 
     describe("getBlockWinner()", () => {
       it("should select correct winner", () => {
+        setupCleanEnv();
+        chain.mineBlock([
+          client.registerMiner(wallet_3)
+        ]);
+        const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
+
         const miners = new MinersList();
         miners.push(
           { miner: wallet_1, amountUstx: 1 },
           { miner: wallet_2, amountUstx: 2 },
           { miner: wallet_3, amountUstx: 3 },
         );
+        
+        chain.mineBlock([
+          client.mineTokens(miners[0].amountUstx, miners[0].miner),
+          client.mineTokens(miners[1].amountUstx, miners[1].miner),
+          client.mineTokens(miners[2].amountUstx, miners[2].miner),
+        ]);
+
+        chain.mineEmptyBlock(500)
 
         const known_rnd_winners = [0, 1, 1, 2, 2, 2, 0, 1, 1, 2, 2, 2, 0]
 
         known_rnd_winners.forEach((e, i) => {
-          let result = client.getBlockWinner(i, miners).result;
+          let result = client.getBlockWinner(block.block_height, i, miners).result;
           let winner = result.expectSome().expectTuple();
           let expectedWinner = miners.getFormatted(e)
 
@@ -238,7 +252,7 @@ describe('[CityCoin]', () => {
       });
 
       it("should return no winner if there are no miners", () => {
-        const result = client.getBlockWinner(0, new MinersList()).result;
+        const result = client.getBlockWinner(200, 0, new MinersList()).result;
 
         result.expectNone();
       });
