@@ -28,6 +28,10 @@ export const MINING_HALVING_BLOCKS = 210000;
 export const MINING_ACTIVATION_DELAY = 100;
 export const FIRST_STACKING_BLOCK = 1 + MINING_ACTIVATION_DELAY;
 export const REWARD_CYCLE_LENGTH = 500;
+export const CITY_CUSTODIED_WALLET = "STRKQ271SRDWB166VNV4FMXPH3X35YPQ5N192EWN";
+export const SPLIT_STACKER_PERCENTAGE = 0.7;
+export const SPLIT_CITY_PERCENTAGE = 0.3;
+
 export class CityCoinClient {
   contractName: string = "citycoin"
   chain: Chain;
