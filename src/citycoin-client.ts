@@ -106,19 +106,20 @@ export class CityCoinClient {
     return this.callReadOnlyFn("get-pox-lite-info");
   }
 
-  getBlockCommitTotal(miners: MinersList): Result {
+  getBlockCommitTotal(stacksBlockHeight: number): Result {
     return this.callReadOnlyFn(
       "get-block-commit-total",
       [
-        miners.convert()
+        types.uint(stacksBlockHeight)
       ]
     );
   }
 
-  getBlockWinner(randomSampleUint: number, miners: MinersList): Result {
+  getBlockWinner(stacksBlockHeight: number, randomSampleUint: number, miners: MinersList): Result {
     return this.callReadOnlyFn(
       "get-block-winner",
       [
+        types.uint(stacksBlockHeight),
         types.uint(randomSampleUint),
         miners.convert()
       ]
