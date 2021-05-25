@@ -28,6 +28,10 @@ describe('[CityCoin]', () => {
   let wallet_1: Account;
   let wallet_2: Account;
   let wallet_3: Account;
+  let wallet_4: Account;
+  let wallet_5: Account;
+  let wallet_6: Account;
+
 
   function setupCleanEnv() {
     (Deno as any).core.ops();
@@ -47,6 +51,9 @@ describe('[CityCoin]', () => {
     wallet_1 = accounts.get('wallet_1')!;
     wallet_2 = accounts.get('wallet_2')!;
     wallet_3 = accounts.get('wallet_3')!;
+    wallet_4 = accounts.get('wallet_4')!;
+    wallet_5 = accounts.get('wallet_5')!;
+    wallet_6 = accounts.get('wallet_6')!;
 
     client = new CityCoinClient(chain, deployer);
   }
@@ -196,22 +203,28 @@ describe('[CityCoin]', () => {
     });
 
     describe("get-block-commit-total()", () => {
+      beforeAll(() => {
+        setupCleanEnv();
+      });
+
       it("should return 0 when miners list is empty", () => {
-        const miners = new MinersList();
-
-        const result = client.getBlockCommitTotal(miners).result;
-
+        const result = client.getBlockCommitTotal(1).result;
         result.expectUint(0);
       })
 
       it("should return 100", () => {
-        const miners = new MinersList();
-        miners.push(
-          { miner: wallet_1, amountUstx: 30 },
-          { miner: wallet_2, amountUstx: 70 },
-        )
+        chain.mineBlock([
+          client.registerMiner(wallet_1)
+        ]);
+        
+        const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
+        
+        chain.mineBlock([
+          client.mineTokens(30, wallet_1),
+          client.mineTokens(70, wallet_2)
+        ]);
 
-        const result = client.getBlockCommitTotal(miners).result;
+        const result = client.getBlockCommitTotal(block.block_height).result;
 
         result.expectUint(100);
       });
@@ -286,21 +299,35 @@ describe('[CityCoin]', () => {
         { miner: wallet_3, amountUstx: 3 },
       );
 
+      let txs = new Array(); 
+      miners.forEach((r) => {
+        txs.push(client.mineTokens(r.amountUstx, r.miner));
+      });
+      
       const claimedRec = new MinersRec(miners, true);
       const unclaimedRec = new MinersRec(miners, false);
       const tokenRewardMaturity = 100;
 
 
       it("returns true", () => {
-        const currentStacksBlock = tokenRewardMaturity + 1;
+        setupCleanEnv();
+        chain.mineBlock([
+          client.registerMiner(wallet_1)
+        ]);
+        let block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
+        chain.mineBlock(txs);
+
+        const claimerStacksBlockHeight = block.block_height;
+        const currentStacksBlock = block.block_height + tokenRewardMaturity + 1;
+
         const results = [
-          client.canClaimTokens(wallet_1, 0, 0, unclaimedRec, currentStacksBlock).result,
-          client.canClaimTokens(wallet_2, 0, 1, unclaimedRec, currentStacksBlock).result,
-          client.canClaimTokens(wallet_2, 0, 2, unclaimedRec, currentStacksBlock).result,
-          client.canClaimTokens(wallet_3, 0, 3, unclaimedRec, currentStacksBlock).result,
-          client.canClaimTokens(wallet_3, 0, 4, unclaimedRec, currentStacksBlock).result,
-          client.canClaimTokens(wallet_3, 0, 5, unclaimedRec, currentStacksBlock).result,
-          client.canClaimTokens(wallet_1, 0, 6, unclaimedRec, currentStacksBlock).result,
+          client.canClaimTokens(wallet_1, claimerStacksBlockHeight, 0, unclaimedRec, currentStacksBlock).result,
+          client.canClaimTokens(wallet_2, claimerStacksBlockHeight, 1, unclaimedRec, currentStacksBlock).result,
+          client.canClaimTokens(wallet_2, claimerStacksBlockHeight, 2, unclaimedRec, currentStacksBlock).result,
+          client.canClaimTokens(wallet_3, claimerStacksBlockHeight, 3, unclaimedRec, currentStacksBlock).result,
+          client.canClaimTokens(wallet_3, claimerStacksBlockHeight, 4, unclaimedRec, currentStacksBlock).result,
+          client.canClaimTokens(wallet_3, claimerStacksBlockHeight, 5, unclaimedRec, currentStacksBlock).result,
+          client.canClaimTokens(wallet_1, claimerStacksBlockHeight, 6, unclaimedRec, currentStacksBlock).result,
         ];
 
         results.forEach((result) => {
@@ -309,12 +336,20 @@ describe('[CityCoin]', () => {
       });
 
       it("throws ERR_UNAUTHORIZED error", () => {
-        const currentStacksBlock = tokenRewardMaturity + 1;
+        setupCleanEnv();
+        chain.mineBlock([
+          client.registerMiner(wallet_1)
+        ]);
+        let block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
+        chain.mineBlock(txs);
+
+        const claimerStacksBlockHeight = block.block_height;
+        const currentStacksBlock = block.block_height + tokenRewardMaturity + 1;
 
         const results = [
-          client.canClaimTokens(wallet_2, 0, 0, unclaimedRec, currentStacksBlock).result,
-          client.canClaimTokens(wallet_1, 0, 1, unclaimedRec, currentStacksBlock).result,
-          client.canClaimTokens(wallet_3, 0, 2, unclaimedRec, currentStacksBlock).result,
+          client.canClaimTokens(wallet_4, claimerStacksBlockHeight, 0, unclaimedRec, currentStacksBlock).result,
+          client.canClaimTokens(wallet_5, claimerStacksBlockHeight, 1, unclaimedRec, currentStacksBlock).result,
+          client.canClaimTokens(wallet_6, claimerStacksBlockHeight, 2, unclaimedRec, currentStacksBlock).result,
         ]
 
         results.forEach((result) => {
