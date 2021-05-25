@@ -640,7 +640,8 @@
     (begin
         (try! (can-mine-tokens tx-sender block-height amount-ustx miner-rec))
 
-        (try! (set-tokens-mined tx-sender block-height amount-ustx))
+        ;; split needs to happen here too?
+        (try! (set-tokens-mined tx-sender block-height (/ (* SPLIT_STACKER_PERCENTAGE amount-ustx) u100)))
 
         ;; check if stacking is active
         (if (is-some (get-reward-cycle block-height))
