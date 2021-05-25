@@ -22,6 +22,11 @@
 (define-constant REWARD-CYCLE-LENGTH u500)          ;; how long a reward cycle is
 (define-constant MAX-REWARD-CYCLES u32)             ;; how many reward cycles a Stacker can Stack their tokens for
 
+;; Define city wallet and mining split
+(define-constant CITY_CUSTODIED_WALLET 'STRKQ271SRDWB166VNV4FMXPH3X35YPQ5N192EWN)  ;; the custodied wallet address for the city
+(define-constant SPLIT_STACKER_PERCENTAGE u70)      ;; 70% split to stackers of the CityCoin
+(define-constant SPLIT_CITY_PERCENTAGE u30)         ;; 30% split to custodied wallet address for the city
+
 ;; NOTE: must be as long as MAX-REWARD-CYCLES
 (define-constant REWARD-CYCLE-INDEXES (list u0 u1 u2 u3 u4 u5 u6 u7 u8 u9 u10 u11 u12 u13 u14 u15 u16 u17 u18 u19 u20 u21 u22 u23 u24 u25 u26 u27 u28 u29 u30 u31))
 
@@ -636,7 +641,17 @@
         (try! (can-mine-tokens tx-sender block-height amount-ustx miner-rec))
 
         (try! (set-tokens-mined tx-sender block-height amount-ustx))
-        (unwrap-panic (stx-transfer? amount-ustx tx-sender (as-contract tx-sender)))
+
+        ;; check if stacking is active
+        (if (is-some (get-reward-cycle block-height))
+            ;; transfer with split if active
+            (begin 
+                (unwrap-panic (stx-transfer? (/ (* SPLIT_STACKER_PERCENTAGE amount-ustx) u100) tx-sender (as-contract tx-sender)))
+                (unwrap-panic (stx-transfer? (/ (* SPLIT_CITY_PERCENTAGE amount-ustx) u100) tx-sender CITY_CUSTODIED_WALLET))
+            )
+            ;; transfer to custodied wallet if not active
+            (unwrap-panic (stx-transfer? amount-ustx tx-sender CITY_CUSTODIED_WALLET))
+        )
 
         (ok true)
     ))
