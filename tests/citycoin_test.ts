@@ -118,6 +118,10 @@ describe('[CityCoin]', () => {
     });
 
     describe("get-total-supply()", () => {
+      beforeEach(() => {
+        setupCleanEnv();
+      })
+
       it("should return 0", () => {
         const result = client.getTotalSupply().result;
 
@@ -271,21 +275,33 @@ describe('[CityCoin]', () => {
       });
     });
 
-    describe("has-mined-in-list()", () => {
-      const miners = new MinersList();
-      miners.push(
-        { miner: wallet_1, amountUstx: 1 },
-        { miner: wallet_2, amountUstx: 2 },
-      );
+    describe("has-mined()", () => {
+      
+    
+      it("returns true if miner mined selected block", () => {
+        setupCleanEnv();
+      
+        // activate mining
+        chain.mineBlock([
+          client.registerMiner(wallet_3)
+        ]);
 
-      it("returns true if miner is in a list", () => {
-        const result = client.hasMinedInList(wallet_2, miners).result;
+        // advance chain to block where mining is active
+        const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
+        const blockHeight = block.block_height;
+        
+        chain.mineBlock([
+          client.mineTokens(200, wallet_1)
+        ]);
+        
+        const result = client.hasMined(wallet_1, blockHeight).result;
 
         result.expectBool(true);
       })
 
-      it("returns false if miner is not in a list", () => {
-        const result = client.hasMinedInList(wallet_3, miners).result;
+      it("returns false if miner didn't mine selected block", () => {
+        setupCleanEnv();
+        const result = client.hasMined(wallet_2, 800).result;
 
         result.expectBool(false);
       });
@@ -422,9 +438,11 @@ describe('[CityCoin]', () => {
         chain.mineBlock([
           client.registerMiner(wallet_3)
         ]);
-        const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
+        chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
 
-        const result = client.canMineTokens(wallet_1, block.block_height, 10, minersRec).result;
+        const block = chain.mineBlock([client.mineTokens(200, wallet_1)]);
+
+        const result = client.canMineTokens(wallet_1, block.height-1, 10, minersRec).result;
 
         result.expectErr().expectUint(ErrCode.ERR_ALREADY_MINED);
       });

@@ -141,6 +141,11 @@
     { amount: uint }
 )
 
+(define-map miners-block-commitment
+    { miner: principal, stacks-block-height: uint }
+    { committed: bool }
+)
+
 ;; How many uSTX are mined per reward cycle, and how many tokens are locked up in the same reward cycle.
 (define-map tokens-per-cycle
     { reward-cycle: uint }
@@ -337,28 +342,11 @@
     )
 )
 
-
-;; Inner fold function for finding a given miner in a list of miners.
-(define-private (has-mined-in-list-closure (idx uint) (input { found: bool, candidate: principal, miners: (list 32 { miner: principal, amount-ustx: uint }) }))
-    (let (
-        (already-found (get found input))
-        (miner-candidate (get candidate input))
-        (miners-list (get miners input))
-    )
-    {
-        found: (match (element-at miners-list idx)
-                       miner-rec (or already-found (is-eq miner-candidate (get miner miner-rec)))
-                       already-found),
-        candidate: miner-candidate,
-        miners: miners-list
-    })
-)
-
-;; Determine if a given miner has already mined in a list of miners.
-(define-read-only (has-mined-in-list (miner principal) (miner-list (list 32 { miner: principal, amount-ustx: uint })))
-    (get found
-        (fold has-mined-in-list-closure REWARD-CYCLE-INDEXES
-            { found: false, candidate: miner, miners: miner-list }))
+;; Determine if a given miner has already mined at given block height
+(define-read-only (has-mined (miner principal) (stacks-block-height uint))
+    (is-some (map-get? miners-block-commitment 
+        { miner: miner, stacks-block-height: stacks-block-height }
+    ))
 )
 
 ;; Determine whether or not the given principal can claim the mined tokens at a particular block height,
@@ -434,7 +422,7 @@
         (asserts! (< (len (get miners miners-rec)) u32)
             (err ERR-ROUND-FULL))
 
-        (asserts! (not (has-mined-in-list miner-id (get miners miners-rec)))
+        (asserts! (not (has-mined miner-id stacks-bh))
             (err ERR-ALREADY-MINED))
 
         (asserts! (> amount-ustx u0)
@@ -525,6 +513,10 @@
                 miners: (unwrap-panic (as-max-len? (append (get miners miner-rec) { miner: miner-id, amount-ustx: commit-ustx }) u32)),
                 claimed: false
             }
+        )
+        (map-set miners-block-commitment
+            { miner: miner-id, stacks-block-height: stacks-bh}
+            { committed: true }
         )
         (map-set tokens-per-cycle
             { reward-cycle: rc }

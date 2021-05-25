@@ -122,12 +122,12 @@ export class CityCoinClient {
     )
   }
 
-  hasMinedInList(miner: Account, miners: MinersList): Result {
+  hasMined(miner: Account, blockHeight: number): Result {
     return this.callReadOnlyFn(
-      "has-mined-in-list",
+      "has-mined",
       [
         types.principal(miner.address),
-        miners.convert()
+        types.uint(blockHeight)
       ]
     );
   }
