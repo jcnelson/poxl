@@ -105,22 +105,21 @@
     ))
 )
 
-(define-private (test-has-mined-in-list)
-    (let (
-        (miners-list
-            (unwrap-panic (as-max-len? (list
-                { miner: 'SP1GYBXAJSEF8SY0ERKA068J93E3EGNTXHR98MM5P, amount-ustx: u1 }
-                { miner: 'SP2M85H4NNNPQB0Y7GHT3K5EHWMRZWTHF2QAY1W69, amount-ustx: u2 }
-                { miner: 'SP3A33QYJK76BCDJJD11RYWZP9D62PVQXK2VF5TJN, amount-ustx: u3 }
-            ) u32))))
+(define-private (test-has-mined)
     (begin
-        (print "test-has-mined-in-list")
+        (print "test-has-mined")
 
-        (asserts! (has-mined-in-list 'SP1GYBXAJSEF8SY0ERKA068J93E3EGNTXHR98MM5P miners-list) (err u0))
-        (asserts! (not (has-mined-in-list 'SP1G6P9VD2E455SB0KKSJN0711S1MGH5GXPN4RJ1E miners-list)) (err u0))
+        ;; arrange 
+        (map-set miners-block-commitment 
+            { miner: 'SP1GYBXAJSEF8SY0ERKA068J93E3EGNTXHR98MM5P, stacks-block-height: u10 }
+            { committed: true }
+        )
+
+        (asserts! (has-mined 'SP1GYBXAJSEF8SY0ERKA068J93E3EGNTXHR98MM5P u10) (err u0))
+        (asserts! (not (has-mined 'SP1G6P9VD2E455SB0KKSJN0711S1MGH5GXPN4RJ1E u10)) (err u0))
 
         (ok u0)
-    ))
+    )
 )
 
 (define-private (test-can-claim-tokens)
@@ -214,6 +213,11 @@
         (print "test-can-mine-tokens")
         (asserts! (is-eq (err ERR-STACKING-NOT-AVAILABLE) (can-mine-tokens 'SP1GYBXAJSEF8SY0ERKA068J93E3EGNTXHR98MM5P u0 u0 miners-rec)) (err u0))
         (asserts! (is-eq (err ERR-ROUND-FULL) (can-mine-tokens 'SP1GYBXAJSEF8SY0ERKA068J93E3EGNTXHR98MM5P u10 u0 full-miners-rec)) (err u1))
+        ;; arrange for next assert
+        (map-set miners-block-commitment 
+            { miner: 'SP1GYBXAJSEF8SY0ERKA068J93E3EGNTXHR98MM5P, stacks-block-height: u10 }
+            { committed: true }
+        )
         (asserts! (is-eq (err ERR-ALREADY-MINED) (can-mine-tokens 'SP1GYBXAJSEF8SY0ERKA068J93E3EGNTXHR98MM5P u10 u0 miners-rec)) (err u2))
         (asserts! (is-eq (err ERR-CANNOT-MINE) (can-mine-tokens 'SPT00VPT4EXCMMET7RPFRAHSA86CF6QCY2254J9Q u10 u0 miners-rec)) (err u3))
         (asserts! (is-eq (err ERR-INSUFFICIENT-BALANCE) (can-mine-tokens 'SPP5ERW9P30ZQ9S7KGEBH042E7EJHWDT2Z5K086D u10 u1001 miners-rec)) (err u4))
@@ -381,7 +385,7 @@
         (try! (test-lower-16-le))
         (try! (test-get-block-commit-total))
         (try! (test-get-block-winner))
-        (try! (test-has-mined-in-list))
+        (try! (test-has-mined))
         (try! (test-can-claim-tokens))
         (try! (test-can-mine-tokens))
         (try! (test-can-stack-tokens))
