@@ -135,6 +135,12 @@
     }
 )
 
+;; TO DO: think about adding amount to miners map.
+(define-map block-commit
+    { stacks-block-height: uint }
+    { amount: uint }
+)
+
 (define-map miners-block-commitment
     { miner: principal, stacks-block-height: uint }
     { committed: bool }
@@ -291,70 +297,49 @@
         { miners: (list ), claimed: false })
 )
 
-;; Inner fold function for getting how many uSTX were committed by a list of miners.
-(define-private (get-block-commit-total-closure (idx uint) (input { sum: uint, miners: (list 32 { miner: principal, amount-ustx: uint }) }))
-    (let (
-        (sum (get sum input))
-        (miners-list (get miners input))
-        (commit-at-index (match (element-at miners-list idx)
-                            miner-rec (get amount-ustx miner-rec)
-                            u0))
-    )
-    {
-        sum: (+ sum commit-at-index),
-        miners: miners-list
-    })
-)
-
-;; Given a list of miners and uSTX commitments, return how many uSTX were committed in total.
-(define-read-only (get-block-commit-total (miners-list (list 32 { miner: principal, amount-ustx: uint })))
-    (get sum
-        (fold get-block-commit-total-closure REWARD-CYCLE-INDEXES
-            { sum: u0, miners: miners-list })
-    )
+;; Given stacks-block-height, return how many uSTX were committed in total.
+(define-read-only (get-block-commit-total (stacks-block-height uint))
+    (default-to u0 (get amount (map-get? block-commit {stacks-block-height: stacks-block-height})))
 )
 
 ;; Inner fold function to determine which miner won the token batch at a particular Stacks block height, given a sampling value.
-(define-private (get-block-winner-closure (idx uint) (input { sum: uint, sample: uint, winner-index: (optional uint), miners: (list 32 { miner: principal, amount-ustx: uint }) }))
-    (let (
-        (sum (get sum input))
-        (sample (get sample input))
-        (miners-list (get miners input))
-        (commit-at-index (match (element-at miners-list idx)
-                            miner-rec (get amount-ustx miner-rec)
-                            u0))
-        (next-sum (+ sum commit-at-index))
-        (next-winner-index 
-            (if (and (>= sample sum) (< sample next-sum) (> commit-at-index u0))
-                (some idx)
-                (get winner-index input)))
+(define-private (get-block-winner-closure (miner-rec { miner: principal, amount-ustx: uint }) (data {sample: uint, sum: uint, winner: (optional { miner: principal, amount-ustx: uint })}))
+    (let
+        (
+            (sum (get sum data))
+            (sample (get sample data))
+            (amount-ustx (get amount-ustx miner-rec))
+            (next-sum (+ sum amount-ustx))
+            (new-winner 
+                (if (and (>= sample sum) (< sample next-sum))
+                    (some miner-rec)
+                    (get winner data)
+                )
+            )
+        )    
+        {
+            sample: sample,
+            sum: next-sum,
+            winner: new-winner
+        }
     )
-    {
-        sum: next-sum,
-        sample: sample,
-        winner-index: next-winner-index,
-        miners: miners-list
-    })
 )
 
 ;; Determine who won a given batch of tokens, given a random sample and a list of miners and commitments.
 ;; The probability that a given miner wins the batch is proportional to how many uSTX it committed out of the 
 ;; sum of commitments for this block.
-(define-read-only (get-block-winner (random-sample uint) (miners-list (list 32 { miner: principal, amount-ustx: uint })))
-    (let (
-        (commit-total (get-block-commit-total miners-list))
-        (winner-index-opt
-            (if (> commit-total u0)
-                (get winner-index
-                    (fold get-block-winner-closure REWARD-CYCLE-INDEXES
-                        { sum: u0, sample: (mod random-sample commit-total), winner-index: none, miners: miners-list }))
-                none))
+(define-read-only (get-block-winner (stacks-bh uint) (random-sample uint) (miners-list (list 32 { miner: principal, amount-ustx: uint })))
+    (let
+        (
+            (commit-total (get-block-commit-total stacks-bh))
+        )
+        (if (> commit-total u0)
+            (get winner (fold get-block-winner-closure miners-list 
+                {sample: (mod random-sample commit-total), sum: u0, winner: none})
+            )
+            none
+        )
     )
-    (match winner-index-opt
-        winner-index (match (element-at miners-list winner-index)
-            winning-miner-rec (some winning-miner-rec)
-            none)
-        none))
 )
 
 ;; Determine if a given miner has already mined at given block height
@@ -386,7 +371,7 @@
             (asserts! (not (get claimed miners-rec))
                 (err ERR-ALREADY-CLAIMED))
 
-            (match (get-block-winner random-sample (get miners miners-rec))
+            (match (get-block-winner claimer-stacks-block-height random-sample (get miners miners-rec))
                 winner-rec (if (is-eq claimer (get miner winner-rec))
                                (ok true)
                                (err ERR-UNAUTHORIZED))
@@ -536,6 +521,10 @@
         (map-set tokens-per-cycle
             { reward-cycle: rc }
             { total-ustx: (+ commit-ustx (get total-ustx tokens-mined)), total-tokens: (get total-tokens tokens-mined) }
+        )
+        (map-set block-commit
+            { stacks-block-height: stacks-bh }
+            { amount: (+ commit-ustx (get-block-commit-total stacks-bh)) }
         )
 
         (ok true)
