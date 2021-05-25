@@ -17,7 +17,10 @@ import {
   FIRST_STACKING_BLOCK,
   REWARD_CYCLE_LENGTH,
   MINING_ACTIVATION_DELAY,
-  MINING_HALVING_BLOCKS
+  MINING_HALVING_BLOCKS,
+  CITY_CUSTODIED_WALLET,
+  SPLIT_STACKER_PERCENTAGE,
+  SPLIT_CITY_PERCENTAGE
 } from "../src/citycoin-client.ts"
 
 describe('[CityCoin]', () => {
@@ -121,7 +124,8 @@ describe('[CityCoin]', () => {
         result.expectOk().expectUint(0);
       });
 
-      it("should return 100", () => {
+      // returns 70% of commitment when stacking is active
+      it("should return 100 * SPLIT_STACKER_PERCENTAGE", () => {
         chain.mineBlock([
           client.registerMiner(wallet_1)
         ]);
@@ -134,7 +138,7 @@ describe('[CityCoin]', () => {
 
         const result = client.getTotalSupply().result;
 
-        result.expectOk().expectUint(100);
+        result.expectOk().expectUint(100 * SPLIT_STACKER_PERCENTAGE);
       });
     });
 
@@ -488,7 +492,7 @@ describe('[CityCoin]', () => {
         result.expectUint(0);
       });
 
-      it("returns 1000 if miners committed only 1000ustx and there is only one stacker", () => {
+      it("returns 1000 * SPLIT_STACKER_PERCENTAGE if miners committed only 1000ustx and there is only one stacker", () => {
         setupCleanEnv();
         chain.mineBlock([
           client.registerMiner(wallet_3)
@@ -519,7 +523,7 @@ describe('[CityCoin]', () => {
 
         const result = client.getEntitledStackingReward(stacker, targetRewardCycle, block.block_height).result;
 
-        result.expectUint(minerCommitment);
+        result.expectUint(minerCommitment * SPLIT_STACKER_PERCENTAGE);
       });
     });
 
@@ -665,7 +669,8 @@ describe('[CityCoin]', () => {
         assertEquals(receipt_err.events.length, 0)
       })
 
-      it("succeeds and causes one stx_transfer_event", () => {
+      // modified to two events since 70% to stackers, 30% to city
+      it("succeeds and causes two stx_transfer_events", () => {
         const amount = 20000;
         const block = chain.mineBlock([
           client.mineTokens(amount, wallet_1),
@@ -675,11 +680,12 @@ describe('[CityCoin]', () => {
         block.receipts[0].result.expectOk().expectBool(true);
 
         // check number of events
-        assertEquals(block.receipts[0].events.length, 1)
+        assertEquals(block.receipts[0].events.length, 2)
 
         // check event details
+        // TODO test 30% to city wallet value as well
         block.receipts[0].events.expectSTXTransferEvent(
-          amount,
+          amount * SPLIT_STACKER_PERCENTAGE,
           wallet_1.address,
           client.getContractAddress()
         );
@@ -782,7 +788,7 @@ describe('[CityCoin]', () => {
 
         // check event details
         receipt.events.expectSTXTransferEvent(
-          minerCommitment * 2,
+          minerCommitment * 2 * SPLIT_STACKER_PERCENTAGE,
           client.getContractAddress(),
           stacker.address
         )
