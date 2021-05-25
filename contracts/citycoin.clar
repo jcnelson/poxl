@@ -143,7 +143,10 @@
 ;; TO DO: think about adding amount to miners map.
 (define-map block-commit
     { stacks-block-height: uint }
-    { amount: uint }
+    { amount: uint, 
+      amount-to-stackers: uint, 
+      amount-to-city: uint 
+    }
 )
 
 (define-map miners-block-commitment
@@ -302,9 +305,19 @@
         { miners: (list ), claimed: false })
 )
 
-;; Given stacks-block-height, return how many uSTX were committed in total.
+;; Given stacks-block-height, return how many uSTX were committed in total
 (define-read-only (get-block-commit-total (stacks-block-height uint))
     (default-to u0 (get amount (map-get? block-commit {stacks-block-height: stacks-block-height})))
+)
+
+;; Given stacks-block-height, return how many uSTX were committed to stackers
+(define-read-only (get-block-commit-to-stackers (stacks-block-height uint))
+    (default-to u0 (get amount-to-stackers (map-get? block-commit {stacks-block-height: stacks-block-height})))
+)
+
+;; Given stacks-block-height, return how many uSTX were committed to the city
+(define-read-only (get-block-commit-to-city (stacks-block-height uint))
+    (default-to u0 (get amount-to-city (map-get? block-commit {stacks-block-height: stacks-block-height})))
 )
 
 ;; Inner fold function to determine which miner won the token batch at a particular Stacks block height, given a sampling value.
@@ -502,7 +515,7 @@
 )
 
 ;; Mark a miner as having mined in a given Stacks block and committed the given uSTX.
-(define-private (set-tokens-mined (miner-id principal) (stacks-bh uint) (commit-ustx uint))
+(define-private (set-tokens-mined (miner-id principal) (stacks-bh uint) (commit-ustx uint) (commit-ustx-to-stackers uint) (commit-ustx-to-city uint))
     (let (
         (miner-rec (get-block-miner-rec-or-default stacks-bh))
         (rc (unwrap! (get-reward-cycle stacks-bh)
@@ -527,9 +540,14 @@
             { reward-cycle: rc }
             { total-ustx: (+ commit-ustx (get total-ustx tokens-mined)), total-tokens: (get total-tokens tokens-mined) }
         )
+
         (map-set block-commit
             { stacks-block-height: stacks-bh }
-            { amount: (+ commit-ustx (get-block-commit-total stacks-bh)) }
+            {
+                amount: (+ commit-ustx (get-block-commit-total stacks-bh)),
+                amount-to-stackers: (+ commit-ustx-to-stackers (get-block-commit-to-stackers stacks-bh)),
+                amount-to-city: (+ commit-ustx-to-city (get-block-commit-to-city stacks-bh))
+            }
         )
 
         (ok true)
@@ -625,15 +643,32 @@
 (define-public (mine-tokens (amount-ustx uint))
     (let (
         (miner-rec (get-block-miner-rec-or-default block-height))
+        (rc (unwrap! (get-reward-cycle block-height)
+            (err ERR-STACKING-NOT-AVAILABLE)))
+        (total-stacked (get total-tokens (map-get? tokens-per-cycle { reward-cycle: rc })))
+        (total-stacked-ustx (default-to u0 total-stacked))
+        (stacked-something (not (is-eq total-stacked-ustx u0)))
+        (amount-ustx-to-stacker
+            (if stacked-something
+                (/ (* SPLIT_STACKER_PERCENTAGE amount-ustx) u100)
+                u0
+            )
+        )
+        (amount-ustx-to-city
+            (if stacked-something
+                (/ (* SPLIT_CITY_PERCENTAGE amount-ustx) u100)
+                amount-ustx
+            )
+        )
     )
+
     (begin
         (try! (can-mine-tokens tx-sender block-height amount-ustx miner-rec))
 
-        ;; split needs to happen here too?
-        (try! (set-tokens-mined tx-sender block-height (/ (* SPLIT_STACKER_PERCENTAGE amount-ustx) u100)))
+        (try! (set-tokens-mined tx-sender block-height amount-ustx amount-ustx-to-stacker amount-ustx-to-city))
 
         ;; check if stacking is active
-        (if (is-some (get-reward-cycle block-height))
+        (if stacked-something
             ;; transfer with split if active
             (begin 
                 (unwrap-panic (stx-transfer? (/ (* SPLIT_STACKER_PERCENTAGE amount-ustx) u100) tx-sender (as-contract tx-sender)))
