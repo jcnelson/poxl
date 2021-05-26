@@ -24,6 +24,12 @@
 (define-constant REWARD-CYCLE-LENGTH u500)          ;; how long a reward cycle is
 (define-constant MAX-REWARD-CYCLES u32)             ;; how many reward cycles a Stacker can Stack their tokens for
 
+;; Define city wallet and mining split
+(define-constant CITY_CUSTODIED_WALLET 'ST31270FK25JBGCRWYT7RNK90E946R8VW6SZYSQR6)  ;; the custodied wallet address for the city
+(define-data-var city-wallet principal CITY_CUSTODIED_WALLET)  ;; variable used in place of constant for easier testing
+(define-constant SPLIT_STACKER_PERCENTAGE u70)                 ;; 70% split to stackers of the CityCoin
+(define-constant SPLIT_CITY_PERCENTAGE u30)                    ;; 30% split to custodied wallet address for the city
+
 ;; NOTE: must be as long as MAX-REWARD-CYCLES
 (define-constant REWARD-CYCLE-INDEXES (list u0 u1 u2 u3 u4 u5 u6 u7 u8 u9 u10 u11 u12 u13 u14 u15 u16 u17 u18 u19 u20 u21 u22 u23 u24 u25 u26 u27 u28 u29 u30 u31))
 
@@ -171,7 +177,10 @@
 ;; TO DO: think about adding amount to mined-blocks map.
 (define-map block-commit
     { stacks-block-height: uint }
-    { amount: uint }
+    { amount: uint, 
+      amount-to-stackers: uint, 
+      amount-to-city: uint 
+    }
 )
 
 (define-map miners-block-commitment
@@ -334,9 +343,19 @@
         })
 )
 
-;; Given stacks-block-height, return how many uSTX were committed in total.
+;; Given stacks-block-height, return how many uSTX were committed in total
 (define-read-only (get-block-commit-total (stacks-block-height uint))
     (default-to u0 (get amount (map-get? block-commit {stacks-block-height: stacks-block-height})))
+)
+
+;; Given stacks-block-height, return how many uSTX were committed to stackers
+(define-read-only (get-block-commit-to-stackers (stacks-block-height uint))
+    (default-to u0 (get amount-to-stackers (map-get? block-commit {stacks-block-height: stacks-block-height})))
+)
+
+;; Given stacks-block-height, return how many uSTX were committed to the city
+(define-read-only (get-block-commit-to-city (stacks-block-height uint))
+    (default-to u0 (get amount-to-city (map-get? block-commit {stacks-block-height: stacks-block-height})))
 )
 
 ;; Inner fold function to determine which miner won the token batch at a particular Stacks block height, given a sampling value.
@@ -548,7 +567,7 @@
 )
 
 ;; Mark a miner as having mined in a given Stacks block and committed the given uSTX.
-(define-private (set-tokens-mined (miner principal) (stacks-bh uint) (commit-ustx uint))
+(define-private (set-tokens-mined (miner principal) (stacks-bh uint) (commit-ustx uint) (commit-ustx-to-stackers uint) (commit-ustx-to-city uint))
     (let (
         (miner-id (unwrap! (get-miner-id miner) (err ERR-MINER-ID-NOT-FOUND)))
 
@@ -636,11 +655,16 @@
         )
         (map-set tokens-per-cycle
             { reward-cycle: reward-cycle }
-            { total-ustx: (+ commit-ustx (get total-ustx tokens-mined)), total-tokens: (get total-tokens tokens-mined) }
+            { total-ustx: (+ commit-ustx-to-stackers (get total-ustx tokens-mined)), total-tokens: (get total-tokens tokens-mined) }
         )
+
         (map-set block-commit
             { stacks-block-height: stacks-bh }
-            { amount: (+ commit-ustx (get-block-commit-total stacks-bh)) }
+            {
+                amount: (+ commit-ustx (get-block-commit-total stacks-bh)),
+                amount-to-stackers: (+ commit-ustx-to-stackers (get-block-commit-to-stackers stacks-bh)),
+                amount-to-city: (+ commit-ustx-to-city (get-block-commit-to-city stacks-bh))
+            }
         )
 
         (ok true)
@@ -734,15 +758,46 @@
 ;; wait for a token maturity window in order to obtain the tokens.  Once that window passes, they can get the tokens.
 ;; This ensures that no one knows the VRF seed that will be used to pick the winner.
 (define-public (mine-tokens (amount-ustx uint))
-    (let
-        (
-            (miner-id (get-or-create-miner-id tx-sender))
+    (let (
+        (miner-id (get-or-create-miner-id tx-sender))
+
+        (rc (unwrap! (get-reward-cycle block-height)
+            (err ERR-STACKING-NOT-AVAILABLE)))
+        (total-stacked (get total-tokens (map-get? tokens-per-cycle { reward-cycle: rc })))
+        (total-stacked-ustx (default-to u0 total-stacked))
+        (stacked-something (not (is-eq total-stacked-ustx u0)))
+        (amount-ustx-to-stacker
+            (if stacked-something
+                (/ (* SPLIT_STACKER_PERCENTAGE amount-ustx) u100)
+                u0
+            )
         )
-        (try! (can-mine-tokens tx-sender block-height amount-ustx))
-        (try! (set-tokens-mined tx-sender block-height amount-ustx))
-        (unwrap-panic (stx-transfer? amount-ustx tx-sender (as-contract tx-sender)))
-        (ok true)
+        (amount-ustx-to-city
+            (if stacked-something
+                (/ (* SPLIT_CITY_PERCENTAGE amount-ustx) u100)
+                amount-ustx
+            )
+        )
     )
+
+    (begin
+        (try! (can-mine-tokens tx-sender block-height amount-ustx))
+
+        (try! (set-tokens-mined tx-sender block-height amount-ustx amount-ustx-to-stacker amount-ustx-to-city))
+
+        ;; check if stacking is active
+        (if stacked-something
+            ;; transfer with split if active
+            (begin
+                (unwrap-panic (stx-transfer? amount-ustx-to-stacker tx-sender (as-contract tx-sender)))
+                (unwrap-panic (stx-transfer? amount-ustx-to-city tx-sender (var-get city-wallet)))
+            )
+            ;; transfer to custodied wallet if not active
+            (unwrap-panic (stx-transfer? amount-ustx-to-city tx-sender (var-get city-wallet)))
+        )
+
+        (ok true)
+    ))
 )
 
 ;; Claim the block reward.  This mints and transfers out a miner's tokens if it is indeed the block winner for

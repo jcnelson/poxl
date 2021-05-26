@@ -12,7 +12,7 @@
         (
             (miner-id (get-or-create-miner-id who))
         )
-        (try! (set-tokens-mined who stacks-block-height amount-ustx))
+        (try! (set-tokens-mined who stacks-block-height amount-ustx u0 u0))
         (ok true)
     )
 )
@@ -207,6 +207,15 @@
     (try! (fake-mine-tokens 'SP3W7KGS778WNHT4PJSMCCTDVXVATT1TP5ZV79D72 block-height u127))
     (try! (fake-mine-tokens 'SP3QDEAD3RRRVG1C3A3AZ82VPND1ARX4C4WYEFFPN block-height u128))
 
+    (ok true)
+  )
+)
+
+(define-public (set-city-wallet (wallet-address principal))
+  ;; specify city wallet address for testing, allows for a test wallet
+  ;; to be used in place of specific city wallet defined in constant
+  (begin
+    (var-set city-wallet wallet-address)
     (ok true)
   )
 )

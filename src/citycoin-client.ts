@@ -28,6 +28,10 @@ export const MINING_HALVING_BLOCKS = 210000;
 export const MINING_ACTIVATION_DELAY = 100;
 export const FIRST_STACKING_BLOCK = 1 + MINING_ACTIVATION_DELAY;
 export const REWARD_CYCLE_LENGTH = 500;
+export const CITY_CUSTODIED_WALLET = "STRKQ271SRDWB166VNV4FMXPH3X35YPQ5N192EWN";
+export const SPLIT_STACKER_PERCENTAGE = 0.7;
+export const SPLIT_CITY_PERCENTAGE = 0.3;
+
 export class CityCoinClient {
   contractName: string = "citycoin"
   chain: Chain;
@@ -105,6 +109,24 @@ export class CityCoinClient {
   getBlockCommitTotal(stacksBlockHeight: number): Result {
     return this.callReadOnlyFn(
       "get-block-commit-total",
+      [
+        types.uint(stacksBlockHeight)
+      ]
+    );
+  }
+
+  getBlockCommitToStackers(stacksBlockHeight: number): Result {
+    return this.callReadOnlyFn(
+      "get-block-commit-to-stackers",
+      [
+        types.uint(stacksBlockHeight)
+      ]
+    );
+  }
+
+  getBlockCommitToCity(stacksBlockHeight: number): Result {
+    return this.callReadOnlyFn(
+      "get-block-commit-to-city",
       [
         types.uint(stacksBlockHeight)
       ]
@@ -282,6 +304,17 @@ export class CityCoinClient {
       this.contractName,
       "register-miner",
       [],
+      sender.address
+    )
+  }
+
+  setCityWallet(sender: Account): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "set-city-wallet",
+      [
+        types.principal(sender.address)
+      ],
       sender.address
     )
   }

@@ -17,7 +17,9 @@ import {
   FIRST_STACKING_BLOCK,
   REWARD_CYCLE_LENGTH,
   MINING_ACTIVATION_DELAY,
-  MINING_HALVING_BLOCKS
+  MINING_HALVING_BLOCKS,
+  SPLIT_STACKER_PERCENTAGE,
+  SPLIT_CITY_PERCENTAGE
 } from "../src/citycoin-client.ts"
 
 describe('[CityCoin]', () => {
@@ -31,7 +33,6 @@ describe('[CityCoin]', () => {
   let wallet_4: Account;
   let wallet_5: Account;
   let wallet_6: Account;
-
 
   function setupCleanEnv() {
     (Deno as any).core.ops();
@@ -122,16 +123,17 @@ describe('[CityCoin]', () => {
         setupCleanEnv();
       })
 
-      it("should return 0", () => {
+      it("should return 0 if nobody mined", () => {
         const result = client.getTotalSupply().result;
 
         result.expectOk().expectUint(0);
       });
 
-      it("should return 100", () => {
+      it("should return 0 if stackers are not stacking", () => {
         chain.mineBlock([
           client.registerMiner(wallet_1)
         ]);
+
         // skip mining activation delay period
         chain.mineEmptyBlock(MINING_ACTIVATION_DELAY)
 
@@ -141,7 +143,35 @@ describe('[CityCoin]', () => {
 
         const result = client.getTotalSupply().result;
 
-        result.expectOk().expectUint(100);
+        result.expectOk().expectUint(0);
+      });
+
+      // returns 70% of commitment when stackers are stacking
+      it("should return 100 * SPLIT_STACKER_PERCENTAGE when stackers are stacking", () => {
+        chain.mineBlock([
+          client.registerMiner(wallet_1)
+        ]);
+        chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
+        const startStacksHeight = 105;
+
+        chain.mineBlock([
+          client.ftMint(100, wallet_1),
+          client.stackTokens(100, startStacksHeight, 1, wallet_1)
+        ]);
+
+        chain.mineBlock([
+          client.stackTokens(100, startStacksHeight, 1, wallet_1)
+        ]);
+
+        chain.mineEmptyBlock(REWARD_CYCLE_LENGTH + 1)
+
+        chain.mineBlock([
+          client.mineTokens(100, wallet_1)
+        ]);
+
+        const result = client.getTotalSupply().result;
+
+        result.expectOk().expectUint(100 * SPLIT_STACKER_PERCENTAGE);
       });
     });
 
@@ -232,6 +262,122 @@ describe('[CityCoin]', () => {
 
         result.expectUint(100);
       });
+    });
+
+    describe("get-block-commit-to-stackers()", () => {
+      beforeEach(() => {
+        setupCleanEnv();
+      });
+
+      it("should return 0 when miners list is empty", () => {
+        const result = client.getBlockCommitToStackers(1).result;
+        result.expectUint(0);
+      })
+
+      it("should return 0 when no stackers are stacking", () => {
+        chain.mineBlock([
+          client.registerMiner(wallet_1)
+        ]);
+        
+        const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
+        
+        chain.mineBlock([
+          client.mineTokens(30, wallet_1),
+          client.mineTokens(70, wallet_2)
+        ]);
+
+        const result = client.getBlockCommitToStackers(block.block_height).result;
+
+        result.expectUint(0);
+      });
+
+      it("should return 100 * SPLIT_STACKER_PERCENTAGE when stackers are stacking", () => {
+
+        chain.mineBlock([
+          client.registerMiner(wallet_1)
+        ]);
+
+        chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
+
+        // stack in cycle 1 while cycle 0 is active
+        chain.mineBlock([
+          client.ftMint(100, wallet_2),
+          client.stackTokens(100, 105, 1, wallet_2)
+        ]);
+
+        // progress into reward cycle 1
+        chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
+
+        // mine during cycle 1, which will be split
+        const block = chain.mineBlock([
+          client.mineTokens(30, wallet_1),
+          client.mineTokens(70, wallet_2)
+        ]);
+
+        // check that split stacker commit was stored correctly in map
+        const result = client.getBlockCommitToStackers(block.height - 1).result;
+
+        result.expectUint(100 * SPLIT_STACKER_PERCENTAGE);
+      });
+
+    });
+
+    describe("get-block-commit-to-city()", () => {
+      beforeEach(() => {
+        setupCleanEnv();
+      });
+
+      it("should return 0 when miners list is empty", () => {
+        const result = client.getBlockCommitToCity(1).result;
+        result.expectUint(0);
+      })
+
+      it("should return 100 when no stackers are stacking", () => {
+        chain.mineBlock([
+          client.registerMiner(wallet_1)
+        ]);
+        
+        const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
+        
+        chain.mineBlock([
+          client.mineTokens(30, wallet_1),
+          client.mineTokens(70, wallet_2)
+        ]);
+
+        const result = client.getBlockCommitToCity(block.block_height).result;
+
+        result.expectUint(100);
+      });
+
+      it("should return 100 * SPLIT_CITY_PERCENTAGE when stackers are stacking", () => {
+
+        chain.mineBlock([
+          client.registerMiner(wallet_1)
+        ]);
+
+        chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
+
+        // stack in cycle 1 while cycle 0 is active
+        chain.mineBlock([
+          client.ftMint(100, wallet_2),
+          client.stackTokens(100, 105, 1, wallet_2)
+        ]);
+
+        // progress into reward cycle 1
+        chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
+
+        // mine during cycle 1, which will be split
+        const block = chain.mineBlock([
+          client.mineTokens(30, wallet_1),
+          client.mineTokens(70, wallet_2)
+        ]);
+
+        // check that split stacker commit was stored correctly in map
+        const result = client.getBlockCommitToCity(block.height - 1).result;
+
+        result.expectUint(100 * SPLIT_CITY_PERCENTAGE);
+      });
+
     });
 
     describe("getBlockWinner()", () => {
@@ -540,7 +686,7 @@ describe('[CityCoin]', () => {
         result.expectUint(0);
       });
 
-      it("returns 1000 if miners committed only 1000ustx and there is only one stacker", () => {
+      it("returns 1000 * SPLIT_STACKER_PERCENTAGE if miners committed only 1000ustx and there is only one stacker", () => {
         setupCleanEnv();
         chain.mineBlock([
           client.registerMiner(wallet_3)
@@ -571,7 +717,7 @@ describe('[CityCoin]', () => {
 
         const result = client.getEntitledStackingReward(stacker, targetRewardCycle, block.block_height).result;
 
-        result.expectUint(minerCommitment);
+        result.expectUint(minerCommitment * SPLIT_STACKER_PERCENTAGE);
       });
     });
 
@@ -717,10 +863,15 @@ describe('[CityCoin]', () => {
         assertEquals(receipt_err.events.length, 0)
       })
 
-      it("succeeds and causes one stx_transfer_event", () => {
+      it("succeeds and causes one stx_transfer_event to city-wallet if no stackers stacking", () => {
         const amount = 20000;
+
+        chain.mineBlock([
+          client.setCityWallet(wallet_6)
+        ])
+
         const block = chain.mineBlock([
-          client.mineTokens(amount, wallet_1),
+          client.mineTokens(amount, wallet_1)
         ]);
 
         // check return value
@@ -733,7 +884,48 @@ describe('[CityCoin]', () => {
         block.receipts[0].events.expectSTXTransferEvent(
           amount,
           wallet_1.address,
+          wallet_6.address
+        );
+      });
+
+      // modified to two events since 70% to stackers, 30% to city
+      it("succeeds and causes two stx_transfer_events if stackers are stacking, one to stackers, one to city", () => {      
+
+        const amount = 20000;
+        const startStacksHeight = 105;
+
+        chain.mineBlock([
+          client.setCityWallet(wallet_6)
+        ])
+
+        chain.mineBlock([
+          client.ftMint(100, wallet_1),
+          client.stackTokens(100, startStacksHeight, 1, wallet_1)
+        ]);
+
+        chain.mineEmptyBlock(REWARD_CYCLE_LENGTH + 1)
+
+        const block = chain.mineBlock([
+          client.mineTokens(amount, wallet_1)
+        ]);
+
+        // check return value
+        block.receipts[0].result.expectOk().expectBool(true);
+
+        // check number of events
+        assertEquals(block.receipts[0].events.length, 2)
+
+        // check event details
+        const events = block.receipts[0].events;
+        events.expectSTXTransferEvent(
+          amount * SPLIT_STACKER_PERCENTAGE,
+          wallet_1.address,
           client.getContractAddress()
+        );
+        events.expectSTXTransferEvent(
+          amount * SPLIT_CITY_PERCENTAGE,
+          wallet_1.address,
+          wallet_6.address
         );
       });
     });
@@ -834,7 +1026,7 @@ describe('[CityCoin]', () => {
 
         // check event details
         receipt.events.expectSTXTransferEvent(
-          minerCommitment * 2,
+          minerCommitment * 2 * SPLIT_STACKER_PERCENTAGE,
           client.getContractAddress(),
           stacker.address
         )
