@@ -300,25 +300,22 @@ describe('[CityCoin]', () => {
         chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
 
         // stack in cycle 1 while cycle 0 is active
-        // block height: 103
-        console.info(chain.mineBlock([
+        chain.mineBlock([
           client.ftMint(100, wallet_2),
           client.stackTokens(100, 105, 1, wallet_2)
-        ]));
+        ]);
 
         // progress into reward cycle 1
-        // block height: 603
-        console.info(chain.mineEmptyBlock(REWARD_CYCLE_LENGTH));
+        chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
 
-        // mine during cycle 1, which should be split
-        // block height: 604
-        console.info(chain.mineBlock([
+        // mine during cycle 1, which will be split
+        const block = chain.mineBlock([
           client.mineTokens(30, wallet_1),
           client.mineTokens(70, wallet_2)
-        ]));
+        ]);
 
-        // WHY DOES THIS WORK ??
-        const result = client.getBlockCommitToStackers(603).result;
+        // check that split stacker commit was stored correctly in map
+        const result = client.getBlockCommitToStackers(block.height - 1).result;
 
         result.expectUint(100 * SPLIT_STACKER_PERCENTAGE);
       });
@@ -326,7 +323,7 @@ describe('[CityCoin]', () => {
     });
 
     describe("get-block-commit-to-city()", () => {
-      beforeAll(() => {
+      beforeEach(() => {
         setupCleanEnv();
       });
 
@@ -353,18 +350,30 @@ describe('[CityCoin]', () => {
       });
 
       it("should return 100 * SPLIT_CITY_PERCENTAGE when stackers are stacking", () => {
+
         chain.mineBlock([
           client.registerMiner(wallet_1)
         ]);
-        
-        const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
-        
+
+        chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
+
+        // stack in cycle 1 while cycle 0 is active
         chain.mineBlock([
+          client.ftMint(100, wallet_2),
+          client.stackTokens(100, 105, 1, wallet_2)
+        ]);
+
+        // progress into reward cycle 1
+        chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
+
+        // mine during cycle 1, which will be split
+        const block = chain.mineBlock([
           client.mineTokens(30, wallet_1),
           client.mineTokens(70, wallet_2)
         ]);
 
-        const result = client.getBlockCommitToCity(block.block_height).result;
+        // check that split stacker commit was stored correctly in map
+        const result = client.getBlockCommitToCity(block.height - 1).result;
 
         result.expectUint(100 * SPLIT_CITY_PERCENTAGE);
       });
