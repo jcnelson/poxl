@@ -538,7 +538,7 @@
         )
         (map-set tokens-per-cycle
             { reward-cycle: rc }
-            { total-ustx: (+ commit-ustx (get total-ustx tokens-mined)), total-tokens: (get total-tokens tokens-mined) }
+            { total-ustx: (+ commit-ustx-to-stackers (get total-ustx tokens-mined)), total-tokens: (get total-tokens tokens-mined) }
         )
 
         (map-set block-commit
