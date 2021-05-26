@@ -18,7 +18,6 @@ import {
   REWARD_CYCLE_LENGTH,
   MINING_ACTIVATION_DELAY,
   MINING_HALVING_BLOCKS,
-  CITY_CUSTODIED_WALLET,
   SPLIT_STACKER_PERCENTAGE,
   SPLIT_CITY_PERCENTAGE
 } from "../src/citycoin-client.ts"
@@ -148,7 +147,7 @@ describe('[CityCoin]', () => {
       });
 
       // returns 70% of commitment when stackers are stacking
-      it("should return 100 * SPLIT_STACKER_PERCENTAGE", () => {
+      it("should return 100 * SPLIT_STACKER_PERCENTAGE when stackers are stacking", () => {
         chain.mineBlock([
           client.registerMiner(wallet_1)
         ]);
@@ -774,7 +773,7 @@ describe('[CityCoin]', () => {
       });
 
       // modified to two events since 70% to stackers, 30% to city
-      it("succeeds and causes two stx_transfer_events if stackers are stacking", () => {      
+      it("succeeds and causes two stx_transfer_events if stackers are stacking, one to stackers, one to city", () => {      
 
         const amount = 20000;
         const startStacksHeight = 105;
