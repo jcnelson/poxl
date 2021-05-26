@@ -264,6 +264,111 @@ describe('[CityCoin]', () => {
       });
     });
 
+    describe("get-block-commit-to-stackers()", () => {
+      beforeEach(() => {
+        setupCleanEnv();
+      });
+
+      it("should return 0 when miners list is empty", () => {
+        const result = client.getBlockCommitToStackers(1).result;
+        result.expectUint(0);
+      })
+
+      it("should return 0 when no stackers are stacking", () => {
+        chain.mineBlock([
+          client.registerMiner(wallet_1)
+        ]);
+        
+        const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
+        
+        chain.mineBlock([
+          client.mineTokens(30, wallet_1),
+          client.mineTokens(70, wallet_2)
+        ]);
+
+        const result = client.getBlockCommitToStackers(block.block_height).result;
+
+        result.expectUint(0);
+      });
+
+      it("should return 100 * SPLIT_STACKER_PERCENTAGE when stackers are stacking", () => {
+
+        chain.mineBlock([
+          client.registerMiner(wallet_1)
+        ]);
+
+        chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
+
+        console.info(chain.mineBlock([
+          client.ftMint(100, wallet_2),
+          client.stackTokens(100, 105, 1, wallet_2)
+        ]));
+
+        console.info(chain.mineBlock([
+          client.mineTokens(30, wallet_1),
+          client.mineTokens(70, wallet_2)
+        ]));
+
+        console.info(chain.mineEmptyBlock(REWARD_CYCLE_LENGTH + 1));
+
+        console.info(chain.mineBlock([
+          client.mineTokens(30, wallet_1),
+          client.mineTokens(70, wallet_2)
+        ]));
+
+        const result = client.getBlockCommitToStackers(605).result;
+
+        result.expectUint(100 * SPLIT_STACKER_PERCENTAGE);
+      });
+
+    });
+
+    describe("get-block-commit-to-city()", () => {
+      beforeAll(() => {
+        setupCleanEnv();
+      });
+
+      it("should return 0 when miners list is empty", () => {
+        const result = client.getBlockCommitToCity(1).result;
+        result.expectUint(0);
+      })
+
+      it("should return 100 when no stackers are stacking", () => {
+        chain.mineBlock([
+          client.registerMiner(wallet_1)
+        ]);
+        
+        const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
+        
+        chain.mineBlock([
+          client.mineTokens(30, wallet_1),
+          client.mineTokens(70, wallet_2)
+        ]);
+
+        const result = client.getBlockCommitToCity(block.block_height).result;
+
+        result.expectUint(100);
+      });
+
+      it("should return 100 * SPLIT_CITY_PERCENTAGE when stackers are stacking", () => {
+        chain.mineBlock([
+          client.registerMiner(wallet_1)
+        ]);
+        
+        const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
+        
+        chain.mineBlock([
+          client.mineTokens(30, wallet_1),
+          client.mineTokens(70, wallet_2)
+        ]);
+
+        const result = client.getBlockCommitToCity(block.block_height).result;
+
+        result.expectUint(100 * SPLIT_CITY_PERCENTAGE);
+      });
+
+    });
+
     describe("getBlockWinner()", () => {
       it("should select correct winner", () => {
         setupCleanEnv();

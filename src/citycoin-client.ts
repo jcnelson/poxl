@@ -115,6 +115,24 @@ export class CityCoinClient {
     );
   }
 
+  getBlockCommitToStackers(stacksBlockHeight: number): Result {
+    return this.callReadOnlyFn(
+      "get-block-commit-to-stackers",
+      [
+        types.uint(stacksBlockHeight)
+      ]
+    );
+  }
+
+  getBlockCommitToCity(stacksBlockHeight: number): Result {
+    return this.callReadOnlyFn(
+      "get-block-commit-to-city",
+      [
+        types.uint(stacksBlockHeight)
+      ]
+    );
+  }
+
   getBlockWinner(stacksBlockHeight: number, randomSampleUint: number, miners: MinersList): Result {
     return this.callReadOnlyFn(
       "get-block-winner",
