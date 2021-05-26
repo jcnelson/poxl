@@ -34,8 +34,6 @@ describe('[CityCoin]', () => {
   let wallet_4: Account;
   let wallet_5: Account;
   let wallet_6: Account;
-  let wallet_city: Account;
-
 
   function setupCleanEnv() {
     (Deno as any).core.ops();
@@ -750,10 +748,15 @@ describe('[CityCoin]', () => {
         assertEquals(receipt_err.events.length, 0)
       })
 
-      it("succeeds and causes one stx_transfer_event if no stackers stacking", () => {
+      it("succeeds and causes one stx_transfer_event to city-wallet if no stackers stacking", () => {
         const amount = 20000;
+
+        chain.mineBlock([
+          client.setCityWallet(wallet_6)
+        ])
+
         const block = chain.mineBlock([
-          client.mineTokens(amount, wallet_1),
+          client.mineTokens(amount, wallet_1)
         ]);
 
         // check return value
@@ -764,9 +767,9 @@ describe('[CityCoin]', () => {
 
         // check event details
         block.receipts[0].events.expectSTXTransferEvent(
-          0,
+          amount,
           wallet_1.address,
-          client.getContractAddress()
+          wallet_6.address
         );
       });
 
@@ -775,6 +778,10 @@ describe('[CityCoin]', () => {
 
         const amount = 20000;
         const startStacksHeight = 105;
+
+        chain.mineBlock([
+          client.setCityWallet(wallet_6)
+        ])
 
         chain.mineBlock([
           client.stackTokens(100, startStacksHeight, 1, wallet_1)
@@ -789,11 +796,13 @@ describe('[CityCoin]', () => {
         // check return value
         block.receipts[0].result.expectOk().expectBool(true);
 
+        console.info(block.receipts[0].events);
+        console.info(block.receipts[0].events.length);
+
         // check number of events
         assertEquals(block.receipts[0].events.length, 2)
 
         // check event details
-        // TODO test 30% to city wallet value as well
         block.receipts[0].events.expectSTXTransferEvent(
           amount * SPLIT_STACKER_PERCENTAGE,
           wallet_1.address,
