@@ -16,6 +16,7 @@
 (define-constant ERR-MINER-ALREADY-REGISTERED u12)
 (define-constant ERR-MINING-ACTIVATION-THRESHOLD-REACHED u13)
 (define-constant ERR-MINER-ID-NOT-FOUND u14)
+(define-constant ERR-TO-SMALL-COMMITMENT u15)
 
 
 ;; Tailor to your needs.
@@ -466,20 +467,27 @@
     (let
         (
             (miner-id (unwrap! (get-miner-id miner) (err ERR-MINER-ID-NOT-FOUND)))
+            (miner-rec (get-block-miner-rec-or-default stacks-bh))
+            (least-commitment-amount (default-to u0 (get amount-ustx (get least-commitment miner-rec))))
+        )        
+        (if (and (is-eq u128 (len (get miners miner-rec))) (<= amount-ustx least-commitment-amount))
+            (err ERR-TO-SMALL-COMMITMENT)
+            (begin
+                (asserts! (is-some (get-reward-cycle stacks-bh))
+                    (err ERR-STACKING-NOT-AVAILABLE))
+
+                (asserts! (not (has-mined miner-id stacks-bh))
+                    (err ERR-ALREADY-MINED))
+
+                (asserts! (> amount-ustx u0)
+                    (err ERR-CANNOT-MINE))
+
+                (asserts! (>= (stx-get-balance miner) amount-ustx)
+                    (err ERR-INSUFFICIENT-BALANCE))
+
+                (ok true)
+            )
         )
-        (asserts! (is-some (get-reward-cycle stacks-bh))
-            (err ERR-STACKING-NOT-AVAILABLE))
-
-        (asserts! (not (has-mined miner-id stacks-bh))
-            (err ERR-ALREADY-MINED))
-
-        (asserts! (> amount-ustx u0)
-            (err ERR-CANNOT-MINE))
-
-        (asserts! (>= (stx-get-balance miner) amount-ustx)
-            (err ERR-INSUFFICIENT-BALANCE))
-
-        (ok true)
     )
 )
 

@@ -78,7 +78,7 @@
     (try! (fake-mine-tokens 'SPBGS5AACHW8M7W8QEKSBA3241TTBTK3JZ9Z36ZK block-height u16))
     (try! (fake-mine-tokens 'SP4MKYT1P8X8ZT2ECG6X9TWBBMHDZMYHHH529C0Q block-height u17))
     (try! (fake-mine-tokens 'SPGJM94X65H3DN49VEQRQQT454R4EBGGZ9DD880H block-height u18))
-    (try! (fake-mine-tokens 'SP1GYBXAJSEF8SY0ERKA068J93E3EGNTXHR98MM5P block-height u1))
+    (try! (fake-mine-tokens 'SP1GYBXAJSEF8SY0ERKA068J93E3EGNTXHR98MM5P block-height u2))
     (try! (fake-mine-tokens 'SP3AWJXN3R8JFSNWFCXR3HND5R0Z98271ESDJGJ9 block-height u19))
     (try! (fake-mine-tokens 'SP2M85H4NNNPQB0Y7GHT3K5EHWMRZWTHF2QAY1W69 block-height u2))
     (try! (fake-mine-tokens 'SP1SKBHY382YBAM9YCZ384ZFC3ZRMS6MBM94EQZZV block-height u20))
