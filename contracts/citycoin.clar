@@ -23,7 +23,7 @@
 (define-constant MAX-REWARD-CYCLES u32)             ;; how many reward cycles a Stacker can Stack their tokens for
 
 ;; Define city wallet and mining split
-(define-constant CITY_CUSTODIED_WALLET 'STRKQ271SRDWB166VNV4FMXPH3X35YPQ5N192EWN)  ;; the custodied wallet address for the city
+(define-constant CITY_CUSTODIED_WALLET 'ST31270FK25JBGCRWYT7RNK90E946R8VW6SZYSQR6)  ;; the custodied wallet address for the city
 (define-data-var city-wallet principal CITY_CUSTODIED_WALLET)  ;; variable used in place of constant for easier testing
 (define-constant SPLIT_STACKER_PERCENTAGE u70)                 ;; 70% split to stackers of the CityCoin
 (define-constant SPLIT_CITY_PERCENTAGE u30)                    ;; 30% split to custodied wallet address for the city
