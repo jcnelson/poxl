@@ -671,12 +671,12 @@
         ;; check if stacking is active
         (if stacked-something
             ;; transfer with split if active
-            (begin 
-                (unwrap-panic (stx-transfer? (/ (* SPLIT_STACKER_PERCENTAGE amount-ustx) u100) tx-sender (as-contract tx-sender)))
-                (unwrap-panic (stx-transfer? (/ (* SPLIT_CITY_PERCENTAGE amount-ustx) u100) tx-sender (var-get city-wallet)))
+            (begin
+                (unwrap-panic (stx-transfer? amount-ustx-to-stacker tx-sender (as-contract tx-sender)))
+                (unwrap-panic (stx-transfer? amount-ustx-to-city tx-sender (var-get city-wallet)))
             )
             ;; transfer to custodied wallet if not active
-            (unwrap-panic (stx-transfer? amount-ustx tx-sender (var-get city-wallet)))
+            (unwrap-panic (stx-transfer? amount-ustx-to-city tx-sender (var-get city-wallet)))
         )
 
         (ok true)
