@@ -784,6 +784,7 @@ describe('[CityCoin]', () => {
         ])
 
         chain.mineBlock([
+          client.ftMint(100, wallet_1),
           client.stackTokens(100, startStacksHeight, 1, wallet_1)
         ]);
 
@@ -796,17 +797,20 @@ describe('[CityCoin]', () => {
         // check return value
         block.receipts[0].result.expectOk().expectBool(true);
 
-        console.info(block.receipts[0].events);
-        console.info(block.receipts[0].events.length);
-
         // check number of events
         assertEquals(block.receipts[0].events.length, 2)
 
         // check event details
-        block.receipts[0].events.expectSTXTransferEvent(
+        const events = block.receipts[0].events;
+        events.expectSTXTransferEvent(
           amount * SPLIT_STACKER_PERCENTAGE,
           wallet_1.address,
           client.getContractAddress()
+        );
+        events.expectSTXTransferEvent(
+          amount * SPLIT_CITY_PERCENTAGE,
+          wallet_1.address,
+          wallet_6.address
         );
       });
     });
