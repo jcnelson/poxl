@@ -299,24 +299,26 @@ describe('[CityCoin]', () => {
 
         chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
 
+        // stack in cycle 1 while cycle 0 is active
+        // block height: 103
         console.info(chain.mineBlock([
           client.ftMint(100, wallet_2),
           client.stackTokens(100, 105, 1, wallet_2)
         ]));
 
+        // progress into reward cycle 1
+        // block height: 603
+        console.info(chain.mineEmptyBlock(REWARD_CYCLE_LENGTH));
+
+        // mine during cycle 1, which should be split
+        // block height: 604
         console.info(chain.mineBlock([
           client.mineTokens(30, wallet_1),
           client.mineTokens(70, wallet_2)
         ]));
 
-        console.info(chain.mineEmptyBlock(REWARD_CYCLE_LENGTH + 1));
-
-        console.info(chain.mineBlock([
-          client.mineTokens(30, wallet_1),
-          client.mineTokens(70, wallet_2)
-        ]));
-
-        const result = client.getBlockCommitToStackers(605).result;
+        // WHY DOES THIS WORK ??
+        const result = client.getBlockCommitToStackers(603).result;
 
         result.expectUint(100 * SPLIT_STACKER_PERCENTAGE);
       });
