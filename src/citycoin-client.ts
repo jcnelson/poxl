@@ -290,6 +290,17 @@ export class CityCoinClient {
     )
   }
 
+  setCityWallet(sender: Account): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "set-city-wallet",
+      [
+        types.principal(sender.address)
+      ],
+      sender.address
+    )
+  }
+
   // SIP-010 functions
 
   transfer(amount: number, from: Account, to: Account, sender: Account): Tx {

@@ -43,3 +43,12 @@
     (ok true)
   )
 )
+
+(define-public (set-city-wallet (wallet-address principal))
+  ;; specify city wallet address for testing, allows for a test wallet
+  ;; to be used in place of specific city wallet defined in constant
+  (begin
+    (var-set city-wallet wallet-address)
+    (ok true)
+  )
+)
