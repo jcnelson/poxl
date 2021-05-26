@@ -394,8 +394,8 @@ export interface MinerCommit {
 
 export class MinersList extends Array<MinerCommit> {
   convert(): string {
-    if (this.length > 32) {
-      throw new Error("Miners list can't have more than 32 elements.")
+    if (this.length > 128) {
+      throw new Error("Miners list can't have more than 128 elements.")
     }
 
     let miners = this.map(minerCommit => {

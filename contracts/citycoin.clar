@@ -138,7 +138,7 @@
 (define-map mined-blocks
     { stacks-block-height: uint }
     {
-        miners: (list 32 { miner-id: uint, amount-ustx: uint }),
+        miners: (list 128 { miner-id: uint, amount-ustx: uint }),
         claimed: bool,
         least-commitment: (optional { miner-id: uint, amount-ustx: uint }),
     }
@@ -384,7 +384,7 @@
 ;; Determine who won a given batch of tokens, given a random sample and a list of miners and commitments.
 ;; The probability that a given miner wins the batch is proportional to how many uSTX it committed out of the 
 ;; sum of commitments for this block.
-(define-read-only (get-block-winner (stacks-bh uint) (random-sample uint) (miners-list (list 32 { miner-id: uint, amount-ustx: uint })))
+(define-read-only (get-block-winner (stacks-bh uint) (random-sample uint) (miners-list (list 128 { miner-id: uint, amount-ustx: uint })))
     (let
         (
             (commit-total (get-block-commit-total stacks-bh))
@@ -411,7 +411,7 @@
                                     (claimer-stacks-block-height uint)
                                     (random-sample uint)
                                     (miners-rec { 
-                                        miners: (list 32 { miner-id: uint, amount-ustx: uint }),
+                                        miners: (list 128 { miner-id: uint, amount-ustx: uint }),
                                         claimed: bool,
                                         least-commitment: (optional { miner-id: uint, amount-ustx: uint }),
                                     })
@@ -581,10 +581,10 @@
         )
 
         (cur-miners (get miners miner-rec))
-        (miners-is-full (is-eq u32 (len cur-miners)))        
+        (miners-is-full (is-eq u128 (len cur-miners)))        
         (new-miners (if miners-is-full 
             cur-miners
-            (unwrap-panic (as-max-len? (append cur-miners { miner-id: miner-id, amount-ustx: commit-ustx }) u32)) 
+            (unwrap-panic (as-max-len? (append cur-miners { miner-id: miner-id, amount-ustx: commit-ustx }) u128)) 
             )
         )
         (cur-least-commitment (get least-commitment miner-rec))
@@ -612,7 +612,7 @@
                         (
                             ;; filter out miner who committed least
                             (new-miners-filtered (filter remove-miner-to-kick-closure new-miners))
-                            (new-miners-final (unwrap-panic (as-max-len? (append new-miners-filtered { miner-id: miner-id, amount-ustx: commit-ustx }) u32)))
+                            (new-miners-final (unwrap-panic (as-max-len? (append new-miners-filtered { miner-id: miner-id, amount-ustx: commit-ustx }) u128)))
                             ;; find new miner who committed least
                             (new-least-commitment-filtered (fold find-least new-miners-final none))
                         )
