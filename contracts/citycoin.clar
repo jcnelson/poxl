@@ -10,7 +10,7 @@
 (define-constant ERR-CANNOT-STACK u6)
 (define-constant ERR-INSUFFICIENT-BALANCE u7)
 (define-constant ERR-ALREADY-MINED u8)
-(define-constant ERR-ROUND-FULL u9)
+(define-constant ERR-ROUND-FULL u9)  ;; deprecated - this error is not used anymore
 (define-constant ERR-NOTHING-TO-REDEEM u10)
 (define-constant ERR-CANNOT-MINE u11)
 (define-constant ERR-MINER-ALREADY-REGISTERED u12)

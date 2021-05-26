@@ -6,6 +6,10 @@
 )
 
 
+(define-public (generate-miner-id (miner principal))
+  (ok (get-or-create-miner-id miner))
+)
+
 
 (define-public (fake-mine-tokens (who principal) (stacks-block-height uint) (amount-ustx uint))
     (let
