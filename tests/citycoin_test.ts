@@ -34,6 +34,7 @@ describe('[CityCoin]', () => {
   let wallet_4: Account;
   let wallet_5: Account;
   let wallet_6: Account;
+  let wallet_city: Account;
 
 
   function setupCleanEnv() {
@@ -125,19 +126,47 @@ describe('[CityCoin]', () => {
         setupCleanEnv();
       })
 
-      it("should return 0", () => {
+      it("should return 0 if nobody mined", () => {
         const result = client.getTotalSupply().result;
 
         result.expectOk().expectUint(0);
       });
 
-      // returns 70% of commitment when stacking is active
+      it("should return 0 if stackers are not stacking", () => {
+        chain.mineBlock([
+          client.registerMiner(wallet_1)
+        ]);
+
+        // skip mining activation delay period
+        chain.mineEmptyBlock(MINING_ACTIVATION_DELAY)
+
+        chain.mineBlock([
+          client.mineTokens(100, wallet_1)
+        ]);
+
+        const result = client.getTotalSupply().result;
+
+        result.expectOk().expectUint(0);
+      });
+
+      // returns 70% of commitment when stackers are stacking
       it("should return 100 * SPLIT_STACKER_PERCENTAGE", () => {
         chain.mineBlock([
           client.registerMiner(wallet_1)
         ]);
-        // skip mining activation delay period
-        chain.mineEmptyBlock(MINING_ACTIVATION_DELAY)
+        chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
+        const startStacksHeight = 105;
+
+        chain.mineBlock([
+          client.ftMint(100, wallet_1),
+          client.stackTokens(100, startStacksHeight, 1, wallet_1)
+        ]);
+
+        chain.mineBlock([
+          client.stackTokens(100, startStacksHeight, 1, wallet_1)
+        ]);
+
+        chain.mineEmptyBlock(REWARD_CYCLE_LENGTH + 1)
 
         chain.mineBlock([
           client.mineTokens(100, wallet_1)
@@ -721,11 +750,40 @@ describe('[CityCoin]', () => {
         assertEquals(receipt_err.events.length, 0)
       })
 
-      // modified to two events since 70% to stackers, 30% to city
-      it("succeeds and causes two stx_transfer_events", () => {
+      it("succeeds and causes one stx_transfer_event if no stackers stacking", () => {
         const amount = 20000;
         const block = chain.mineBlock([
           client.mineTokens(amount, wallet_1),
+        ]);
+
+        // check return value
+        block.receipts[0].result.expectOk().expectBool(true);
+
+        // check number of events
+        assertEquals(block.receipts[0].events.length, 1)
+
+        // check event details
+        block.receipts[0].events.expectSTXTransferEvent(
+          0,
+          wallet_1.address,
+          client.getContractAddress()
+        );
+      });
+
+      // modified to two events since 70% to stackers, 30% to city
+      it("succeeds and causes two stx_transfer_events if stackers are stacking", () => {      
+
+        const amount = 20000;
+        const startStacksHeight = 105;
+
+        chain.mineBlock([
+          client.stackTokens(100, startStacksHeight, 1, wallet_1)
+        ]);
+
+        chain.mineEmptyBlock(REWARD_CYCLE_LENGTH + 1)
+
+        const block = chain.mineBlock([
+          client.mineTokens(amount, wallet_1)
         ]);
 
         // check return value
