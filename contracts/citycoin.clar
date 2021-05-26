@@ -15,6 +15,8 @@
 (define-constant ERR-CANNOT-MINE u11)
 (define-constant ERR-MINER-ALREADY-REGISTERED u12)
 (define-constant ERR-MINING-ACTIVATION-THRESHOLD-REACHED u13)
+(define-constant ERR-MINER-ID-NOT-FOUND u14)
+
 
 ;; Tailor to your needs.
 (define-constant TOKEN-REWARD-MATURITY u100)        ;; how long a miner must wait before claiming their minted tokens
@@ -126,25 +128,54 @@
 )
 
 ;; Bind Stacks block height to a list of up to 32 miners (and how much they mined) per block,
-;; and track whether or not the miner has come back to claim their tokens.
-(define-map miners
+;; and track whether or not the miner has come back to claim their tokens and who mined the least.
+(define-map mined-blocks
     { stacks-block-height: uint }
     {
-        miners: (list 32 { miner: principal, amount-ustx: uint }),
+        miners: (list 32 { miner-id: uint, amount-ustx: uint }),
         claimed: bool,
-        least-committed-amount-ustx: uint,
-        miner-committed-least: (optional principal),
+        least-commitment: (optional { miner-id: uint, amount-ustx: uint }),
     }
 )
 
-;; TO DO: think about adding amount to miners map.
+;; variable used to generate unique miner-id's
+(define-data-var miners-nonce uint u0)
+
+;; Maps miner address to uint miner-id
+(define-map miners
+    { miner: principal }
+    { miner-id: uint }
+)
+
+;; Returns miner ID if it has been created
+(define-read-only (get-miner-id (miner principal))
+    (get miner-id (map-get? miners { miner: miner }))
+)
+
+;; Returns miners ID if it has been created, or creates and returns new
+(define-private (get-or-create-miner-id (miner principal))
+    (match (get miner-id (map-get? miners { miner: miner }))
+        value value
+        (let
+            ((new-id (+ u1 (var-get miners-nonce))))
+            (map-set miners
+                { miner: miner }
+                { miner-id: new-id}
+            )
+            (var-set miners-nonce new-id)
+            new-id
+        )
+    )
+)
+
+;; TO DO: think about adding amount to mined-blocks map.
 (define-map block-commit
     { stacks-block-height: uint }
     { amount: uint }
 )
 
 (define-map miners-block-commitment
-    { miner: principal, stacks-block-height: uint }
+    { miner-id: uint, stacks-block-height: uint }
     { committed: bool }
 )
 
@@ -238,7 +269,7 @@
 
 ;; Getter for getting the list of miners and uSTX committments for a given block.
 (define-read-only (get-miners-at-block (stacks-block-ht uint))
-    (match (map-get? miners { stacks-block-height: stacks-block-ht })
+    (match (map-get? mined-blocks { stacks-block-height: stacks-block-ht })
         miner-rec (get miners miner-rec)
         (list )
     )
@@ -294,13 +325,12 @@
 ;; Getter to obtain the list of miners and uSTX commitments at a given Stacks block height,
 ;; OR, an empty such structure.
 (define-private (get-block-miner-rec-or-default (stacks-block-ht uint))
-    (match (map-get? miners { stacks-block-height: stacks-block-ht })
+    (match (map-get? mined-blocks { stacks-block-height: stacks-block-ht })
         rec rec
         { 
             miners: (list ), 
             claimed: false,
-            least-committed-amount-ustx: u0,
-            miner-committed-least: none,
+            least-commitment: none,
         })
 )
 
@@ -310,7 +340,7 @@
 )
 
 ;; Inner fold function to determine which miner won the token batch at a particular Stacks block height, given a sampling value.
-(define-private (get-block-winner-closure (miner-rec { miner: principal, amount-ustx: uint }) (data {sample: uint, sum: uint, winner: (optional { miner: principal, amount-ustx: uint })}))
+(define-private (get-block-winner-closure (miner-rec { miner-id: uint, amount-ustx: uint }) (data {sample: uint, sum: uint, winner: (optional { miner-id: uint, amount-ustx: uint })}))
     (let
         (
             (sum (get sum data))
@@ -335,7 +365,7 @@
 ;; Determine who won a given batch of tokens, given a random sample and a list of miners and commitments.
 ;; The probability that a given miner wins the batch is proportional to how many uSTX it committed out of the 
 ;; sum of commitments for this block.
-(define-read-only (get-block-winner (stacks-bh uint) (random-sample uint) (miners-list (list 32 { miner: principal, amount-ustx: uint })))
+(define-read-only (get-block-winner (stacks-bh uint) (random-sample uint) (miners-list (list 32 { miner-id: uint, amount-ustx: uint })))
     (let
         (
             (commit-total (get-block-commit-total stacks-bh))
@@ -350,9 +380,9 @@
 )
 
 ;; Determine if a given miner has already mined at given block height
-(define-read-only (has-mined (miner principal) (stacks-block-height uint))
+(define-read-only (has-mined (miner-id uint) (stacks-block-height uint))
     (is-some (map-get? miners-block-commitment 
-        { miner: miner, stacks-block-height: stacks-block-height }
+        { miner-id: miner-id, stacks-block-height: stacks-block-height }
     ))
 )
 
@@ -362,13 +392,13 @@
                                     (claimer-stacks-block-height uint)
                                     (random-sample uint)
                                     (miners-rec { 
-                                        miners: (list 32 { miner: principal, amount-ustx: uint }),
+                                        miners: (list 32 { miner-id: uint, amount-ustx: uint }),
                                         claimed: bool,
-                                        least-committed-amount-ustx: uint,
-                                        miner-committed-least: (optional principal),
+                                        least-commitment: (optional { miner-id: uint, amount-ustx: uint }),
                                     })
                                     (current-stacks-block uint))
     (let (
+        (claimer-id (unwrap! (get-miner-id claimer) (err ERR-MINER-ID-NOT-FOUND)))
         (reward-maturity (var-get token-reward-maturity))
         (maximum-stacks-block-height
             (if (>= current-stacks-block reward-maturity)
@@ -381,7 +411,7 @@
                 (err ERR-ALREADY-CLAIMED))
 
             (match (get-block-winner claimer-stacks-block-height random-sample (get miners miners-rec))
-                winner-rec (if (is-eq claimer (get miner winner-rec))
+                winner-rec (if (is-eq claimer-id (get miner-id winner-rec))
                                (ok true)
                                (err ERR-UNAUTHORIZED))
                 (err ERR-NO-WINNER))
@@ -393,21 +423,16 @@
 (define-private (set-tokens-claimed (claimed-stacks-block-height uint))
     (let (
       (miner-rec (unwrap!
-          (map-get? miners { stacks-block-height: claimed-stacks-block-height })
+          (map-get? mined-blocks { stacks-block-height: claimed-stacks-block-height })
           (err ERR-NO-WINNER)))
     )
     (begin
        (asserts! (not (get claimed miner-rec))
           (err ERR-ALREADY-CLAIMED))
 
-       (map-set miners
+       (map-set mined-blocks
            { stacks-block-height: claimed-stacks-block-height }
-           { 
-               miners: (get miners miner-rec),
-               claimed: true,
-               least-committed-amount-ustx: (get least-committed-amount-ustx miner-rec),
-               miner-committed-least: (get miner-committed-least miner-rec),
-           }
+           (merge miner-rec { claimed: true })
        )
        (ok true)))
 )
@@ -418,8 +443,11 @@
 ;; * This miner hasn't mined in this block before
 ;; * The miner is committing a positive number of uSTX
 ;; * The miner has the uSTX to commit
-(define-read-only (can-mine-tokens (miner-id principal) (stacks-bh uint) (amount-ustx uint))
-    (begin
+(define-read-only (can-mine-tokens (miner principal) (stacks-bh uint) (amount-ustx uint))
+    (let
+        (
+            (miner-id (unwrap! (get-miner-id miner) (err ERR-MINER-ID-NOT-FOUND)))
+        )
         (asserts! (is-some (get-reward-cycle stacks-bh))
             (err ERR-STACKING-NOT-AVAILABLE))
 
@@ -429,7 +457,7 @@
         (asserts! (> amount-ustx u0)
             (err ERR-CANNOT-MINE))
 
-        (asserts! (>= (stx-get-balance miner-id) amount-ustx)
+        (asserts! (>= (stx-get-balance miner) amount-ustx)
             (err ERR-INSUFFICIENT-BALANCE))
 
         (ok true)
@@ -498,16 +526,18 @@
 )
 
 ;; Helper variable used only to achieve "dynamic" filter condition in closure function called by `filter`
-(define-data-var miner-to-kick (optional principal) none)
+(define-data-var miner-to-kick (optional {miner-id: uint, amount-ustx: uint}) none)
 
 ;; Inner filter function.
 ;; Returns true if supplied miner in not miner who committed the least and needs to be kicked out of the list
-(define-private (remove-miner-to-kick-closure (miner-data {miner: principal, amount-ustx: uint}))
-    (not (is-eq (get miner miner-data) (unwrap-panic (var-get miner-to-kick))))
+(define-private (remove-miner-to-kick-closure (miner-data {miner-id: uint, amount-ustx: uint}))
+    (not 
+        (is-eq miner-data (unwrap-panic (var-get miner-to-kick)))
+    )
 )
 
-(define-private (find-least (miner-data {miner: principal, amount-ustx: uint}) 
-                            (ret-data (optional {miner: principal, amount-ustx: uint})))
+(define-private (find-least (miner-data {miner-id: uint, amount-ustx: uint}) 
+                            (ret-data (optional {miner-id: uint, amount-ustx: uint})))
     (if (is-some ret-data)
         (if ( < (get amount-ustx miner-data) (default-to u0 (get amount-ustx ret-data)))
             (some miner-data)
@@ -518,88 +548,90 @@
 )
 
 ;; Mark a miner as having mined in a given Stacks block and committed the given uSTX.
-(define-private (set-tokens-mined (miner-id principal) (stacks-bh uint) (commit-ustx uint))
+(define-private (set-tokens-mined (miner principal) (stacks-bh uint) (commit-ustx uint))
     (let (
+        (miner-id (unwrap! (get-miner-id miner) (err ERR-MINER-ID-NOT-FOUND)))
+
         (miner-rec (get-block-miner-rec-or-default stacks-bh))
         
         (reward-cycle (unwrap! (get-reward-cycle stacks-bh)
             (err ERR-STACKING-NOT-AVAILABLE)))
-        (tokens-mined (match (map-get? tokens-per-cycle { reward-cycle: reward-cycle })
-                                rec rec
-                                { total-ustx: u0, total-tokens: u0 }))
+
+        (tokens-mined (default-to { total-ustx: u0, total-tokens: u0 } 
+            (map-get? tokens-per-cycle { reward-cycle: reward-cycle }))
+        )
 
         (cur-miners (get miners miner-rec))
-        (miners-is-full (is-eq u32 (len cur-miners)))
+        (miners-is-full (is-eq u32 (len cur-miners)))        
         (new-miners (if miners-is-full 
             cur-miners
-            (unwrap-panic (as-max-len? (append cur-miners { miner: miner-id, amount-ustx: commit-ustx }) u32)) 
+            (unwrap-panic (as-max-len? (append cur-miners { miner-id: miner-id, amount-ustx: commit-ustx }) u32)) 
             )
         )
-        (least-committed-amount-ustx (get least-committed-amount-ustx miner-rec))
-        (miner-committed-least (get miner-committed-least miner-rec))
+        (cur-least-commitment (get least-commitment miner-rec))
+        (cur-least-commitment-amount (default-to u0 (get amount-ustx cur-least-commitment)))
+
+        (new-least-commitment (some { miner-id: miner-id, amount-ustx: commit-ustx }))
     )
     (begin
-        (if (is-none miner-committed-least)
+        (if (is-none cur-least-commitment)
             ;; add first miner data at defined stacks-block-height
-            (map-set miners
+            (map-set mined-blocks
                 { stacks-block-height: stacks-bh }
                 {
                     miners: new-miners,
                     claimed: false,
-                    least-committed-amount-ustx: commit-ustx,
-                    miner-committed-least: (some miner-id)
+                    least-commitment: new-least-commitment
                 }
             )
             ;; add 2nd and subsequent miner data at defined stacks-block-height
             (if miners-is-full
                 ;; miners list is full and miner who committed least needs to be kick out of it
                 (begin
-                    (var-set miner-to-kick miner-committed-least)
+                    (var-set miner-to-kick cur-least-commitment)
                     (let
                         (
                             ;; filter out miner who committed least
                             (new-miners-filtered (filter remove-miner-to-kick-closure new-miners))
+                            (new-miners-final (unwrap-panic (as-max-len? (append new-miners-filtered { miner-id: miner-id, amount-ustx: commit-ustx }) u32)))
                             ;; find new miner who committed least
-                            (new-least (fold find-least new-miners-filtered none))
+                            (new-least-commitment-filtered (fold find-least new-miners-final none))
                         )
-                        (map-set miners
+                        (map-set mined-blocks
                             { stacks-block-height: stacks-bh }
                             {
-                                miners: (unwrap-panic (as-max-len? (append new-miners-filtered { miner: miner-id, amount-ustx: commit-ustx }) u32)),
+                                miners: new-miners-final,
                                 claimed: false,
-                                least-committed-amount-ustx: (default-to u0 (get amount-ustx new-least)),
-                                miner-committed-least: (get miner new-least)
+                                least-commitment: new-least-commitment-filtered
                             }
                         )
                     )
                 )
                 ;; if list is not full
-                (if (< commit-ustx least-committed-amount-ustx)
+                (if (< commit-ustx cur-least-commitment-amount)
                     ;; miner committed less than any previous miners
-                    (map-set miners
+                    (map-set mined-blocks
                         { stacks-block-height: stacks-bh }
                         {
                             miners: new-miners,
                             claimed: false,
-                            least-committed-amount-ustx: commit-ustx,
-                            miner-committed-least: (some miner-id) 
+                            least-commitment: new-least-commitment
                         }
                     )
                     ;; miner committed same or more than miner who committed least
-                    (map-set miners
+                    (map-set mined-blocks
                         { stacks-block-height: stacks-bh }
                         {
                             miners: new-miners,
                             claimed: false,
-                            least-committed-amount-ustx: least-committed-amount-ustx,
-                            miner-committed-least: miner-committed-least
+                            least-commitment: cur-least-commitment,
                         }
                     )
                 )
             )
         )
         (map-set miners-block-commitment
-            { miner: miner-id, stacks-block-height: stacks-bh}
+            { miner-id: miner-id, stacks-block-height: stacks-bh}
             { committed: true }
         )
         (map-set tokens-per-cycle
@@ -702,12 +734,13 @@
 ;; wait for a token maturity window in order to obtain the tokens.  Once that window passes, they can get the tokens.
 ;; This ensures that no one knows the VRF seed that will be used to pick the winner.
 (define-public (mine-tokens (amount-ustx uint))
-    (begin
+    (let
+        (
+            (miner-id (get-or-create-miner-id tx-sender))
+        )
         (try! (can-mine-tokens tx-sender block-height amount-ustx))
-
         (try! (set-tokens-mined tx-sender block-height amount-ustx))
         (unwrap-panic (stx-transfer? amount-ustx tx-sender (as-contract tx-sender)))
-
         (ok true)
     )
 )
@@ -722,7 +755,7 @@
     (let (
         (random-sample (unwrap! (get-random-uint-at-block (+ mined-stacks-block-ht (var-get token-reward-maturity)))
                         (err ERR-IMMATURE-TOKEN-REWARD)))
-        (miners-rec (unwrap! (map-get? miners { stacks-block-height: mined-stacks-block-ht })
+        (miners-rec (unwrap! (map-get? mined-blocks { stacks-block-height: mined-stacks-block-ht })
                         (err ERR-NO-WINNER)))
     )
     (begin
