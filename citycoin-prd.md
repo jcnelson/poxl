@@ -193,7 +193,7 @@ Additional performance metrics that may be of use to both the user interfaces ab
 
 ### Fair and Open Launch
 
-The launch of a CityCoin will require at least 5 unique wallets to signal activation as part of a function in the smart contract, after which a countdown begins and anyone is eligible to mine the CityCoins within a given Stacks block.
+The launch of a CityCoin will require at 20 unique wallets to signal activation as part of a function in the smart contract, after which a countdown begins and anyone is eligible to mine the CityCoins within a given Stacks block.
 
 There are no CityCoins issued or distributed prior to the start of mining.
 

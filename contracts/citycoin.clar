@@ -102,7 +102,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Mining configuration
-(define-constant MINING-ACTIVATION-THRESHOLD u1)     ;; how many miners have to register to kickoff countdown to mining activation
+(define-constant MINING-ACTIVATION-THRESHOLD u20)     ;; how many miners have to register to kickoff countdown to mining activation
+(define-data-var mining-activation-threshold uint MINING-ACTIVATION-THRESHOLD) ;; variable used in place of constant for easier testing
 (define-constant MINING-ACTIVATION-DELAY u100)       ;; how many blocks after last miner registration mining will be activated (~24hrs)
 (define-constant MINING-HALVING-BLOCKS u210000)      ;; how many blocks until the next halving occurs
 (define-data-var miners-nonce uint u0)               ;; variable used to generate unique miner-id's
@@ -213,11 +214,12 @@
     (let
         (
             (new-id (+ u1 (var-get signaling-miners-nonce)))
+            (threshold (var-get mining-activation-threshold))
         )
         (asserts! (is-none (map-get? signaling-miners {miner: tx-sender}))
             (err ERR-MINER-ALREADY-REGISTERED))
 
-        (asserts! (<= new-id MINING-ACTIVATION-THRESHOLD)
+        (asserts! (<= new-id threshold)
             (err ERR-MINING-ACTIVATION-THRESHOLD-REACHED))
         
         (map-set signaling-miners
@@ -227,7 +229,7 @@
         
         (var-set signaling-miners-nonce new-id)
 
-        (if (is-eq new-id MINING-ACTIVATION-THRESHOLD) 
+        (if (is-eq new-id threshold)
             (let
                 (
                     (first-stacking-block-val (+ block-height MINING-ACTIVATION-DELAY))

@@ -77,6 +77,17 @@ export class CityCoinClient {
     );
   }
 
+  setMiningActivationThreshold(newThreshold: number): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "set-mining-activation-threshold",
+      [
+        types.uint(newThreshold)
+      ],
+      this.deployer.address
+    )
+  }
+
   // read only functions
 
   getCoinbaseAmount(stacksBlockHeight: number): Result {
@@ -202,14 +213,16 @@ export class CityCoinClient {
   }
 
   canMineTokens(
-    minerId: Account,
+    miner: Account,
+    minerId: number,
     stacksBlockHeight: number,
     amountUstx: number,
   ): Result {
     return this.callReadOnlyFn(
       "can-mine-tokens",
       [
-        types.principal(minerId.address),
+        types.principal(miner.address),
+        types.uint(minerId),
         types.uint(stacksBlockHeight),
         types.uint(amountUstx)
       ]
