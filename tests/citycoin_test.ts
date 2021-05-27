@@ -541,8 +541,9 @@ describe('[CityCoin]', () => {
           client.generateMinerId(wallet_3)
         ]);
         const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
+        const minerId = client.getMinerId(wallet_3);
 
-        const result = client.canMineTokens(wallet_3, block.block_height, 10).result;
+        const result = client.canMineTokens(wallet_3, minerId, block.block_height, 10).result;
 
         result.expectOk().expectBool(true);
       });
@@ -552,7 +553,9 @@ describe('[CityCoin]', () => {
         chain.mineBlock([
           client.generateMinerId(wallet_3)
         ]);
-        const result = client.canMineTokens(wallet_3, 0, 10).result;
+        const minerId = client.getMinerId(wallet_3)
+
+        const result = client.canMineTokens(wallet_3, minerId, 0, 10).result;
 
         result.expectErr().expectUint(ErrCode.ERR_STACKING_NOT_AVAILABLE);
       });
@@ -566,8 +569,9 @@ describe('[CityCoin]', () => {
         chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
 
         const block = chain.mineBlock([client.mineTokens(200, wallet_1)]);
+        const minerId = client.getMinerId(wallet_1);
 
-        const result = client.canMineTokens(wallet_1, block.height-1, 10).result;
+        const result = client.canMineTokens(wallet_1, minerId, block.height-1, 10).result;
 
         result.expectErr().expectUint(ErrCode.ERR_ALREADY_MINED);
       });
@@ -580,7 +584,7 @@ describe('[CityCoin]', () => {
         ]);
         const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
 
-        const result = client.canMineTokens(wallet_3, block.block_height, 0).result;
+        const result = client.canMineTokens(wallet_3, 1, block.block_height, 0).result;
 
         result.expectErr().expectUint(ErrCode.ERR_CANNOT_MINE);
       });
@@ -592,22 +596,35 @@ describe('[CityCoin]', () => {
           client.generateMinerId(wallet_3)
         ]);
         const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
-
-        const result = client.canMineTokens(wallet_3, block.block_height, wallet_3.balance + 1).result;
+        const minerId = client.getMinerId(wallet_3);
+      
+        const result = client.canMineTokens(wallet_3, 1, block.block_height, wallet_3.balance + 1).result;
 
         result.expectErr().expectUint(ErrCode.ERR_INSUFFICIENT_BALANCE);
       });
-/* TODO: add test for this constant
-      it("throws ERR-TOO-SMALL-COMMITMENT error", () => {
+
+      it("throws ERR_TOO_SMALL_COMMITMENT error", () => {
         setupCleanEnv();
         chain.mineBlock([
-          client.generateMinerId(wallet_3)
+          client.registerMiner(wallet_1),
+          client.generateMinerId(wallet_1)
         ]);
-        const result = client.canMineTokens(wallet_3, 0, 10).result;
+        
+        const minerId = client.getMinerId(wallet_1);
+        const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
 
-        result.expectErr().expectUint(ErrCode.ERR_STACKING_NOT_AVAILABLE);
+        // fill miners list with 128 fake miners with commitment as low as 2uSTX
+        chain.mineBlock([
+          Tx.contractCall("citycoin", "setup-32-miners-1", [], deployer.address),
+          Tx.contractCall("citycoin", "setup-32-miners-2", [], deployer.address),
+          Tx.contractCall("citycoin", "setup-32-miners-3", [], deployer.address),
+          Tx.contractCall("citycoin", "setup-32-miners-4", [], deployer.address),
+        ]); 
+        
+        const result = client.canMineTokens(wallet_1, minerId, block.block_height, 1).result;
+        
+        result.expectErr().expectUint(ErrCode.ERR_TOO_SMALL_COMMITMENT)
       });
-*/
     });
 
     describe("can-stack-tokens()", () => {

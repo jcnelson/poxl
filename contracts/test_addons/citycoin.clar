@@ -16,7 +16,7 @@
         (
             (miner-id (get-or-create-miner-id who))
         )
-        (try! (set-tokens-mined who stacks-block-height amount-ustx u0 u0))
+        (try! (set-tokens-mined who miner-id stacks-block-height amount-ustx u0 u0))
         (ok true)
     )
 )

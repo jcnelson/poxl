@@ -466,7 +466,6 @@
 (define-read-only (can-mine-tokens (miner principal) (miner-id uint) (stacks-bh uint) (amount-ustx uint))
     (let
         (
-            ;; (miner-id (unwrap! (get-miner-id miner) (err ERR-MINER-ID-NOT-FOUND)))
             (miner-rec (get-block-miner-rec-or-default stacks-bh))
             (least-commitment-amount (default-to u0 (get amount-ustx (get least-commitment miner-rec))))
         )        
@@ -577,8 +576,6 @@
 ;; Mark a miner as having mined in a given Stacks block and committed the given uSTX.
 (define-private (set-tokens-mined (miner principal) (miner-id uint) (stacks-bh uint) (commit-ustx uint) (commit-ustx-to-stackers uint) (commit-ustx-to-city uint))
     (let (
-        ;; (miner-id (unwrap! (get-miner-id miner) (err ERR-MINER-ID-NOT-FOUND)))
-
         (miner-rec (get-block-miner-rec-or-default stacks-bh))
         
         (reward-cycle (unwrap! (get-reward-cycle stacks-bh)
