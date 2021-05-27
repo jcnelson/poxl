@@ -6,8 +6,8 @@ contracts_dir=$(readlink -e "$contracts_dir_rel")
 contracts_clarinet_dir="${contracts_dir}/clarinet"
 contracts_test_addons_dir="${contracts_dir}/test_addons"
 
-sip10_address="SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.sip-10-ft-standard.ft-trait"
-mock_sip10_address="ST1HTBVD3JG9C05J7HBJTHGR0GGW7KXW28M5JS8QE.sip-10-ft-standard.ft-trait"
+sip10_address="SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.sip-010-trait.sip-010-trait"
+mock_sip10_address="ST1HTBVD3JG9C05J7HBJTHGR0GGW7KXW28M5JS8QE.sip-010-trait.sip-010-trait"
 
 rm -rf "${contracts_clarinet_dir}"
 mkdir -p "${contracts_clarinet_dir}"
