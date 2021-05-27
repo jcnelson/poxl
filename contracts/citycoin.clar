@@ -16,7 +16,7 @@
 (define-constant ERR-MINER-ALREADY-REGISTERED u12)
 (define-constant ERR-MINING-ACTIVATION-THRESHOLD-REACHED u13)
 (define-constant ERR-MINER-ID-NOT-FOUND u14)
-(define-constant ERR-TO-SMALL-COMMITMENT u15)
+(define-constant ERR-TOO-SMALL-COMMITMENT u15)
 
 
 ;; Tailor to your needs.
@@ -471,7 +471,7 @@
             (least-commitment-amount (default-to u0 (get amount-ustx (get least-commitment miner-rec))))
         )        
         (if (and (is-eq u128 (len (get miners miner-rec))) (<= amount-ustx least-commitment-amount))
-            (err ERR-TO-SMALL-COMMITMENT)
+            (err ERR-TOO-SMALL-COMMITMENT)
             (begin
                 (asserts! (is-some (get-reward-cycle stacks-bh))
                     (err ERR-STACKING-NOT-AVAILABLE))

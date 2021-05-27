@@ -597,6 +597,17 @@ describe('[CityCoin]', () => {
 
         result.expectErr().expectUint(ErrCode.ERR_INSUFFICIENT_BALANCE);
       });
+/* TODO: add test for this constant
+      it("throws ERR-TOO-SMALL-COMMITMENT error", () => {
+        setupCleanEnv();
+        chain.mineBlock([
+          client.generateMinerId(wallet_3)
+        ]);
+        const result = client.canMineTokens(wallet_3, 0, 10).result;
+
+        result.expectErr().expectUint(ErrCode.ERR_STACKING_NOT_AVAILABLE);
+      });
+*/
     });
 
     describe("can-stack-tokens()", () => {
