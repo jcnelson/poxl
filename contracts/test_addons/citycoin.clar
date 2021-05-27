@@ -223,3 +223,8 @@
     (ok true)
   )
 )
+
+;; used in tests to bring down activation threshold to lower level
+(define-public (set-mining-activation-threshold (new-threshold uint))
+  (ok (var-set mining-activation-threshold new-threshold))
+)

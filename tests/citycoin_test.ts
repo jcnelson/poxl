@@ -131,6 +131,7 @@ describe('[CityCoin]', () => {
 
       it("should return 0 if stackers are not stacking", () => {
         chain.mineBlock([
+          client.setMiningActivationThreshold(1),
           client.registerMiner(wallet_1)
         ]);
 
@@ -149,6 +150,7 @@ describe('[CityCoin]', () => {
       // returns 70% of commitment when stackers are stacking
       it("should return 100 * SPLIT_STACKER_PERCENTAGE when stackers are stacking", () => {
         chain.mineBlock([
+          client.setMiningActivationThreshold(1),
           client.registerMiner(wallet_1)
         ]);
         chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
@@ -194,6 +196,7 @@ describe('[CityCoin]', () => {
 
         // activate mining
         chain.mineBlock([
+          client.setMiningActivationThreshold(1),
           client.registerMiner(wallet_3)
         ]);
 
@@ -248,6 +251,7 @@ describe('[CityCoin]', () => {
 
       it("should return 100", () => {
         chain.mineBlock([
+          client.setMiningActivationThreshold(1),
           client.registerMiner(wallet_1)
         ]);
         
@@ -276,6 +280,7 @@ describe('[CityCoin]', () => {
 
       it("should return 0 when no stackers are stacking", () => {
         chain.mineBlock([
+          client.setMiningActivationThreshold(1),
           client.registerMiner(wallet_1)
         ]);
         
@@ -294,6 +299,7 @@ describe('[CityCoin]', () => {
       it("should return 100 * SPLIT_STACKER_PERCENTAGE when stackers are stacking", () => {
 
         chain.mineBlock([
+          client.setMiningActivationThreshold(1),
           client.registerMiner(wallet_1)
         ]);
 
@@ -334,6 +340,7 @@ describe('[CityCoin]', () => {
 
       it("should return 100 when no stackers are stacking", () => {
         chain.mineBlock([
+          client.setMiningActivationThreshold(1),
           client.registerMiner(wallet_1)
         ]);
         
@@ -352,6 +359,7 @@ describe('[CityCoin]', () => {
       it("should return 100 * SPLIT_CITY_PERCENTAGE when stackers are stacking", () => {
 
         chain.mineBlock([
+          client.setMiningActivationThreshold(1),
           client.registerMiner(wallet_1)
         ]);
 
@@ -384,6 +392,7 @@ describe('[CityCoin]', () => {
       it("should select correct winner", () => {
         setupCleanEnv();
         chain.mineBlock([
+          client.setMiningActivationThreshold(1),
           client.registerMiner(wallet_3)
         ]);
         const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
@@ -429,6 +438,7 @@ describe('[CityCoin]', () => {
       
         // activate mining
         chain.mineBlock([
+          client.setMiningActivationThreshold(1),
           client.registerMiner(wallet_3)
         ]);
 
@@ -474,6 +484,7 @@ describe('[CityCoin]', () => {
       it("returns true", () => {
         setupCleanEnv();
         chain.mineBlock([
+          client.setMiningActivationThreshold(1),
           client.registerMiner(wallet_1)
         ]);
         let block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
@@ -500,6 +511,7 @@ describe('[CityCoin]', () => {
       it("throws ERR_MINER_ID_NOT_FOUND error", () => {
         setupCleanEnv();
         chain.mineBlock([
+          client.setMiningActivationThreshold(1),
           client.registerMiner(wallet_1)
         ]);
         let block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
@@ -537,6 +549,7 @@ describe('[CityCoin]', () => {
       it("returns true", () => {
         setupCleanEnv();
         chain.mineBlock([
+          client.setMiningActivationThreshold(1),
           client.registerMiner(wallet_3),
           client.generateMinerId(wallet_3)
         ]);
@@ -563,6 +576,7 @@ describe('[CityCoin]', () => {
       it("throws ERR_ALREADY_MINED error", () => {
         setupCleanEnv();
         chain.mineBlock([
+          client.setMiningActivationThreshold(1),
           client.registerMiner(wallet_3),
           client.generateMinerId(wallet_1)
         ]);
@@ -579,6 +593,7 @@ describe('[CityCoin]', () => {
       it("throws ERR_CANNOT_MINE error", () => {
         setupCleanEnv();
         chain.mineBlock([
+          client.setMiningActivationThreshold(1),
           client.registerMiner(wallet_3),
           client.generateMinerId(wallet_3)
         ]);
@@ -592,6 +607,7 @@ describe('[CityCoin]', () => {
       it("throws ERR_INSUFFICIENT_BALANCE error", () => {
         setupCleanEnv();
         chain.mineBlock([
+          client.setMiningActivationThreshold(1),
           client.registerMiner(wallet_3),
           client.generateMinerId(wallet_3)
         ]);
@@ -606,6 +622,7 @@ describe('[CityCoin]', () => {
       it("throws ERR_TOO_SMALL_COMMITMENT error", () => {
         setupCleanEnv();
         chain.mineBlock([
+          client.setMiningActivationThreshold(1),
           client.registerMiner(wallet_1),
           client.generateMinerId(wallet_1)
         ]);
@@ -631,6 +648,7 @@ describe('[CityCoin]', () => {
       it("throws ERR_CANNOT_STACK error if nowStacksHeight < startStacksHeight", () => {
         setupCleanEnv();
         chain.mineBlock([
+          client.setMiningActivationThreshold(1),
           client.registerMiner(wallet_3)
         ]);
 
@@ -669,6 +687,7 @@ describe('[CityCoin]', () => {
       it("throws ERR_INSUFFICIENT_BALANCE if stacker doesn't have enough tokens", () => {
         setupCleanEnv();
         chain.mineBlock([
+          client.setMiningActivationThreshold(1),
           client.registerMiner(wallet_3)
         ]);
 
@@ -698,6 +717,7 @@ describe('[CityCoin]', () => {
       it("returns 1000 * SPLIT_STACKER_PERCENTAGE if miners committed only 1000ustx and there is only one stacker", () => {
         setupCleanEnv();
         chain.mineBlock([
+          client.setMiningActivationThreshold(1),
           client.registerMiner(wallet_3)
         ]);
         chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
@@ -740,6 +760,7 @@ describe('[CityCoin]', () => {
       it("returns Some with correct value when stacksBlockHeight > 100", () => {
         setupCleanEnv();
         chain.mineBlock([
+          client.setMiningActivationThreshold(1),
           client.registerMiner(wallet_3)
         ]);
 
@@ -775,6 +796,7 @@ describe('[CityCoin]', () => {
       beforeEach(() => {
         setupCleanEnv();
         chain.mineBlock([
+          client.setMiningActivationThreshold(1),
           client.registerMiner(wallet_3)
         ]);
       })
@@ -831,6 +853,7 @@ describe('[CityCoin]', () => {
       beforeEach(() => {
         setupCleanEnv();
         chain.mineBlock([
+          client.setMiningActivationThreshold(1),
           client.registerMiner(wallet_3)
         ]);
         chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
@@ -943,6 +966,7 @@ describe('[CityCoin]', () => {
       beforeEach(() => {
         setupCleanEnv();
         chain.mineBlock([
+          client.setMiningActivationThreshold(1),
           client.registerMiner(wallet_3)
         ]);
         chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
@@ -1047,6 +1071,7 @@ describe('[CityCoin]', () => {
         setupCleanEnv();
 
         const block = chain.mineBlock([
+          client.setMiningActivationThreshold(1),
           client.registerMiner(wallet_1)
         ]);
 
@@ -1060,11 +1085,12 @@ describe('[CityCoin]', () => {
         setupCleanEnv();
 
         const block = chain.mineBlock([
+          client.setMiningActivationThreshold(1),
           client.registerMiner(wallet_1),
           client.registerMiner(wallet_1)
         ]);
 
-        const receipt = block.receipts[1];
+        const receipt = block.receipts[2];
 
         receipt.result.expectErr().expectUint(ErrCode.ERR_MINER_ALREADY_REGISTERED);
         assertEquals(receipt.events.length, 0);
@@ -1074,11 +1100,12 @@ describe('[CityCoin]', () => {
         setupCleanEnv();
 
         const block = chain.mineBlock([
+          client.setMiningActivationThreshold(1),
           client.registerMiner(wallet_1),
           client.registerMiner(wallet_2)
         ]);
 
-        const receipt = block.receipts[1];
+        const receipt = block.receipts[2];
 
         receipt.result.expectErr().expectUint(ErrCode.ERR_MINING_ACTIVATION_THRESHOLD_REACHED);
         assertEquals(receipt.events.length, 0);
