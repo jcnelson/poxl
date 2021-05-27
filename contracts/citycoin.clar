@@ -134,7 +134,7 @@
     (configure FIRST-STACKING-BLOCK REWARD-CYCLE-LENGTH TOKEN-REWARD-MATURITY MAX-REWARD-CYCLES)
 )
 
-;; Bind Stacks block height to a list of up to 32 miners (and how much they mined) per block,
+;; Bind Stacks block height to a list of up to 128 miners (and how much they mined) per block,
 ;; and track whether or not the miner has come back to claim their tokens and who mined the least.
 (define-map mined-blocks
     { stacks-block-height: uint }

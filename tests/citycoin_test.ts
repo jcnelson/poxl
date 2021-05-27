@@ -392,7 +392,7 @@ describe('[CityCoin]', () => {
         miners.push(
           { miner: wallet_1, minerId: 1, amountUstx: 1 },
           { miner: wallet_2, minerId: 2, amountUstx: 2 },
-          { miner: wallet_3, minerId: 4, amountUstx: 3 },
+          { miner: wallet_3, minerId: 3, amountUstx: 3 },
         );
         
         chain.mineBlock([
