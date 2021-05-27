@@ -463,10 +463,10 @@
 ;; * This miner hasn't mined in this block before
 ;; * The miner is committing a positive number of uSTX
 ;; * The miner has the uSTX to commit
-(define-read-only (can-mine-tokens (miner principal) (stacks-bh uint) (amount-ustx uint))
+(define-read-only (can-mine-tokens (miner principal) (miner-id uint) (stacks-bh uint) (amount-ustx uint))
     (let
         (
-            (miner-id (unwrap! (get-miner-id miner) (err ERR-MINER-ID-NOT-FOUND)))
+            ;; (miner-id (unwrap! (get-miner-id miner) (err ERR-MINER-ID-NOT-FOUND)))
             (miner-rec (get-block-miner-rec-or-default stacks-bh))
             (least-commitment-amount (default-to u0 (get amount-ustx (get least-commitment miner-rec))))
         )        
@@ -575,9 +575,9 @@
 )
 
 ;; Mark a miner as having mined in a given Stacks block and committed the given uSTX.
-(define-private (set-tokens-mined (miner principal) (stacks-bh uint) (commit-ustx uint) (commit-ustx-to-stackers uint) (commit-ustx-to-city uint))
+(define-private (set-tokens-mined (miner principal) (miner-id uint) (stacks-bh uint) (commit-ustx uint) (commit-ustx-to-stackers uint) (commit-ustx-to-city uint))
     (let (
-        (miner-id (unwrap! (get-miner-id miner) (err ERR-MINER-ID-NOT-FOUND)))
+        ;; (miner-id (unwrap! (get-miner-id miner) (err ERR-MINER-ID-NOT-FOUND)))
 
         (miner-rec (get-block-miner-rec-or-default stacks-bh))
         
@@ -789,9 +789,9 @@
     )
 
     (begin
-        (try! (can-mine-tokens tx-sender block-height amount-ustx))
+        (try! (can-mine-tokens tx-sender miner-id block-height amount-ustx))
 
-        (try! (set-tokens-mined tx-sender block-height amount-ustx amount-ustx-to-stacker amount-ustx-to-city))
+        (try! (set-tokens-mined tx-sender miner-id block-height amount-ustx amount-ustx-to-stacker amount-ustx-to-city))
 
         ;; check if stacking is active
         (if stacked-something
