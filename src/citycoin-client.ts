@@ -367,7 +367,8 @@ export class CityCoinClient {
       [
         types.uint(amount),
         types.principal(from.address),
-        types.principal(to.address)
+        types.principal(to.address),
+        types.none()
       ],
       sender.address
     );
