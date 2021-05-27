@@ -390,9 +390,9 @@ describe('[CityCoin]', () => {
 
         const miners = new MinersList();
         miners.push(
-          { miner: wallet_1, amountUstx: 1 },
-          { miner: wallet_2, amountUstx: 2 },
-          { miner: wallet_3, amountUstx: 3 },
+          { miner: wallet_1, minerId: 1, amountUstx: 1 },
+          { miner: wallet_2, minerId: 2, amountUstx: 2 },
+          { miner: wallet_3, minerId: 3, amountUstx: 3 },
         );
         
         chain.mineBlock([
@@ -456,9 +456,9 @@ describe('[CityCoin]', () => {
     describe("can-claim-tokens()", () => {
       const miners = new MinersList();
       miners.push(
-        { miner: wallet_1, amountUstx: 1 },
-        { miner: wallet_2, amountUstx: 2 },
-        { miner: wallet_3, amountUstx: 3 },
+        { miner: wallet_1, minerId: 1, amountUstx: 1 },
+        { miner: wallet_2, minerId: 2, amountUstx: 2 },
+        { miner: wallet_3, minerId: 3, amountUstx: 3 },
       );
 
       let txs = new Array(); 
@@ -466,8 +466,8 @@ describe('[CityCoin]', () => {
         txs.push(client.mineTokens(r.amountUstx, r.miner));
       });
       
-      const claimedRec = new MinersRec(miners, true);
-      const unclaimedRec = new MinersRec(miners, false);
+      const claimedRec = new MinersRec(miners, true, miners[0]);
+      const unclaimedRec = new MinersRec(miners, false, undefined);
       const tokenRewardMaturity = 100;
 
 
@@ -497,7 +497,7 @@ describe('[CityCoin]', () => {
         });
       });
 
-      it("throws ERR_UNAUTHORIZED error", () => {
+      it("throws ERR_MINER_ID_NOT_FOUND error", () => {
         setupCleanEnv();
         chain.mineBlock([
           client.registerMiner(wallet_1)
@@ -515,7 +515,7 @@ describe('[CityCoin]', () => {
         ]
 
         results.forEach((result) => {
-          result.expectErr().expectUint(ErrCode.ERR_UNAUTHORIZED);
+          result.expectErr().expectUint(ErrCode.ERR_MINER_ID_NOT_FOUND);
         });
       });
 
@@ -534,61 +534,44 @@ describe('[CityCoin]', () => {
     });
 
     describe("can-mine-tokens()", () => {
-      const miners = new MinersList();
-      miners.push(
-        { miner: wallet_1, amountUstx: 1 },
-        { miner: wallet_2, amountUstx: 2 },
-      );
-
-      const minersFull = new MinersList();
-      for (let i = 1; i <= 32; i++) {
-        minersFull.push({ miner: wallet_1, amountUstx: 10 })
-      }
-
-      const minersRec = new MinersRec(miners, false);
-      const minersRecFull = new MinersRec(minersFull, false);
-
       it("returns true", () => {
         setupCleanEnv();
         chain.mineBlock([
-          client.registerMiner(wallet_3)
+          client.registerMiner(wallet_3),
+          client.generateMinerId(wallet_3)
         ]);
         const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
+        const minerId = client.getMinerId(wallet_3);
 
-        const result = client.canMineTokens(wallet_3, block.block_height, 10, minersRec).result;
+        const result = client.canMineTokens(wallet_3, minerId, block.block_height, 10).result;
 
         result.expectOk().expectBool(true);
       });
 
       it("throws ERR_STACKING_NOT_AVAILABLE error", () => {
         setupCleanEnv();
-        const result = client.canMineTokens(wallet_3, 0, 10, minersRec).result;
+        chain.mineBlock([
+          client.generateMinerId(wallet_3)
+        ]);
+        const minerId = client.getMinerId(wallet_3)
+
+        const result = client.canMineTokens(wallet_3, minerId, 0, 10).result;
 
         result.expectErr().expectUint(ErrCode.ERR_STACKING_NOT_AVAILABLE);
-      });
-
-      it("throws ERR_ROUND_FULL error", () => {
-        setupCleanEnv();
-        chain.mineBlock([
-          client.registerMiner(wallet_3)
-        ]);
-        const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
-
-        const result = client.canMineTokens(wallet_2, block.block_height, 10, minersRecFull).result;
-
-        result.expectErr().expectUint(ErrCode.ERR_ROUND_FULL);
       });
 
       it("throws ERR_ALREADY_MINED error", () => {
         setupCleanEnv();
         chain.mineBlock([
-          client.registerMiner(wallet_3)
+          client.registerMiner(wallet_3),
+          client.generateMinerId(wallet_1)
         ]);
         chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
 
         const block = chain.mineBlock([client.mineTokens(200, wallet_1)]);
+        const minerId = client.getMinerId(wallet_1);
 
-        const result = client.canMineTokens(wallet_1, block.height-1, 10, minersRec).result;
+        const result = client.canMineTokens(wallet_1, minerId, block.height-1, 10).result;
 
         result.expectErr().expectUint(ErrCode.ERR_ALREADY_MINED);
       });
@@ -596,11 +579,12 @@ describe('[CityCoin]', () => {
       it("throws ERR_CANNOT_MINE error", () => {
         setupCleanEnv();
         chain.mineBlock([
-          client.registerMiner(wallet_3)
+          client.registerMiner(wallet_3),
+          client.generateMinerId(wallet_3)
         ]);
         const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
 
-        const result = client.canMineTokens(wallet_3, block.block_height, 0, minersRec).result;
+        const result = client.canMineTokens(wallet_3, 1, block.block_height, 0).result;
 
         result.expectErr().expectUint(ErrCode.ERR_CANNOT_MINE);
       });
@@ -608,13 +592,38 @@ describe('[CityCoin]', () => {
       it("throws ERR_INSUFFICIENT_BALANCE error", () => {
         setupCleanEnv();
         chain.mineBlock([
-          client.registerMiner(wallet_3)
+          client.registerMiner(wallet_3),
+          client.generateMinerId(wallet_3)
         ]);
         const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
-
-        const result = client.canMineTokens(wallet_3, block.block_height, wallet_3.balance + 1, minersRec).result;
+        const minerId = client.getMinerId(wallet_3);
+      
+        const result = client.canMineTokens(wallet_3, 1, block.block_height, wallet_3.balance + 1).result;
 
         result.expectErr().expectUint(ErrCode.ERR_INSUFFICIENT_BALANCE);
+      });
+
+      it("throws ERR_TOO_SMALL_COMMITMENT error", () => {
+        setupCleanEnv();
+        chain.mineBlock([
+          client.registerMiner(wallet_1),
+          client.generateMinerId(wallet_1)
+        ]);
+        
+        const minerId = client.getMinerId(wallet_1);
+        const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
+
+        // fill miners list with 128 fake miners with commitment as low as 2uSTX
+        chain.mineBlock([
+          Tx.contractCall("citycoin", "setup-32-miners-1", [], deployer.address),
+          Tx.contractCall("citycoin", "setup-32-miners-2", [], deployer.address),
+          Tx.contractCall("citycoin", "setup-32-miners-3", [], deployer.address),
+          Tx.contractCall("citycoin", "setup-32-miners-4", [], deployer.address),
+        ]); 
+        
+        const result = client.canMineTokens(wallet_1, minerId, block.block_height, 1).result;
+        
+        result.expectErr().expectUint(ErrCode.ERR_TOO_SMALL_COMMITMENT)
       });
     });
 

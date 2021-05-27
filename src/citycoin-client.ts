@@ -21,7 +21,9 @@ export enum ErrCode {
   ERR_NOTHING_TO_REDEEM,
   ERR_CANNOT_MINE,
   ERR_MINER_ALREADY_REGISTERED,
-  ERR_MINING_ACTIVATION_THRESHOLD_REACHED
+  ERR_MINING_ACTIVATION_THRESHOLD_REACHED,
+  ERR_MINER_ID_NOT_FOUND,
+  ERR_TOO_SMALL_COMMITMENT
 }
 
 export const MINING_HALVING_BLOCKS = 210000;
@@ -144,11 +146,37 @@ export class CityCoinClient {
     )
   }
 
+  generateMinerId(miner: Account): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "generate-miner-id",
+      [
+        types.principal(miner.address)
+      ],
+      this.deployer.address
+    )
+  }
+
+  getMinerId(miner: Account): number {
+    const result =  this.callReadOnlyFn(
+      "get-miner-id",
+      [
+        types.principal(miner.address)
+      ]
+    ).result
+
+    const regex = /\(some u(\d+)\)/g;
+    const match = regex.exec(result);
+    const minerId = (!match) ? 1 : match[1];
+
+    return Number(minerId);
+  }
+
   hasMined(miner: Account, blockHeight: number): Result {
-    return this.callReadOnlyFn(
+  return this.callReadOnlyFn(
       "has-mined",
       [
-        types.principal(miner.address),
+        types.uint(this.getMinerId(miner)),
         types.uint(blockHeight)
       ]
     );
@@ -177,15 +205,13 @@ export class CityCoinClient {
     minerId: Account,
     stacksBlockHeight: number,
     amountUstx: number,
-    minersRec: MinersRec
   ): Result {
     return this.callReadOnlyFn(
       "can-mine-tokens",
       [
         types.principal(minerId.address),
         types.uint(stacksBlockHeight),
-        types.uint(amountUstx),
-        minersRec.convert()
+        types.uint(amountUstx)
       ]
     );
   }
@@ -363,18 +389,19 @@ export class CityCoinClient {
 
 export interface MinerCommit {
   miner: Account,
+  minerId: number,
   amountUstx: number
 }
 
 export class MinersList extends Array<MinerCommit> {
   convert(): string {
-    if (this.length > 32) {
-      throw new Error("Miners list can't have more than 32 elements.")
+    if (this.length > 128) {
+      throw new Error("Miners list can't have more than 128 elements.")
     }
 
     let miners = this.map(minerCommit => {
       return types.tuple({
-        "miner": types.principal(minerCommit.miner.address),
+        "miner-id": types.uint(minerCommit.minerId),
         "amount-ustx": types.uint(minerCommit.amountUstx)
       });
     });
@@ -385,7 +412,7 @@ export class MinersList extends Array<MinerCommit> {
   getFormatted(index: number) {
     let item = this[index];
     return {
-      "miner": item.miner.address,
+      "miner-id": types.uint(item.minerId),
       "amount-ustx": types.uint(item.amountUstx)
     }
   }
@@ -394,16 +421,33 @@ export class MinersList extends Array<MinerCommit> {
 export class MinersRec {
   miners: MinersList;
   claimed: boolean;
+  leastCommitment?: MinerCommit;
 
-  constructor(miners: MinersList, claimed: boolean) {
+  constructor(miners: MinersList, claimed: boolean, leastCommitment?: MinerCommit) {
     this.claimed = claimed;
     this.miners = miners;
+
+    if( typeof leastCommitment !== "undefined")
+    {
+      this.leastCommitment = leastCommitment;
+    }
   }
 
   convert(): string {
+    let leastCommitment;
+    if(this.leastCommitment !== undefined) {
+      leastCommitment = types.some(types.tuple({
+        "miner-id": types.uint(this.leastCommitment.minerId),
+        "amount-ustx": types.uint(this.leastCommitment.amountUstx)
+      }))
+    } else {
+      leastCommitment = types.none();
+    }
+
     return types.tuple({
       miners: this.miners.convert(),
-      claimed: types.bool(this.claimed)
-    });
+      claimed: types.bool(this.claimed),
+      "least-commitment": leastCommitment
+    })
   }
 }
