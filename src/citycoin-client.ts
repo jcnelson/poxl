@@ -202,14 +202,16 @@ export class CityCoinClient {
   }
 
   canMineTokens(
-    minerId: Account,
+    miner: Account,
+    minerId: number,
     stacksBlockHeight: number,
     amountUstx: number,
   ): Result {
     return this.callReadOnlyFn(
       "can-mine-tokens",
       [
-        types.principal(minerId.address),
+        types.principal(miner.address),
+        types.uint(minerId),
         types.uint(stacksBlockHeight),
         types.uint(amountUstx)
       ]
