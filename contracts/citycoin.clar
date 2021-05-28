@@ -885,4 +885,4 @@
     (ok (stx-get-balance (as-contract tx-sender))))
 
 (define-read-only (get-token-uri)
-    (ok none))
+    (ok (some u"https://cdn.citycoins.co/metadata/citycoin.json")))
