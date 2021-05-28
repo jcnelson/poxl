@@ -855,6 +855,10 @@
     ))
 )
 
+(define-read-only (get-total-supply-ustx)
+    (ok (stx-get-balance (as-contract tx-sender)))
+)
+
 ;;;;;;;;;;;;;;;;;;;;; SIP 010 ;;;;;;;;;;;;;;;;;;;;;;
 ;; testnet implementation
 ;; (impl-trait 'STR8P3RD1EHA8AA37ERSSSZSWKS9T2GYQFGXNA4C.sip-010-trait.sip-010-trait)
@@ -882,7 +886,7 @@
     (ok (ft-get-balance citycoins user)))
 
 (define-read-only (total-supply)
-    (ok (stx-get-balance (as-contract tx-sender))))
+    (ok (ft-get-supply citycoins)))
 
 (define-read-only (get-token-uri)
     (ok (some u"https://cdn.citycoins.co/metadata/citycoin.json")))
