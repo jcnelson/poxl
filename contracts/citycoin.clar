@@ -855,9 +855,13 @@
     ))
 )
 
+(define-read-only (get-total-supply-ustx)
+    (ok (stx-get-balance (as-contract tx-sender)))
+)
+
 ;;;;;;;;;;;;;;;;;;;;; SIP 010 ;;;;;;;;;;;;;;;;;;;;;;
 ;; testnet implementation
-;; (impl-trait 'ST1HTBVD3JG9C05J7HBJTHGR0GGW7KXW28M5JS8QE.sip-010-trait.sip-010-trait)
+;; (impl-trait 'STR8P3RD1EHA8AA37ERSSSZSWKS9T2GYQFGXNA4C.sip-010-trait.sip-010-trait)
 (impl-trait 'SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.sip-010-trait.sip-010-trait)
 
 (define-public (transfer (amount uint) (from principal) (to principal) (memo (optional (buff 34))))
@@ -869,20 +873,20 @@
     )
 )
 
-(define-public (get-name)
+(define-read-only (name)
     (ok "citycoins"))
 
-(define-public (get-symbol)
+(define-read-only (symbol)
     (ok "CYCN"))
 
-(define-public (get-decimals)
+(define-read-only (decimals)
     (ok u0))
 
-(define-public (get-balance-of (user principal))
+(define-read-only (balance-of (user principal))
     (ok (ft-get-balance citycoins user)))
 
-(define-public (get-total-supply)
-    (ok (stx-get-balance (as-contract tx-sender))))
+(define-read-only (total-supply)
+    (ok (ft-get-supply citycoins)))
 
-(define-public (get-token-uri)
-    (ok none))
+(define-read-only (get-token-uri)
+    (ok (some u"https://cdn.citycoins.co/metadata/citycoin.json")))
