@@ -119,10 +119,24 @@ describe('[CityCoin]', () => {
     });
 
     describe("get-total-supply()", () => {
+      beforeEach(() => {
+        setupCleanEnv();
+      })
+
       it("should return 0", () => {
         const result = client.getTotalSupply().result;
 
         result.expectOk().expectUint(0);
+      });
+
+      it("should return 100 after 100 tokens are minted", () => {
+        chain.mineBlock([
+          client.ftMint(100, wallet_1)
+        ]);
+
+        const result = client.getTotalSupply().result;
+
+        result.expectOk().expectUint(100);
       });
 
       it("should return 250000 after a miner wins a block", () => {
@@ -136,8 +150,16 @@ describe('[CityCoin]', () => {
         chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
 
         // mine a block
-        chain.mineBlock([
+        const block = chain.mineBlock([
           client.mineTokens(100, wallet_1)
+        ]);
+
+        // advance chain past miner reward window
+        chain.mineEmptyBlock(101);
+
+        // claim tokens so they are minted
+        chain.mineBlock([
+          client.claimTokenReward(block.height - 1, wallet_1)
         ]);
 
         const result = client.getTotalSupply().result;
