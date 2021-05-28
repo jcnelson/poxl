@@ -358,6 +358,10 @@ export class CityCoinClient {
     )
   }
 
+  getTotalSupplyUstx(): Result {
+    return this.callReadOnlyFn("get-total-supply-ustx");
+  }
+
   // SIP-010 functions
 
   transfer(amount: number, from: Account, to: Account, sender: Account): Tx {
@@ -375,25 +379,25 @@ export class CityCoinClient {
   }
 
   getName(): Result {
-    return this.callReadOnlyFn("get-name");
+    return this.callReadOnlyFn("name");
   }
 
   getSymbol(): Result {
-    return this.callReadOnlyFn("get-symbol");
+    return this.callReadOnlyFn("symbol");
   }
 
   getDecimals(): Result {
-    return this.callReadOnlyFn("get-decimals");
+    return this.callReadOnlyFn("decimals");
   }
 
   getBalanceOf(user: Account): Result {
-    return this.callReadOnlyFn("get-balance-of", [
+    return this.callReadOnlyFn("balance-of", [
       types.principal(user.address)
     ])
   }
 
   getTotalSupply(): Result {
-    return this.callReadOnlyFn("get-total-supply");
+    return this.callReadOnlyFn("total-supply");
   }
 
   getTokenUri(): Result {

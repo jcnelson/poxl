@@ -114,17 +114,58 @@ describe('[CityCoin]', () => {
 
         const result = client.getBalanceOf(wallet_1).result;
 
-        result.expectOk().expectUint(100);
+        result.expectOk().expectUint(0);
       });
     });
 
     describe("get-total-supply()", () => {
+      it("should return 0", () => {
+        const result = client.getTotalSupply().result;
+
+        result.expectOk().expectUint(100);
+      });
+
+      it("should return 250000 after a miner wins a block", () => {
+        // activate mining
+        chain.mineBlock([
+          client.setMiningActivationThreshold(1),
+          client.registerMiner(wallet_3)
+        ]);
+
+        // advance chain to block where mining is active
+        chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
+
+        // mine a block
+        chain.mineBlock([
+          client.mineTokens(100, wallet_1)
+        ]);
+
+        const result = client.getTotalSupply().result;
+
+        result.expectOk().expectUint(250000);
+      });
+
+    });
+
+    describe("get-token-uri()", () => {
+      it("should return none", () => {
+        const result = client.getTokenUri().result;
+
+        result.expectOk().expectSome().expectUtf8("https://cdn.citycoins.co/metadata/citycoin.json");
+      });
+    });
+  });
+
+  describe("Read only functions:", () => {
+    setupCleanEnv();
+
+    describe("get-total-supply-ustx()", () => {
       beforeEach(() => {
         setupCleanEnv();
       })
 
       it("should return 0 if nobody mined", () => {
-        const result = client.getTotalSupply().result;
+        const result = client.getTotalSupplyUstx().result;
 
         result.expectOk().expectUint(0);
       });
@@ -142,7 +183,7 @@ describe('[CityCoin]', () => {
           client.mineTokens(100, wallet_1)
         ]);
 
-        const result = client.getTotalSupply().result;
+        const result = client.getTotalSupplyUstx().result;
 
         result.expectOk().expectUint(0);
       });
@@ -171,23 +212,11 @@ describe('[CityCoin]', () => {
           client.mineTokens(100, wallet_1)
         ]);
 
-        const result = client.getTotalSupply().result;
+        const result = client.getTotalSupplyUstx().result;
 
         result.expectOk().expectUint(100 * SPLIT_STACKER_PERCENTAGE);
       });
     });
-
-    describe("get-token-uri()", () => {
-      it("should return none", () => {
-        const result = client.getTokenUri().result;
-
-        result.expectOk().expectNone();
-      });
-    });
-  });
-
-  describe("Read only functions:", () => {
-    setupCleanEnv();
 
     describe("get-coinbase-amount()", () => {
 
