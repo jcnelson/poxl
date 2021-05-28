@@ -114,7 +114,7 @@ describe('[CityCoin]', () => {
 
         const result = client.getBalanceOf(wallet_1).result;
 
-        result.expectOk().expectUint(0);
+        result.expectOk().expectUint(100);
       });
     });
 
@@ -122,7 +122,7 @@ describe('[CityCoin]', () => {
       it("should return 0", () => {
         const result = client.getTotalSupply().result;
 
-        result.expectOk().expectUint(100);
+        result.expectOk().expectUint(0);
       });
 
       it("should return 250000 after a miner wins a block", () => {
