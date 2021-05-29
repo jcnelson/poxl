@@ -879,8 +879,8 @@
 )
 
 ;;;;;;;;;;;;;;;;;;;;; SIP 010 ;;;;;;;;;;;;;;;;;;;;;;
-;; testnet: (impl-trait 'ST1X6M947Z7E58CNE0H8YJVJTVKS9VW0PHEG3NHN3.sip-010-trait.sip-010-trait)
-(impl-trait 'SP1X6M947Z7E58CNE0H8YJVJTVKS9VW0PHD4Q0A5F.sip-010-trait.sip-010-trait)
+;; testnet: (impl-trait 'STR8P3RD1EHA8AA37ERSSSZSWKS9T2GYQFGXNA4C.sip-010-trait-ft-standard.sip-010-trait)
+(impl-trait 'SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.sip-010-trait-ft-standard.sip-010-trait)
 
 (define-public (transfer (amount uint) (from principal) (to principal) (memo (optional (buff 34))))
     (begin
@@ -900,7 +900,7 @@
 (define-read-only (get-decimals)
     (ok u0))
 
-(define-read-only (get-balance-of (user principal))
+(define-read-only (get-balance (user principal))
     (ok (ft-get-balance citycoins user)))
 
 (define-read-only (get-total-supply)
