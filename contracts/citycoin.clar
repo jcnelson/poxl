@@ -1,4 +1,4 @@
-;; citycoin implmentation of the PoX-lite contract, MVP.
+;; citycoin implementation of the PoX-lite contract, MVP.
 
 ;; error codes
 (define-constant ERR-NO-WINNER u0)
@@ -17,7 +17,6 @@
 (define-constant ERR-MINING-ACTIVATION-THRESHOLD-REACHED u13)
 (define-constant ERR-MINER-ID-NOT-FOUND u14)
 (define-constant ERR-TOO-SMALL-COMMITMENT u15)
-
 
 ;; Tailor to your needs.
 (define-constant TOKEN-REWARD-MATURITY u100)        ;; how long a miner must wait before claiming their minted tokens
@@ -104,6 +103,7 @@
 ;; Mining configuration
 (define-constant MINING-ACTIVATION-THRESHOLD u20)     ;; how many miners have to register to kickoff countdown to mining activation
 (define-data-var mining-activation-threshold uint MINING-ACTIVATION-THRESHOLD) ;; variable used in place of constant for easier testing
+(define-data-var mining-activation-threshold-reached bool false)  ;; variable used to track if mining is active
 (define-constant MINING-ACTIVATION-DELAY u100)       ;; how many blocks after last miner registration mining will be activated (~24hrs)
 (define-constant MINING-HALVING-BLOCKS u210000)      ;; how many blocks until the next halving occurs
 (define-data-var miners-nonce uint u0)               ;; variable used to generate unique miner-id's
@@ -146,8 +146,6 @@
         least-commitment: (optional { miner-id: uint, amount-ustx: uint }),
     }
 )
-
-
 
 ;; Maps miner address to uint miner-id
 (define-map miners
@@ -234,6 +232,7 @@
                 (
                     (first-stacking-block-val (+ block-height MINING-ACTIVATION-DELAY))
                 )
+                (var-set mining-activation-threshold-reached true)
                 (var-set first-stacking-block first-stacking-block-val)
                 (var-set coinbase-threshold-1 (+ first-stacking-block-val MINING-HALVING-BLOCKS))
                 (var-set coinbase-threshold-2 (+ first-stacking-block-val (* u2 MINING-HALVING-BLOCKS)))
@@ -245,6 +244,26 @@
             (ok true)
         )
     )
+)
+
+;; Getter for checking if mining is activated
+(define-read-only (get-mining-activation-status)
+    (var-get mining-activation-threshold-reached)
+)
+
+;; Getter for viewing registered miner by principal
+(define-read-only (get-registered-miner-id (miner principal))
+    (map-get? signaling-miners { miner: miner })
+)
+
+;; Getter for number of registered miners
+(define-read-only (get-registered-miners-nonce)
+    (var-get signaling-miners-nonce)
+)
+
+;; Getter for current registration threshold
+(define-read-only (get-registered-miners-threshold)
+    (var-get mining-activation-threshold)
 )
 
 ;; Function for deciding how many tokens to mint, depending on when they were mined.
