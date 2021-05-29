@@ -390,8 +390,8 @@ export class CityCoinClient {
     return this.callReadOnlyFn("get-decimals");
   }
 
-  getBalanceOf(user: Account): Result {
-    return this.callReadOnlyFn("get-balance-of", [
+  getBalance(user: Account): Result {
+    return this.callReadOnlyFn("get-balance", [
       types.principal(user.address)
     ])
   }

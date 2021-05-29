@@ -100,9 +100,9 @@ describe('[CityCoin]', () => {
       });
     });
 
-    describe("get-balance-of()", () => {
+    describe("get-balance()", () => {
       it("should return 0", () => {
-        const result = client.getBalanceOf(wallet_1).result;
+        const result = client.getBalance(wallet_1).result;
 
         result.expectOk().expectUint(0);
       });
@@ -112,7 +112,7 @@ describe('[CityCoin]', () => {
           client.ftMint(100, wallet_1)
         ]);
 
-        const result = client.getBalanceOf(wallet_1).result;
+        const result = client.getBalance(wallet_1).result;
 
         result.expectOk().expectUint(100);
       });
