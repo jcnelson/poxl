@@ -23,6 +23,17 @@
 (define-constant FIRST-STACKING-BLOCK u340282366920938463463374607431768211455)           ;; Stacks block height when Stacking is available
 (define-constant REWARD-CYCLE-LENGTH u500)          ;; how long a reward cycle is
 (define-constant MAX-REWARD-CYCLES u32)             ;; how many reward cycles a Stacker can Stack their tokens for
+(define-constant MAX-MINERS-COUNT u128)                ;; 
+(define-constant LONG-UINT-LIST (list
+u1 u2 u3 u4 u5 u6 u7 u8 u9 u10 u11 u12 u13 u14 u15 u16 
+u17 u18 u19 u20 u21 u22 u23 u24 u25 u26 u27 u28 u29 u30 u31 u32 
+u33 u34 u35 u36 u37 u38 u39 u40 u41 u42 u43 u44 u45 u46 u47 u48
+u49 u50 u51 u52 u53 u54 u55 u56 u57 u58 u59 u60 u61 u62 u63 u64
+u65 u66 u67 u68 u69 u70 u71 u72 u73 u74 u75 u76 u77 u78 u79 u80
+u81 u82 u83 u84 u85 u86 u87 u88 u89 u90 u91 u92 u93 u94 u95 u96
+u97 u98 u99 u100 u101 u102 u103 u104 u105 u106 u107 u108 u109 u110 u111 u112
+u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128 
+))
 
 ;; Define city wallet and mining split
 (define-constant CITY_CUSTODIED_WALLET 'ST31270FK25JBGCRWYT7RNK90E946R8VW6SZYSQR6)  ;; the custodied wallet address for the city
@@ -140,10 +151,16 @@
 (define-map mined-blocks
     { stacks-block-height: uint }
     {
-        miners: (list 128 { miner-id: uint, amount-ustx: uint }),
+        miners-count: uint,
+        least-commitment-idx: uint,
+        least-commitment-ustx: uint,
         claimed: bool,
-        least-commitment: (optional { miner-id: uint, amount-ustx: uint }),
     }
+)
+
+(define-map blocks-miners
+  { stacks-block-height: uint, idx: uint }
+  { miner-id: uint, ustx: uint }
 )
 
 ;; Maps miner address to uint miner-id
@@ -283,10 +300,18 @@
 )
 
 ;; Getter for getting the list of miners and uSTX committments for a given block.
-(define-read-only (get-miners-at-block (stacks-block-ht uint))
-    (match (map-get? mined-blocks { stacks-block-height: stacks-block-ht })
-        miner-rec (get miners miner-rec)
-        (list )
+(define-read-only (get-miners-at-block (stacks-block-height uint))
+    (get miners (fold get-miners-at-block-closure LONG-UINT-LIST { stacks-block-height: stacks-block-height, miners: (list )}))
+)
+
+(define-private (get-miners-at-block-closure (idx uint) (data { stacks-block-height: uint, miners: (list 128 { miner-id: uint, ustx: uint })}))
+    (match (map-get? blocks-miners { stacks-block-height: (get stacks-block-height data), idx: idx })
+        miner 
+        {
+            stacks-block-height: (get stacks-block-height data),
+            miners: (unwrap-panic (as-max-len? (append (get miners data) miner) u128))
+        }
+        data
     )
 )
 
@@ -339,13 +364,14 @@
 
 ;; Getter to obtain the list of miners and uSTX commitments at a given Stacks block height,
 ;; OR, an empty such structure.
-(define-private (get-block-miner-rec-or-default (stacks-block-ht uint))
-    (match (map-get? mined-blocks { stacks-block-height: stacks-block-ht })
-        rec rec
+(define-private (get-mined-block-or-default (stacks-block-height uint))
+    (match (map-get? mined-blocks { stacks-block-height: stacks-block-height })
+        block block
         { 
-            miners: (list ), 
+            miners-count: u0, 
+            least-commitment-idx: u0,
+            least-commitment-ustx: u0,
             claimed: false,
-            least-commitment: none,
         })
 )
 
@@ -365,40 +391,50 @@
 )
 
 ;; Inner fold function to determine which miner won the token batch at a particular Stacks block height, given a sampling value.
-(define-private (get-block-winner-closure (miner-rec { miner-id: uint, amount-ustx: uint }) (data {sample: uint, sum: uint, winner: (optional { miner-id: uint, amount-ustx: uint })}))
-    (let
-        (
-            (sum (get sum data))
-            (sample (get sample data))
-            (amount-ustx (get amount-ustx miner-rec))
-            (next-sum (+ sum amount-ustx))
-            (new-winner 
-                (if (and (>= sample sum) (< sample next-sum))
-                    (some miner-rec)
-                    (get winner data)
+(define-private (get-block-winner-closure (idx uint) (data { stacks-block-height: uint, sample: uint, sum: uint, winner: (optional { miner-id: uint, ustx: uint})}))
+    (match (map-get? blocks-miners { stacks-block-height: (get stacks-block-height data), idx: idx})
+        miner 
+        (let
+            (
+                (sum (get sum data))
+                (sample (get sample data))
+                (ustx (get ustx miner))
+                (next-sum (+ sum ustx))
+                (new-winner
+                    (if (and (>= sample sum) (< sample next-sum))
+                        (some miner)
+                        (get winner data)
+                    )
                 )
             )
-        )    
-        {
-            sample: sample,
-            sum: next-sum,
-            winner: new-winner
-        }
+            {
+                stacks-block-height: (get stacks-block-height data),
+                sample: sample,
+                sum: next-sum,
+                winner: new-winner
+            }
+        )
+        data
     )
 )
 
 ;; Determine who won a given batch of tokens, given a random sample and a list of miners and commitments.
 ;; The probability that a given miner wins the batch is proportional to how many uSTX it committed out of the 
 ;; sum of commitments for this block.
-(define-read-only (get-block-winner (stacks-bh uint) (random-sample uint) (miners-list (list 128 { miner-id: uint, amount-ustx: uint })))
+(define-read-only (get-block-winner (stacks-block-height uint) (random-sample uint))
     (let
         (
-            (commit-total (get-block-commit-total stacks-bh))
+            (commit-total (get-block-commit-total stacks-block-height))
         )
         (if (> commit-total u0)
-            (get winner (fold get-block-winner-closure miners-list 
-                {sample: (mod random-sample commit-total), sum: u0, winner: none})
-            )
+            (get winner (fold get-block-winner-closure LONG-UINT-LIST 
+                { 
+                    stacks-block-height: stacks-block-height,
+                    sample: (mod random-sample commit-total), 
+                    sum: u0, 
+                    winner: none
+                }
+            ))
             none
         )
     )
@@ -416,10 +452,11 @@
 (define-read-only (can-claim-tokens (claimer principal) 
                                     (claimer-stacks-block-height uint)
                                     (random-sample uint)
-                                    (miners-rec { 
-                                        miners: (list 128 { miner-id: uint, amount-ustx: uint }),
-                                        claimed: bool,
-                                        least-commitment: (optional { miner-id: uint, amount-ustx: uint }),
+                                    (block { 
+                                        miners-count: uint,
+                                        least-commitment-idx: uint, 
+                                        least-commitment-ustx: uint,
+                                        claimed: bool
                                     })
                                     (current-stacks-block uint))
     (let (
@@ -432,10 +469,10 @@
     )
     (if (< claimer-stacks-block-height maximum-stacks-block-height)
         (begin
-            (asserts! (not (get claimed miners-rec))
+            (asserts! (not (get claimed block))
                 (err ERR-ALREADY-CLAIMED))
 
-            (match (get-block-winner claimer-stacks-block-height random-sample (get miners miners-rec))
+            (match (get-block-winner claimer-stacks-block-height random-sample (get-miners-at-block claimer-stacks-block-height))
                 winner-rec (if (is-eq claimer-id (get miner-id winner-rec))
                                (ok true)
                                (err ERR-UNAUTHORIZED))
@@ -468,19 +505,18 @@
 ;; * This miner hasn't mined in this block before
 ;; * The miner is committing a positive number of uSTX
 ;; * The miner has the uSTX to commit
-(define-read-only (can-mine-tokens (miner principal) (miner-id uint) (stacks-bh uint) (amount-ustx uint))
+(define-read-only (can-mine-tokens (miner principal) (miner-id uint) (stacks-block-height uint) (amount-ustx uint))
     (let
         (
-            (miner-rec (get-block-miner-rec-or-default stacks-bh))
-            (least-commitment-amount (default-to u0 (get amount-ustx (get least-commitment miner-rec))))
+            (block (get-mined-block-or-default stacks-block-height))
         )        
-        (if (and (is-eq u128 (len (get miners miner-rec))) (<= amount-ustx least-commitment-amount))
+        (if (and (is-eq MAX-MINERS-COUNT (get miners-count block)) (<= amount-ustx (get least-commitment-ustx block)))
             (err ERR-TOO-SMALL-COMMITMENT)
             (begin
-                (asserts! (is-some (get-reward-cycle stacks-bh))
+                (asserts! (is-some (get-reward-cycle stacks-block-height))
                     (err ERR-STACKING-NOT-AVAILABLE))
 
-                (asserts! (not (has-mined miner-id stacks-bh))
+                (asserts! (not (has-mined miner-id stacks-block-height))
                     (err ERR-ALREADY-MINED))
 
                 (asserts! (> amount-ustx u0)
@@ -579,107 +615,102 @@
 )
 
 ;; Mark a miner as having mined in a given Stacks block and committed the given uSTX.
-(define-private (set-tokens-mined (miner principal) (miner-id uint) (stacks-bh uint) (commit-ustx uint) (commit-ustx-to-stackers uint) (commit-ustx-to-city uint))
+(define-private (set-tokens-mined (miner principal) (miner-id uint) (stacks-block-height uint) (commit-ustx uint) (commit-ustx-to-stackers uint) (commit-ustx-to-city uint))
     (let (
-        (miner-rec (get-block-miner-rec-or-default stacks-bh))
+        (block (get-mined-block-or-default stacks-block-height))
+        (increased-miners-count (+ (get miners-count block) u1))
+        (new-idx increased-miners-count)
+        (least-commitment-idx (get least-commitment-idx block))
+        (least-commitment-ustx (get least-commitment-ustx block))
         
-        (reward-cycle (unwrap! (get-reward-cycle stacks-bh)
+        (reward-cycle (unwrap! (get-reward-cycle stacks-block-height)
             (err ERR-STACKING-NOT-AVAILABLE)))
 
         (tokens-mined (default-to { total-ustx: u0, total-tokens: u0 } 
             (map-get? tokens-per-cycle { reward-cycle: reward-cycle }))
         )
-
-        (cur-miners (get miners miner-rec))
-        (miners-is-full (is-eq u128 (len cur-miners)))        
-        (new-miners (if miners-is-full 
-            cur-miners
-            (unwrap-panic (as-max-len? (append cur-miners { miner-id: miner-id, amount-ustx: commit-ustx }) u128)) 
-            )
-        )
-        (cur-least-commitment (get least-commitment miner-rec))
-        (cur-least-commitment-amount (default-to u0 (get amount-ustx cur-least-commitment)))
-
-        (new-least-commitment (some { miner-id: miner-id, amount-ustx: commit-ustx }))
     )
     (begin
-        (if (is-none cur-least-commitment)
-            ;; add first miner data at defined stacks-block-height
-            (map-set mined-blocks
-                { stacks-block-height: stacks-bh }
-                {
-                    miners: new-miners,
-                    claimed: false,
-                    least-commitment: new-least-commitment
-                }
-            )
-            ;; add 2nd and subsequent miner data at defined stacks-block-height
-            (if miners-is-full
-                ;; miners list is full and miner who committed least needs to be kick out of it
-                (begin
-                    (var-set miner-to-kick cur-least-commitment)
-                    (let
-                        (
-                            ;; filter out miner who committed least
-                            (new-miners-filtered (filter remove-miner-to-kick-closure new-miners))
-                            (new-miners-final (unwrap-panic (as-max-len? (append new-miners-filtered { miner-id: miner-id, amount-ustx: commit-ustx }) u128)))
-                            ;; find new miner who committed least
-                            (new-least-commitment-filtered (fold find-least new-miners-final none))
-                        )
-                        (map-set mined-blocks
-                            { stacks-block-height: stacks-bh }
-                            {
-                                miners: new-miners-final,
-                                claimed: false,
-                                least-commitment: new-least-commitment-filtered
-                            }
-                        )
-                    )
+        (if (> MAX-MINERS-COUNT (get miners-count block))
+            (begin
+                ;; list is not full - add new miner and calculate if he committed the least
+                (map-set blocks-miners
+                    { stacks-block-height: stacks-block-height, idx: new-idx }
+                    { miner-id: miner-id, ustx: commit-ustx }
                 )
-                ;; if list is not full
-                (if (< commit-ustx cur-least-commitment-amount)
-                    ;; miner committed less than any previous miners
-                    (map-set mined-blocks
-                        { stacks-block-height: stacks-bh }
-                        {
-                            miners: new-miners,
-                            claimed: false,
-                            least-commitment: new-least-commitment
-                        }
+
+                (map-set mined-blocks
+                    { stacks-block-height: stacks-block-height }
+                    {
+                        miners-count: increased-miners-count,
+                        least-commitment-idx: (if (or (is-eq new-idx u1) (< commit-ustx least-commitment-ustx)) new-idx least-commitment-idx),
+                        least-commitment-ustx: (if (or (is-eq new-idx u1) (< commit-ustx least-commitment-ustx)) commit-ustx least-commitment-ustx),
+                        claimed: false
+                    }
+                )
+            )
+            (begin
+                ;; list is full - replace miner who committed the least with new one and calculate new miner who committed the least
+                (map-set blocks-miners
+                    { stacks-block-height: stacks-block-height, idx: least-commitment-idx }
+                    { miner-id: miner-id, ustx: commit-ustx }
+                )
+                (let
+                    (
+                        (least-commitment (find-least-commitment stacks-block-height))
                     )
-                    ;; miner committed same or more than miner who committed least
                     (map-set mined-blocks
-                        { stacks-block-height: stacks-bh }
+                        { stacks-block-height: stacks-block-height }
                         {
-                            miners: new-miners,
-                            claimed: false,
-                            least-commitment: cur-least-commitment,
+                            miners-count: MAX-MINERS-COUNT,
+                            least-commitment-idx: (get least-commitment-idx least-commitment),
+                            least-commitment-ustx: (get least-commitment-ustx least-commitment),
+                            claimed: false
                         }
                     )
                 )
             )
         )
         (map-set miners-block-commitment
-            { miner-id: miner-id, stacks-block-height: stacks-bh}
+            { miner-id: miner-id, stacks-block-height: stacks-block-height}
             { committed: true }
         )
         (map-set tokens-per-cycle
             { reward-cycle: reward-cycle }
             { total-ustx: (+ commit-ustx-to-stackers (get total-ustx tokens-mined)), total-tokens: (get total-tokens tokens-mined) }
         )
-
         (map-set block-commit
-            { stacks-block-height: stacks-bh }
+            { stacks-block-height: stacks-block-height }
             {
-                amount: (+ commit-ustx (get-block-commit-total stacks-bh)),
-                amount-to-stackers: (+ commit-ustx-to-stackers (get-block-commit-to-stackers stacks-bh)),
-                amount-to-city: (+ commit-ustx-to-city (get-block-commit-to-city stacks-bh))
+                amount: (+ commit-ustx (get-block-commit-total stacks-block-height)),
+                amount-to-stackers: (+ commit-ustx-to-stackers (get-block-commit-to-stackers stacks-block-height)),
+                amount-to-city: (+ commit-ustx-to-city (get-block-commit-to-city stacks-block-height))
             }
         )
-
         (ok true)
     ))
 )
+
+(define-read-only (find-least-commitment (stacks-block-height uint))
+  (fold find-least-commitment-closure LONG-UINT-LIST { stacks-block-height: stacks-block-height, least-commitment-idx: u0, least-commitment-ustx: u0 })
+)
+
+(define-private (find-least-commitment-closure (idx uint) (data { stacks-block-height: uint, least-commitment-idx: uint, least-commitment-ustx: uint }))
+  
+    (match (get ustx (map-get? blocks-miners { stacks-block-height: (get stacks-block-height data), idx: idx }))
+      ustx 
+      (if (or (is-eq idx u1) (< ustx (get least-commitment-ustx data)))
+        {
+          stacks-block-height: (get stacks-block-height data),
+          least-commitment-idx: (if (> ustx u0) idx u0), ;; if is used here to return 0 when called on block without miners
+          least-commitment-ustx: ustx
+        }
+        data
+      )
+      data
+    )
+)
+
 
 ;; Get the reward cycle for a given Stacks block height
 (define-read-only (get-reward-cycle (stacks-bh uint))
@@ -820,12 +851,11 @@
     (let (
         (random-sample (unwrap! (get-random-uint-at-block (+ mined-stacks-block-ht (var-get token-reward-maturity)))
                         (err ERR-IMMATURE-TOKEN-REWARD)))
-        (miners-rec (unwrap! (map-get? mined-blocks { stacks-block-height: mined-stacks-block-ht })
+        (block (unwrap! (map-get? mined-blocks { stacks-block-height: mined-stacks-block-ht })
                         (err ERR-NO-WINNER)))
     )
     (begin
-        (try! (can-claim-tokens tx-sender mined-stacks-block-ht random-sample miners-rec block-height))
-
+        (try! (can-claim-tokens tx-sender mined-stacks-block-ht random-sample block block-height))
         (try! (set-tokens-claimed mined-stacks-block-ht))
         (unwrap-panic (mint-coinbase tx-sender mined-stacks-block-ht))
 
