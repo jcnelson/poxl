@@ -146,13 +146,12 @@ export class CityCoinClient {
     );
   }
 
-  getBlockWinner(stacksBlockHeight: number, randomSampleUint: number, miners: MinersList): Result {
+  getBlockWinner(stacksBlockHeight: number, randomSampleUint: number): Result {
     return this.callReadOnlyFn(
       "get-block-winner",
       [
         types.uint(stacksBlockHeight),
         types.uint(randomSampleUint),
-        miners.convert()
       ]
     )
   }
@@ -197,7 +196,7 @@ export class CityCoinClient {
     claimer: Account,
     claimerStacksBlockHeight: number,
     randomSample: number,
-    minersRec: MinersRec,
+    minedBlock: MinedBlock,
     currentStacksBlock: number
   ): Result {
     return this.callReadOnlyFn(
@@ -206,7 +205,7 @@ export class CityCoinClient {
         types.principal(claimer.address),
         types.uint(claimerStacksBlockHeight),
         types.uint(randomSample),
-        minersRec.convert(),
+        minedBlock.convert(),
         types.uint(currentStacksBlock)
       ]
     );
@@ -405,6 +404,31 @@ export class CityCoinClient {
   }
 }
 
+export class MinedBlock {
+
+  minersCount: number;
+  leastCommitmentIdx: number;
+  leastCommitmentUstx: number;
+  claimed: boolean;
+
+  constructor(minersCount: number, leastCommitmentIdx: number, leastCommitmentUstx: number, claimed: boolean) {
+    this.minersCount = minersCount;
+    this.leastCommitmentIdx = leastCommitmentIdx;
+    this.leastCommitmentUstx = leastCommitmentUstx;
+    this.claimed = claimed;
+  }
+
+  convert(): string {
+    return types.tuple({
+      "miners-count": types.uint(this.minersCount),
+      "least-commitment-idx": types.uint(this.leastCommitmentIdx),
+      "least-commitment-ustx": types.uint(this.leastCommitmentUstx),
+      "claimed": types.bool(this.claimed)
+    })
+  }
+
+}
+
 export interface MinerCommit {
   miner: Account,
   minerId: number,
@@ -431,7 +455,7 @@ export class MinersList extends Array<MinerCommit> {
     let item = this[index];
     return {
       "miner-id": types.uint(item.minerId),
-      "amount-ustx": types.uint(item.amountUstx)
+      "ustx": types.uint(item.amountUstx)
     }
   }
 }
