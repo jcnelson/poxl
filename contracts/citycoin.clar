@@ -472,7 +472,7 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
             (asserts! (not (get claimed block))
                 (err ERR-ALREADY-CLAIMED))
 
-            (match (get-block-winner claimer-stacks-block-height random-sample (get-miners-at-block claimer-stacks-block-height))
+            (match (get-block-winner claimer-stacks-block-height random-sample)
                 winner-rec (if (is-eq claimer-id (get miner-id winner-rec))
                                (ok true)
                                (err ERR-UNAUTHORIZED))
