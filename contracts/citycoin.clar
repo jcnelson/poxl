@@ -107,7 +107,6 @@
 (define-constant MINING-ACTIVATION-DELAY u100)       ;; how many blocks after last miner registration mining will be activated (~24hrs)
 (define-constant MINING-HALVING-BLOCKS u210000)      ;; how many blocks until the next halving occurs
 (define-data-var miners-nonce uint u0)               ;; variable used to generate unique miner-id's
-(define-data-var signaling-miners-nonce uint u0)     ;; number of miners who signaled activation
 (define-data-var coinbase-threshold-1 uint u0)       ;; block height of the 1st halving, set by register-miner
 (define-data-var coinbase-threshold-2 uint u0)       ;; block height of the 2nd halving, set by register-miner
 (define-data-var coinbase-threshold-3 uint u0)       ;; block height of the 3rd halving, set by register-miner
@@ -203,29 +202,24 @@
 ;; The fungible token that can be Stacked.
 (define-fungible-token citycoins)
 
-(define-map signaling-miners
-    { miner: principal }
-    { id: uint }
-)
-
 (define-public (register-miner)
     (let
         (
-            (new-id (+ u1 (var-get signaling-miners-nonce)))
+            (new-id (+ u1 (var-get miners-nonce)))
             (threshold (var-get mining-activation-threshold))
         )
-        (asserts! (is-none (map-get? signaling-miners {miner: tx-sender}))
+        (asserts! (is-none (map-get? miners { miner: tx-sender }))
             (err ERR-MINER-ALREADY-REGISTERED))
 
         (asserts! (<= new-id threshold)
             (err ERR-MINING-ACTIVATION-THRESHOLD-REACHED))
         
-        (map-set signaling-miners
-            {miner: tx-sender}
-            {id: new-id}
+        (map-set miners
+            { miner: tx-sender }
+            { miner-id: new-id }
         )
         
-        (var-set signaling-miners-nonce new-id)
+        (var-set miners-nonce new-id)
 
         (if (is-eq new-id threshold)
             (let
@@ -249,16 +243,6 @@
 ;; Getter for checking if mining is activated
 (define-read-only (get-mining-activation-status)
     (var-get mining-activation-threshold-reached)
-)
-
-;; Getter for viewing registered miner by principal
-(define-read-only (get-registered-miner-id (miner principal))
-    (map-get? signaling-miners { miner: miner })
-)
-
-;; Getter for number of registered miners
-(define-read-only (get-registered-miners-nonce)
-    (var-get signaling-miners-nonce)
 )
 
 ;; Getter for current registration threshold
