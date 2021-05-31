@@ -1011,6 +1011,31 @@ describe('[CityCoin]', () => {
           wallet_6.address
         );
       });
+
+      it("emits print event with memo if supplied", () => {
+        chain.mineBlock([
+          client.setCityWallet(wallet_6)
+        ]);
+
+        const memo = new TextEncoder().encode("hello world");
+
+        const block = chain.mineBlock([
+          client.mineTokens(200, wallet_1, memo)
+        ]);
+
+        const expectedEvent = {
+          type: "contract_event", 
+          contract_event: {
+            contract_identifier: client.getContractAddress(),
+            topic: "print",
+            value: types.some(types.buff(memo))
+          }
+        }
+
+        const receipt = block.receipts[0];
+        assertEquals(receipt.events.length, 2);
+        assertEquals(receipt.events[0], expectedEvent);
+      });
     });
 
     describe("claim-stacking-reward()", () => {
