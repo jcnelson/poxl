@@ -12,7 +12,7 @@ import {
 import {
   CityCoinClient,
   MinersList,
-  MinersRec,
+  MinedBlock,
   ErrCode,
   FIRST_STACKING_BLOCK,
   REWARD_CYCLE_LENGTH,
@@ -444,7 +444,7 @@ describe('[CityCoin]', () => {
         setupCleanEnv();
         chain.mineBlock([
           client.setMiningActivationThreshold(1),
-          client.registerMiner(wallet_3)
+          client.registerMiner(wallet_1)
         ]);
         const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
 
@@ -466,7 +466,7 @@ describe('[CityCoin]', () => {
         const known_rnd_winners = [0, 1, 1, 2, 2, 2, 0, 1, 1, 2, 2, 2, 0]
 
         known_rnd_winners.forEach((e, i) => {
-          let result = client.getBlockWinner(block.block_height, i, miners).result;
+          let result = client.getBlockWinner(block.block_height, i).result;
           let winner = result.expectSome().expectTuple();
           let expectedWinner = miners.getFormatted(e)
 
@@ -475,7 +475,7 @@ describe('[CityCoin]', () => {
       });
 
       it("should return no winner if there are no miners", () => {
-        const result = client.getBlockWinner(200, 0, new MinersList()).result;
+        const result = client.getBlockWinner(200, 0).result;
 
         result.expectNone();
       });
@@ -527,8 +527,8 @@ describe('[CityCoin]', () => {
         txs.push(client.mineTokens(r.amountUstx, r.miner));
       });
       
-      const claimedRec = new MinersRec(miners, true, miners[0]);
-      const unclaimedRec = new MinersRec(miners, false, undefined);
+      const claimedBlock = new MinedBlock(3, 1, 1, true);
+      const unclaimedBlock = new MinedBlock(3, 1, 1, false);
       const tokenRewardMaturity = 100;
 
 
@@ -545,13 +545,13 @@ describe('[CityCoin]', () => {
         const currentStacksBlock = block.block_height + tokenRewardMaturity + 1;
 
         const results = [
-          client.canClaimTokens(wallet_1, claimerStacksBlockHeight, 0, unclaimedRec, currentStacksBlock).result,
-          client.canClaimTokens(wallet_2, claimerStacksBlockHeight, 1, unclaimedRec, currentStacksBlock).result,
-          client.canClaimTokens(wallet_2, claimerStacksBlockHeight, 2, unclaimedRec, currentStacksBlock).result,
-          client.canClaimTokens(wallet_3, claimerStacksBlockHeight, 3, unclaimedRec, currentStacksBlock).result,
-          client.canClaimTokens(wallet_3, claimerStacksBlockHeight, 4, unclaimedRec, currentStacksBlock).result,
-          client.canClaimTokens(wallet_3, claimerStacksBlockHeight, 5, unclaimedRec, currentStacksBlock).result,
-          client.canClaimTokens(wallet_1, claimerStacksBlockHeight, 6, unclaimedRec, currentStacksBlock).result,
+          client.canClaimTokens(wallet_1, claimerStacksBlockHeight, 0, unclaimedBlock, currentStacksBlock).result,
+          client.canClaimTokens(wallet_2, claimerStacksBlockHeight, 1, unclaimedBlock, currentStacksBlock).result,
+          client.canClaimTokens(wallet_2, claimerStacksBlockHeight, 2, unclaimedBlock, currentStacksBlock).result,
+          client.canClaimTokens(wallet_3, claimerStacksBlockHeight, 3, unclaimedBlock, currentStacksBlock).result,
+          client.canClaimTokens(wallet_3, claimerStacksBlockHeight, 4, unclaimedBlock, currentStacksBlock).result,
+          client.canClaimTokens(wallet_3, claimerStacksBlockHeight, 5, unclaimedBlock, currentStacksBlock).result,
+          client.canClaimTokens(wallet_1, claimerStacksBlockHeight, 6, unclaimedBlock, currentStacksBlock).result,
         ];
 
         results.forEach((result) => {
@@ -572,9 +572,9 @@ describe('[CityCoin]', () => {
         const currentStacksBlock = block.block_height + tokenRewardMaturity + 1;
 
         const results = [
-          client.canClaimTokens(wallet_4, claimerStacksBlockHeight, 0, unclaimedRec, currentStacksBlock).result,
-          client.canClaimTokens(wallet_5, claimerStacksBlockHeight, 1, unclaimedRec, currentStacksBlock).result,
-          client.canClaimTokens(wallet_6, claimerStacksBlockHeight, 2, unclaimedRec, currentStacksBlock).result,
+          client.canClaimTokens(wallet_4, claimerStacksBlockHeight, 0, unclaimedBlock, currentStacksBlock).result,
+          client.canClaimTokens(wallet_5, claimerStacksBlockHeight, 1, unclaimedBlock, currentStacksBlock).result,
+          client.canClaimTokens(wallet_6, claimerStacksBlockHeight, 2, unclaimedBlock, currentStacksBlock).result,
         ]
 
         results.forEach((result) => {
@@ -583,14 +583,14 @@ describe('[CityCoin]', () => {
       });
 
       it("throws ERR_IMMATURE_TOKEN_REWARD", () => {
-        const result = client.canClaimTokens(wallet_1, 0, 0, unclaimedRec, tokenRewardMaturity).result;
+        const result = client.canClaimTokens(wallet_1, 0, 0, unclaimedBlock, tokenRewardMaturity).result;
 
         result.expectErr().expectUint(ErrCode.ERR_IMMATURE_TOKEN_REWARD);
       });
 
       it("throws ERR_ALREADY_CLAIMED error", () => {
         const currentStacksBlock = tokenRewardMaturity + 1;
-        const result = client.canClaimTokens(wallet_1, 0, 0, claimedRec, currentStacksBlock).result;
+        const result = client.canClaimTokens(wallet_1, 0, 0, claimedBlock, currentStacksBlock).result;
 
         result.expectErr().expectUint(ErrCode.ERR_ALREADY_CLAIMED);
       });
