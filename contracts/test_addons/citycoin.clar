@@ -234,6 +234,6 @@
   (begin
     (var-set city-wallet 'STFCVYY1RJDNJHST7RRTPACYHVJQDJ7R1DWTQHQA)
     (var-set mining-activation-threshold u1)
-    (register-miner)
+    (register-miner none)
   )
 )
