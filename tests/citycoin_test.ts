@@ -1132,6 +1132,40 @@ describe('[CityCoin]', () => {
         assertEquals(receipt.events.length, 0);
       });
 
+      it("emits print event with memo if supplied", () => {
+        setupCleanEnv();
+
+        const memo = new TextEncoder().encode("hello world")
+
+        const block = chain.mineBlock([
+          client.registerMiner(wallet_1, memo)
+        ]);
+
+        const expectedEvent = {
+          type: "contract_event", 
+          contract_event: {
+            contract_identifier: client.getContractAddress(),
+            topic: "print",
+            value: types.some(types.buff(memo))
+          }
+        }
+
+        const receipt = block.receipts[0];
+        assertEquals(receipt.events[0], expectedEvent);
+      });
+
+      it("doesn't emit any events if memo is not supplied", () => {
+        setupCleanEnv();
+        
+        const block = chain.mineBlock([
+          client.registerMiner(wallet_1)
+        ]);
+
+        const events = block.receipts[0].events;
+
+        assertEquals(events.length, 0);
+      });
+
       it("fails with ERR_MINER_ALREADY_REGISTERED error when miner wants to register second time", () => {
         setupCleanEnv();
 

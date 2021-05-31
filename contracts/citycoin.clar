@@ -219,7 +219,7 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
 ;; The fungible token that can be Stacked.
 (define-fungible-token citycoins)
 
-(define-public (register-miner)
+(define-public (register-miner (memo (optional (buff 34))))
     (let
         (
             (new-id (+ u1 (var-get miners-nonce)))
@@ -230,7 +230,12 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
 
         (asserts! (<= new-id threshold)
             (err ERR-MINING-ACTIVATION-THRESHOLD-REACHED))
-        
+
+        (if (is-some memo)
+            (print memo)
+            none
+        )
+
         (map-set miners
             { miner: tx-sender }
             { miner-id: new-id }

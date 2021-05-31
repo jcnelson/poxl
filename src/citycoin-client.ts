@@ -337,11 +337,21 @@ export class CityCoinClient {
     );
   }
 
-  registerMiner(sender: Account): Tx {
+  registerMiner(sender: Account, memo: ArrayBuffer|undefined = undefined): Tx {
+    let memoVal: string;
+    
+    if ( typeof memo == "undefined" ) {
+      memoVal = types.none();
+    } else {
+      memoVal = types.some(types.buff(memo));
+    }
+    
     return Tx.contractCall(
       this.contractName,
       "register-miner",
-      [],
+      [
+        memoVal
+      ],
       sender.address
     )
   }
