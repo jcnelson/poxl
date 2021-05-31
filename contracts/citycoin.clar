@@ -798,8 +798,14 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
 ;; and in doing so, enters their candidacy to be able to claim the block reward (via claim-token-reward).  The miner must 
 ;; wait for a token maturity window in order to obtain the tokens.  Once that window passes, they can get the tokens.
 ;; This ensures that no one knows the VRF seed that will be used to pick the winner.
-(define-public (mine-tokens (amount-ustx uint))
-    (mine-tokens-at-block block-height (get-or-create-miner-id tx-sender) amount-ustx)
+(define-public (mine-tokens (amount-ustx uint) (memo (optional (buff 34))))
+    (begin
+        (if (is-some memo)
+            (print memo)
+            none
+        )
+        (mine-tokens-at-block block-height (get-or-create-miner-id tx-sender) amount-ustx)
+    )
 )
 
 (define-private (mine-tokens-at-block (stacks-block-height uint) (miner-id uint) (amount-ustx uint))

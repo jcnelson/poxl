@@ -304,12 +304,21 @@ export class CityCoinClient {
     );
   }
 
-  mineTokens(amountUstx: number, sender: Account): Tx {
+  mineTokens(amountUstx: number, sender: Account, memo: ArrayBuffer|undefined = undefined): Tx {
+    let memoVal: string;
+
+    if ( typeof memo == "undefined" ) {
+      memoVal = types.none();
+    } else {
+      memoVal = types.some(types.buff(memo));
+    }
+
     return Tx.contractCall(
       this.contractName,
       "mine-tokens",
       [
-        types.uint(amountUstx)
+        types.uint(amountUstx),
+        memoVal
       ],
       sender.address
     );
