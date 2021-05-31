@@ -799,10 +799,12 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
 ;; wait for a token maturity window in order to obtain the tokens.  Once that window passes, they can get the tokens.
 ;; This ensures that no one knows the VRF seed that will be used to pick the winner.
 (define-public (mine-tokens (amount-ustx uint))
-    (let (
-        (miner-id (get-or-create-miner-id tx-sender))
+    (mine-tokens-at-block block-height (get-or-create-miner-id tx-sender) amount-ustx)
+)
 
-        (rc (unwrap! (get-reward-cycle block-height)
+(define-private (mine-tokens-at-block (stacks-block-height uint) (miner-id uint) (amount-ustx uint))
+    (let (
+        (rc (unwrap! (get-reward-cycle stacks-block-height)
             (err ERR-STACKING-NOT-AVAILABLE)))
         (total-stacked (get total-tokens (map-get? tokens-per-cycle { reward-cycle: rc })))
         (total-stacked-ustx (default-to u0 total-stacked))
@@ -820,11 +822,9 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
             )
         )
     )
-
     (begin
-        (try! (can-mine-tokens tx-sender miner-id block-height amount-ustx))
-
-        (try! (set-tokens-mined tx-sender miner-id block-height amount-ustx amount-ustx-to-stacker amount-ustx-to-city))
+        (try! (can-mine-tokens tx-sender miner-id stacks-block-height amount-ustx))
+        (try! (set-tokens-mined tx-sender miner-id stacks-block-height amount-ustx amount-ustx-to-stacker amount-ustx-to-city))
 
         ;; check if stacking is active
         (if stacked-something
