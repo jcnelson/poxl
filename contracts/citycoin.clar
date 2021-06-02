@@ -1,5 +1,5 @@
 ;; citycoin implementation of the PoX-lite contract, MVP.
-
+(define-constant CONTRACT-OWNER tx-sender)
 ;; error codes
 (define-constant ERR-NO-WINNER u0)
 (define-constant ERR-NO-SUCH-MINER u1)
@@ -63,6 +63,15 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
     0xe0 0xe1 0xe2 0xe3 0xe4 0xe5 0xe6 0xe7 0xe8 0xe9 0xea 0xeb 0xec 0xed 0xee 0xef
     0xf0 0xf1 0xf2 0xf3 0xf4 0xf5 0xf6 0xf7 0xf8 0xf9 0xfa 0xfb 0xfc 0xfd 0xfe 0xff
 ))
+
+(define-data-var token-uri (optional (string-utf8 256)) (some u"https://cdn.citycoins.co/metadata/citycoin.json"))
+
+(define-public (set-token-uri (new-uri (optional (string-utf8 256))))
+    (begin
+        (asserts! (is-eq tx-sender CONTRACT-OWNER) (err ERR-UNAUTHORIZED))
+        (ok (var-set token-uri new-uri))
+    )
+)
 
 ;; Convert a 1-byte buffer into its uint representation.
 (define-private (buff-to-u8 (byte (buff 1)))
@@ -979,4 +988,4 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
     (ok (ft-get-supply citycoins)))
 
 (define-read-only (get-token-uri)
-    (ok (some u"https://cdn.citycoins.co/metadata/citycoin.json")))
+    (ok (var-get token-uri)))

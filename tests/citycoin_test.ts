@@ -170,7 +170,7 @@ describe('[CityCoin]', () => {
     });
 
     describe("get-token-uri()", () => {
-      it("should return none", () => {
+      it("should return correct uri", () => {
         const result = client.getTokenUri().result;
 
         result.expectOk().expectSome().expectUtf8("https://cdn.citycoins.co/metadata/citycoin.json");
@@ -1228,7 +1228,44 @@ describe('[CityCoin]', () => {
 
         receipt.result.expectErr().expectUint(ErrCode.ERR_MINING_ACTIVATION_THRESHOLD_REACHED);
         assertEquals(receipt.events.length, 0);
-      })
+      });
+    });
+
+    describe('set-token-uri', () => {
+      it("fails with ERR_UNAUTHORIZED when called by someone who is not contract owner", () => {
+        const block = chain.mineBlock([
+          client.setTokenUri(wallet_3, "http://something-something.com")
+        ]);
+
+        const receipt = block.receipts[0];
+
+        receipt.result.expectErr().expectUint(ErrCode.ERR_UNAUTHORIZED);
+      });
+
+      it("changes token uri to none if no new value is provided", () => {
+        const block = chain.mineBlock([
+          client.setTokenUri(deployer)
+        ]);
+
+        const receipt = block.receipts[0];
+        receipt.result.expectOk().expectBool(true);
+
+        const result = client.getTokenUri().result;
+        result.expectOk().expectNone();
+      });
+
+      it("changes token uri to new value if provided", () => {
+        const newUri = "http://something-something.com"
+        const block = chain.mineBlock([
+          client.setTokenUri(deployer, newUri)
+        ]);
+
+        const receipt = block.receipts[0];
+        receipt.result.expectOk().expectBool(true);
+
+        const result = client.getTokenUri().result;
+        result.expectOk().expectSome().expectUtf8(newUri);
+      });
     });
   });
 });
