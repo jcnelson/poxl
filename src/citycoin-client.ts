@@ -229,7 +229,7 @@ export class CityCoinClient {
   }
 
   canStackTokens(
-    stackerId: Account,
+    stacker: Account,
     amountTokens: number,
     nowStacksHeight: number,
     startStacksHeight: number,
@@ -238,7 +238,7 @@ export class CityCoinClient {
     return this.callReadOnlyFn(
       "can-stack-tokens",
       [
-        types.principal(stackerId.address),
+        types.principal(stacker.address),
         types.uint(amountTokens),
         types.uint(nowStacksHeight),
         types.uint(startStacksHeight),
@@ -248,14 +248,14 @@ export class CityCoinClient {
   }
 
   getEntitledStackingReward(
-    stackerId: Account,
+    stacker: Account,
     targetRewardCycle: number,
     currentBlockHeight: number
   ): Result {
     return this.callReadOnlyFn(
       "get-entitled-stacking-reward",
       [
-        types.principal(stackerId.address),
+        types.principal(stacker.address),
         types.uint(targetRewardCycle),
         types.uint(currentBlockHeight)
       ],
