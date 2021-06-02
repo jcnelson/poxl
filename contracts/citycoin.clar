@@ -217,7 +217,7 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
 )
 
 ;; The fungible token that can be Stacked.
-(define-fungible-token citycoins)
+(define-fungible-token mia)
 
 (define-public (register-miner (memo (optional (buff 34))))
     (let
@@ -348,7 +348,7 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
             (ok
                 (let (
                     (token-info (get-tokens-per-cycle cur-reward-cycle))
-                    (total-ft-supply (ft-get-supply citycoins))
+                    (total-ft-supply (ft-get-supply mia))
                     (total-ustx-supply (stx-get-balance (as-contract tx-sender)))
                 )
                 {
@@ -368,7 +368,7 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
 
 ;; Produce the new tokens for the given claimant, who won the tokens at the given Stacks block height.
 (define-private (mint-coinbase (recipient principal) (stacks-block-ht uint))
-    (ft-mint? citycoins (get-coinbase-amount stacks-block-ht) recipient)
+    (ft-mint? mia (get-coinbase-amount stacks-block-ht) recipient)
 )
 
 ;; Getter to obtain the list of miners and uSTX commitments at a given Stacks block height,
@@ -563,7 +563,7 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
         (asserts! (> amount-tokens u0)
             (err ERR-CANNOT-STACK))
 
-        (asserts! (<= amount-tokens (ft-get-balance citycoins stacker-id))
+        (asserts! (<= amount-tokens (ft-get-balance mia stacker-id))
             (err ERR-INSUFFICIENT-BALANCE))
 
         (ok true)
@@ -793,7 +793,7 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
     (begin
         (try! (can-stack-tokens tx-sender amount-tokens block-height start-stacks-ht lock-period))
 
-        (unwrap! (ft-transfer? citycoins amount-tokens tx-sender (as-contract tx-sender))
+        (unwrap! (ft-transfer? mia amount-tokens tx-sender (as-contract tx-sender))
             (err ERR-INSUFFICIENT-BALANCE))
 
         (fold stack-tokens-closure REWARD-CYCLE-INDEXES
@@ -959,24 +959,24 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
         (asserts! (is-eq from tx-sender)
             (err ERR-UNAUTHORIZED))
 
-        (ft-transfer? citycoins amount from to)
+        (ft-transfer? mia amount from to)
     )
 )
 
 (define-read-only (get-name)
-    (ok "citycoins"))
+    (ok "MiamiCoin"))
 
 (define-read-only (get-symbol)
-    (ok "CYCN"))
+    (ok "MIA"))
 
 (define-read-only (get-decimals)
     (ok u0))
 
 (define-read-only (get-balance (user principal))
-    (ok (ft-get-balance citycoins user)))
+    (ok (ft-get-balance mia user)))
 
 (define-read-only (get-total-supply)
-    (ok (ft-get-supply citycoins)))
+    (ok (ft-get-supply mia)))
 
 (define-read-only (get-token-uri)
-    (ok (some u"https://cdn.citycoins.co/metadata/citycoin.json")))
+    (ok (some u"https://cdn.citycoins.co/metadata/miami.json")))
