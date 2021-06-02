@@ -380,6 +380,25 @@ export class CityCoinClient {
     return this.callReadOnlyFn("get-total-supply-ustx");
   }
 
+  setTokenUri(sender: Account, newUri?:string|undefined): Tx {
+    let newUriVal: string;
+
+    if ( typeof newUri == "undefined" ) {
+      newUriVal = types.none();
+    } else {
+      newUriVal = types.some(types.utf8(newUri));
+    }
+
+    return Tx.contractCall(
+      this.contractName,
+      "set-token-uri",
+      [
+        newUriVal
+      ],
+      sender.address
+    )
+  }
+
   // SIP-010 functions
 
   transfer(amount: number, from: Account, to: Account, sender: Account): Tx {
