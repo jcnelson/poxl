@@ -272,6 +272,10 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
     (var-get mining-activation-threshold)
 )
 
+(define-read-only (get-registered-miners-nonce)
+    (var-get miners-nonce)
+)
+
 ;; Function for deciding how many tokens to mint, depending on when they were mined.
 (define-read-only (get-coinbase-amount (miner-block-height uint))
     (let
