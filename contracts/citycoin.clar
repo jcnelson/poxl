@@ -262,7 +262,6 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
     )
 )
 
-<<<<<<< Updated upstream
 ;; Getter for checking if mining is activated
 (define-read-only (get-mining-activation-status)
     (var-get mining-activation-threshold-reached)
@@ -275,16 +274,6 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
 
 (define-read-only (get-registered-miners-nonce)
     (var-get miners-nonce)
-=======
-;; Getter for seeing who is on the list
-(define-read-only (get-registered-miner-id (miner principal))
-    (map-get? signaling-miners { miner: miner })
-)
-
-;; Getter for current registered miners nonce
-(define-read-only (get-registered-miners-nonce)
-    (var-get signaling-miners-nonce)
->>>>>>> Stashed changes
 )
 
 ;; Function for deciding how many tokens to mint, depending on when they were mined.
