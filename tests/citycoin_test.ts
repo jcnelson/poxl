@@ -1097,16 +1097,17 @@ describe('[CityCoin]', () => {
       });
 
 
-      it("succeeds and causes one stx_transfer_event event", () => {
+      it("succeeds and causes one stx_transfer_event event and one ft_transfer event", () => {
         const miner_1 = wallet_1;
         const miner_2 = wallet_2
         const stacker = wallet_3;
         const minerCommitment = 2000;
+        const stackedAmount = 5000;
 
         // add tokens and stack them at the next cycle
         chain.mineBlock([
-          client.ftMint(5000, stacker),
-          client.stackTokens(5000, 105, 1, stacker),
+          client.ftMint(stackedAmount, stacker),
+          client.stackTokens(stackedAmount, 105, 1, stacker),
         ]);
 
         // advance chain forward to jump into 1st stacking cycle
@@ -1131,14 +1132,22 @@ describe('[CityCoin]', () => {
         receipt.result.expectOk().expectBool(true);
 
         // check events count
-        assertEquals(receipt.events.length, 1);
+        assertEquals(receipt.events.length, 2);
 
-        // check event details
+        // check stx_transfer_event details
         receipt.events.expectSTXTransferEvent(
           minerCommitment * 2 * SPLIT_STACKER_PERCENTAGE,
           client.getContractAddress(),
           stacker.address
-        )
+        );
+
+        // check ft_transfer_event details
+        receipt.events.expectFungibleTokenTransferEvent(
+          stackedAmount,
+          client.getContractAddress(),
+          stacker.address,
+          'citycoins'
+        );
       })
     });
 

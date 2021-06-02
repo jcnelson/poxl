@@ -325,8 +325,8 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
 )
 
 ;; Getter for getting how many tokens are Stacked by the given principal in the given reward cycle.
-(define-read-only (get-stacked-in-cycle (miner-id principal) (reward-cycle uint))
-    (match (map-get? stacked-per-cycle { owner: miner-id, reward-cycle: reward-cycle })
+(define-read-only (get-stacked-in-cycle (stacker principal) (reward-cycle uint))
+    (match (map-get? stacked-per-cycle { owner: stacker, reward-cycle: reward-cycle })
         stacked-rec (get amount-token stacked-rec)
         u0
     )
@@ -926,8 +926,9 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
 ;; they locked up).
 (define-public (claim-stacking-reward (target-reward-cycle uint))
     (let (
+        (stacker tx-sender)    
         (entitled-ustx (get-entitled-stacking-reward tx-sender target-reward-cycle block-height))
-        (stacker-id tx-sender)
+        (stacked-in-cycle (get-stacked-in-cycle tx-sender target-reward-cycle))
     )
     (begin
         (asserts! (> entitled-ustx u0)
@@ -938,9 +939,8 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
             { owner: tx-sender, reward-cycle: target-reward-cycle }
             { amount-token: u0 })
 
-        (unwrap-panic 
-            (as-contract
-                (stx-transfer? entitled-ustx tx-sender stacker-id)))
+        (try! (as-contract (stx-transfer? entitled-ustx tx-sender stacker)))
+        (try! (as-contract (ft-transfer? citycoins stacked-in-cycle tx-sender stacker)))
 
         (ok true)
     ))
