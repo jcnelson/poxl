@@ -382,7 +382,15 @@ export class CityCoinClient {
 
   // SIP-010 functions
 
-  transfer(amount: number, from: Account, to: Account, sender: Account): Tx {
+  transfer(amount: number, from: Account, to: Account, sender: Account, memo: ArrayBuffer|undefined = undefined): Tx {
+    let memoVal: string;
+
+    if ( typeof memo == "undefined" ) {
+      memoVal = types.none();
+    } else {
+      memoVal = types.some(types.buff(memo));
+    }
+
     return Tx.contractCall(
       this.contractName,
       "transfer",
@@ -390,7 +398,7 @@ export class CityCoinClient {
         types.uint(amount),
         types.principal(from.address),
         types.principal(to.address),
-        types.none()
+        memoVal
       ],
       sender.address
     );

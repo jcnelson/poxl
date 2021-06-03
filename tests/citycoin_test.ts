@@ -59,10 +59,81 @@ describe('[CityCoin]', () => {
     client = new CityCoinClient(chain, deployer);
   }
 
-  describe("SIP-010 api:", () => {
+  describe("SIP-010:", () => {
     setupCleanEnv();
 
     describe("transfer()", () => {
+      beforeEach(() => {
+        setupCleanEnv();
+      })
+
+      it("should succeed with no memo supplied", () => {
+        const from = wallet_1;
+        const to = wallet_2;
+
+        chain.mineBlock([
+          client.ftMint(100, wallet_1)
+        ]);
+
+        const block = chain.mineBlock([
+          client.transfer(100, from, to, from)
+        ]);
+
+        assertEquals(block.receipts.length, 1);
+        block.receipts[0].result.expectOk();
+      });
+
+      it("should succeed with memo supplied", () => {
+        const from = wallet_1;
+        const to = wallet_2;
+        const memo = new TextEncoder().encode("MiamiCoin is the first CityCoin");
+
+        chain.mineBlock([
+          client.ftMint(100, wallet_1)
+        ]);
+
+        const block = chain.mineBlock([
+          client.transfer(100, from, to, from, memo)
+        ]);
+
+        assertEquals(block.receipts.length, 1);
+        block.receipts[0].result.expectOk();
+
+        /* should the memo be printed? not seeing in receipts
+
+        const expectedEvent = {
+          type: "contract_event", 
+          contract_event: {
+            contract_identifier: client.getContractAddress(),
+            topic: "print",
+            value: types.some(types.buff(memo))
+          }
+        }
+
+        const receipt = block.receipts[0];
+        console.info(receipt);
+        console.info(receipt.events[0]);
+        assertEquals(receipt.events.length, 2);
+        assertEquals(receipt.events[0], expectedEvent);
+
+        */
+
+      });
+
+      it("should fail with u1 when sender does not have enough funds", () => {
+        const from = wallet_1;
+        const to = wallet_2;
+
+        const block = chain.mineBlock([
+          client.transfer(100, from, to, from)
+        ]);
+
+        assertEquals(block.receipts.length, 1);
+        block.receipts[0].result.expectErr().expectUint(1);
+      });
+
+      // TODO: add u2 error test
+
       it("should fail with u3 when token sender is different than transaction sender", () => {
         const from = wallet_1;
         const to = wallet_2;
@@ -107,7 +178,7 @@ describe('[CityCoin]', () => {
         result.expectOk().expectUint(0);
       });
 
-      it("should return 100", () => {
+      it("should return 100 after 100 tokens are minted", () => {
         chain.mineBlock([
           client.ftMint(100, wallet_1)
         ]);
@@ -170,10 +241,12 @@ describe('[CityCoin]', () => {
     });
 
     describe("get-token-uri()", () => {
-      it("should return none", () => {
+      it("should return the correct URI", () => {
         const result = client.getTokenUri().result;
+        const tokenUri = "https://cdn.citycoins.co/metadata/citycoin.json";
 
-        result.expectOk().expectSome().expectUtf8("https://cdn.citycoins.co/metadata/citycoin.json");
+        console.log(`\n  URI: ${tokenUri}`)
+        result.expectOk().expectSome().expectUtf8(tokenUri);
       });
     });
   });
