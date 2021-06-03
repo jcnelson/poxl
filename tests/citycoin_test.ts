@@ -251,7 +251,7 @@ describe('[CityCoin]', () => {
     });
   });
 
-  describe("Read only functions:", () => {
+  describe("Read Only:", () => {
     setupCleanEnv();
 
     describe("get-total-supply-ustx()", () => {
@@ -915,7 +915,7 @@ describe('[CityCoin]', () => {
     })
   });
 
-  describe("Public functions:", () => {
+  describe("Public:", () => {
     describe("stack-tokens()", () => {
       beforeEach(() => {
         setupCleanEnv();
