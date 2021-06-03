@@ -439,7 +439,7 @@ describe('[CityCoin]', () => {
 
     });
 
-    describe("getBlockWinner()", () => {
+    describe("get-block-winner()", () => {
       it("should select correct winner", () => {
         setupCleanEnv();
         chain.mineBlock([
@@ -827,7 +827,7 @@ describe('[CityCoin]', () => {
       });
     });
 
-    describe("get-first-block-height-in-reward-cycle", () => {
+    describe("get-first-block-height-in-reward-cycle()", () => {
       it("returns correct value", () => {
         const rewardCycles = [0, 1, 2, 3, 5, 15, 24, 44, 890];
 
@@ -1142,7 +1142,7 @@ describe('[CityCoin]', () => {
       })
     });
 
-    describe("register-miner", () => {
+    describe("register-miner()", () => {
       it("succeeds with (ok true)", () => {
         setupCleanEnv();
 
