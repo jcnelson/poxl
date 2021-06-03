@@ -1103,7 +1103,44 @@ describe('[CityCoin]', () => {
           result.expectUint(expectedValue);
         });
       });
-    })
+    });
+
+    describe("get-pox-lite-info()", () => {
+      beforeEach(() => {
+        setupCleanEnv();
+      });
+
+      it("throws ERR_STACKING_NOT_AVAILABLE if stacking is not active", () => {
+        const result = client.getPoxLiteInfo().result;
+
+        result.expectErr().expectUint(ErrCode.ERR_STACKING_NOT_AVAILABLE);
+      });
+
+      it("returns statistics if stacking is active", () => {
+        chain.mineBlock([
+          client.setMiningActivationThreshold(1),
+          client.registerMiner(wallet_1)
+        ]);
+
+        chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
+
+        // stack in cycle 1 while cycle 0 is active
+        chain.mineBlock([
+          client.ftMint(100, wallet_2),
+          client.stackTokens(100, 105, 1, wallet_2)
+        ]);
+
+        // progress into reward cycle 1
+        chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
+        
+        const result = client.getPoxLiteInfo().result;
+
+        console.log(`\n  success returned: ${result}`)
+
+        result.expectOk();
+      });
+
+    });
   });
 
   describe("Public:", () => {
@@ -1114,7 +1151,7 @@ describe('[CityCoin]', () => {
           client.setMiningActivationThreshold(1),
           client.registerMiner(wallet_3)
         ]);
-      })
+      });
 
       it("throws ERR_STACKING_NOT_AVAILABLE error", () => {
         const block = chain.mineBlock([
