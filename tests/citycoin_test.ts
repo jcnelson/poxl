@@ -683,8 +683,7 @@ describe('[CityCoin]', () => {
           client.generateMinerId(wallet_3)
         ]);
         const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
-        const minerId = client.getMinerId(wallet_3);
-
+        const minerId = client.getMinerId(wallet_3).result;
         const result = client.canMineTokens(wallet_3, minerId, block.block_height, 10).result;
 
         result.expectOk().expectBool(true);
@@ -695,7 +694,7 @@ describe('[CityCoin]', () => {
         chain.mineBlock([
           client.generateMinerId(wallet_3)
         ]);
-        const minerId = client.getMinerId(wallet_3)
+        const minerId = client.getMinerId(wallet_3).result;
 
         const result = client.canMineTokens(wallet_3, minerId, 0, 10).result;
 
@@ -712,7 +711,7 @@ describe('[CityCoin]', () => {
         chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
 
         const block = chain.mineBlock([client.mineTokens(200, wallet_1)]);
-        const minerId = client.getMinerId(wallet_1);
+        const minerId = client.getMinerId(wallet_1).result;
 
         const result = client.canMineTokens(wallet_1, minerId, block.height-1, 10).result;
 
@@ -741,7 +740,7 @@ describe('[CityCoin]', () => {
           client.generateMinerId(wallet_3)
         ]);
         const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
-        const minerId = client.getMinerId(wallet_3);
+        const minerId = client.getMinerId(wallet_3).result;
       
         const result = client.canMineTokens(wallet_3, 1, block.block_height, wallet_3.balance + 1).result;
 
@@ -1132,7 +1131,7 @@ describe('[CityCoin]', () => {
 
         // progress into reward cycle 1
         chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
-        
+
         const result = client.getPoxLiteInfo().result;
 
         console.log(`\n  success returned: ${result}`)
@@ -1140,6 +1139,14 @@ describe('[CityCoin]', () => {
         result.expectOk();
       });
 
+    });
+
+    describe("get-miner-id()", () => {
+      it("should return none if no miners have mined", () => {
+        const result = client.getMinerId(wallet_1).result;
+
+        result.expectNone();
+      });
     });
   });
 
