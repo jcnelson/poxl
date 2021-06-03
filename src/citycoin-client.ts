@@ -174,13 +174,21 @@ export class CityCoinClient {
         types.principal(miner.address)
       ]
     );
-/*
+  }
+
+  getMinerIdNum(miner: Account): number {
+    const result = this.callReadOnlyFn(
+      "get-miner-id",
+      [
+        types.principal(miner.address)
+      ]
+    ).result;
+
     const regex = /\(some u(\d+)\)/g;
     const match = regex.exec(result);
     const minerId = (!match) ? 1 : match[1];
 
     return Number(minerId);
-    */
   }
 
   hasMined(miner: Account, blockHeight: number): Result {

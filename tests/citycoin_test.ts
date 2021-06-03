@@ -683,7 +683,7 @@ describe('[CityCoin]', () => {
           client.generateMinerId(wallet_3)
         ]);
         const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
-        const minerId = client.getMinerId(wallet_3).result;
+        const minerId = client.getMinerIdNum(wallet_3);
         const result = client.canMineTokens(wallet_3, minerId, block.block_height, 10).result;
 
         result.expectOk().expectBool(true);
@@ -694,7 +694,7 @@ describe('[CityCoin]', () => {
         chain.mineBlock([
           client.generateMinerId(wallet_3)
         ]);
-        const minerId = client.getMinerId(wallet_3).result;
+        const minerId = client.getMinerIdNum(wallet_3);
 
         const result = client.canMineTokens(wallet_3, minerId, 0, 10).result;
 
@@ -711,7 +711,7 @@ describe('[CityCoin]', () => {
         chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
 
         const block = chain.mineBlock([client.mineTokens(200, wallet_1)]);
-        const minerId = client.getMinerId(wallet_1).result;
+        const minerId = client.getMinerIdNum(wallet_1);
 
         const result = client.canMineTokens(wallet_1, minerId, block.height-1, 10).result;
 
@@ -755,7 +755,7 @@ describe('[CityCoin]', () => {
           client.generateMinerId(wallet_1)
         ]);
         
-        const minerId = client.getMinerId(wallet_1);
+        const minerId = client.getMinerIdNum(wallet_1);
         const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
 
         // fill miners list with 128 fake miners with commitment as low as 2uSTX
