@@ -70,36 +70,42 @@ describe('[CityCoin]', () => {
       it("succeeds with no memo supplied", () => {
         const from = wallet_1;
         const to = wallet_2;
+        const amount = 100;
 
         chain.mineBlock([
-          client.ftMint(100, wallet_1)
+          client.ftMint(amount, wallet_1)
         ]);
 
         const block = chain.mineBlock([
-          client.transfer(100, from, to, from)
+          client.transfer(amount, from, to, from)
         ]);
 
         assertEquals(block.receipts.length, 1);
         block.receipts[0].result.expectOk();
+        block.receipts[0].events.expectFungibleTokenTransferEvent(
+          amount,
+          from.address,
+          to.address,
+          'citycoins'
+        );
       });
 
       it("succeeds with memo supplied", () => {
         const from = wallet_1;
         const to = wallet_2;
+        const amount = 100;
         const memo = new TextEncoder().encode("MiamiCoin is the first CityCoin");
 
         chain.mineBlock([
-          client.ftMint(100, wallet_1)
+          client.ftMint(amount, wallet_1)
         ]);
 
         const block = chain.mineBlock([
-          client.transfer(100, from, to, from, memo)
+          client.transfer(amount, from, to, from, memo)
         ]);
 
         assertEquals(block.receipts.length, 1);
         block.receipts[0].result.expectOk();
-
-        /* should the memo be printed? not seeing in receipts
 
         const expectedEvent = {
           type: "contract_event", 
@@ -111,13 +117,14 @@ describe('[CityCoin]', () => {
         }
 
         const receipt = block.receipts[0];
-        console.info(receipt);
-        console.info(receipt.events[0]);
         assertEquals(receipt.events.length, 2);
         assertEquals(receipt.events[0], expectedEvent);
-
-        */
-
+        receipt.events.expectFungibleTokenTransferEvent(
+          amount,
+          from.address,
+          to.address,
+          'citycoins'
+        );
       });
 
       it("fails with u1 when sender does not have enough funds", () => {

@@ -968,6 +968,11 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
         (asserts! (is-eq from tx-sender)
             (err ERR-UNAUTHORIZED))
 
+        (if (is-some memo)
+            (print memo)
+            none
+        )
+
         (ft-transfer? citycoins amount from to)
     )
 )
