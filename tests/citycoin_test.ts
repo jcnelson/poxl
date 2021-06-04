@@ -1271,6 +1271,39 @@ describe('[CityCoin]', () => {
         result.expectUint(3);
       });
     });
+
+    describe("get-miners-at-block()", () => {
+      beforeEach(() => {
+        setupCleanEnv();
+      });
+      
+      it("should return empty list when no miners mined specific block", () => {
+        const result = client.getMinersAtBlock(10).result;
+
+        assertEquals(result.expectList().length, 0);
+      });
+
+      it("should return list with 3 miners when 3 miners mined block", () => {
+        chain.mineBlock([
+          client.setMiningActivationThreshold(1),
+          client.registerMiner(wallet_1)
+        ]);
+
+        const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
+
+        chain.mineBlock([
+          client.mineTokens(100, wallet_1),
+          client.mineTokens(200, wallet_2),
+          client.mineTokens(300, wallet_3)
+        ]);
+
+        const result = client.getMinersAtBlock(block.block_height).result;
+        const minersList = result.expectList();
+
+        assertEquals(minersList.length, 3);
+        // TODO: think about validating content of this list.
+      });
+    });
   });
 
   describe("Public:", () => {
