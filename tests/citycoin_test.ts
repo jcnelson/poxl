@@ -1387,6 +1387,80 @@ describe('[CityCoin]', () => {
         assertEquals(tuple, expectedTuple);
       });
     });
+
+    describe("find-least-commitment()", () => {
+      beforeEach(() => {
+        setupCleanEnv();
+      });
+
+      it("returns default tuple", () => {
+        //stacks-block-height: stacks-block-height, least-commitment-idx: u0, least-commitment-ustx: u0
+        const blockHeight = 10;
+
+        const expectedTuple = {
+          "stacks-block-height": types.uint(blockHeight),
+          "least-commitment-idx": types.uint(0),
+          "least-commitment-ustx": types.uint(0)
+        };
+        
+        const result = client.findLeastCommitment(blockHeight).result;
+        const tuple = result.expectTuple();
+
+        assertEquals(tuple, expectedTuple);
+      });
+
+      it("returns miner if only one mined a block", () => {
+        chain.mineBlock([
+          client.setMiningActivationThreshold(1),
+          client.registerMiner(wallet_1)
+        ]);
+
+        const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
+        const blockHeight = block.block_height;
+
+        chain.mineBlock([
+          client.mineTokens(100, wallet_1),
+        ]);
+
+        const expectedTuple = {
+          "stacks-block-height": types.uint(blockHeight),
+          "least-commitment-idx": types.uint(1),
+          "least-commitment-ustx": types.uint(100)
+        };
+        
+        const result = client.findLeastCommitment(blockHeight).result;
+        const tuple = result.expectTuple();
+
+        assertEquals(tuple, expectedTuple);
+      });
+
+      it("returns miner with smallest commitment at specific block", () => {
+        chain.mineBlock([
+          client.setMiningActivationThreshold(1),
+          client.registerMiner(wallet_1)
+        ]);
+
+        const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
+        const blockHeight = block.block_height;
+
+        chain.mineBlock([
+          client.mineTokens(100, wallet_1),
+          client.mineTokens(1, wallet_2),
+          client.mineTokens(2000, wallet_3),
+        ]);
+
+        const expectedTuple = {
+          "stacks-block-height": types.uint(blockHeight),
+          "least-commitment-idx": types.uint(2),
+          "least-commitment-ustx": types.uint(1)
+        };
+        
+        const result = client.findLeastCommitment(blockHeight).result;
+        const tuple = result.expectTuple();
+
+        assertEquals(tuple, expectedTuple);
+      });
+    });
   });
 
   describe("Public:", () => {

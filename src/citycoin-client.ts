@@ -469,6 +469,12 @@ export class CityCoinClient {
   getTokenUri(): Result {
     return this.callReadOnlyFn("get-token-uri");
   }
+
+  findLeastCommitment(stacksBlockHeight: number): Result {
+    return this.callReadOnlyFn("find-least-commitment", [
+      types.uint(stacksBlockHeight)
+    ]);
+  }
 }
 
 export class MinedBlock {
