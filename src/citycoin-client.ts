@@ -408,6 +408,10 @@ export class CityCoinClient {
     )
   }
 
+  getMiningActivationStatus(): Result {
+    return this.callReadOnlyFn("get-mining-activation-status");
+  }
+
   // SIP-010 functions
 
   transfer(amount: number, from: Account, to: Account, sender: Account, memo: ArrayBuffer|undefined = undefined): Tx {

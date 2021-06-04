@@ -1184,6 +1184,29 @@ describe('[CityCoin]', () => {
         result.expectSome().expectUint(1);
       });
     });
+
+    describe("get-mining-activation-status()", () => {
+      beforeEach(() => {
+        setupCleanEnv();
+      });
+
+      it("should return false when mining activation threshold has not been reached", () => {
+        const result = client.getMiningActivationStatus().result;
+
+        result.expectBool(false);
+      });
+
+      it("should return true when mining activation threshold has been reached.", () => {
+        chain.mineBlock([
+          client.setMiningActivationThreshold(1),
+          client.registerMiner(wallet_1)
+        ]);
+
+        const result = client.getMiningActivationStatus().result;
+
+        result.expectBool(true);
+      });
+    });
   });
 
   describe("Public:", () => {
