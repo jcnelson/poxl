@@ -1336,6 +1336,57 @@ describe('[CityCoin]', () => {
         result.expectUint(amount);
       });
     });
+
+    describe("get-tokens-per-cycle()", () => {
+      beforeEach(() => {
+        setupCleanEnv();
+      });
+
+      it("returns 0 tokens and 0 ustx", () => {
+        const result = client.getTokensPerCycle(1).result;
+
+        const expectedTuple = {
+          "total-tokens": types.uint(0),
+          "total-ustx": types.uint(0)
+        };
+
+        const tuple = result.expectTuple();
+
+        assertEquals(tuple, expectedTuple);
+      });
+
+      it("returns number of stacked tokens and committed uSTX", () => {
+        const tokensAmount = 100;
+        const ustxAmount = 1000;
+
+        chain.mineBlock([
+          client.setMiningActivationThreshold(1),
+          client.registerMiner(wallet_1),
+          client.ftMint(tokensAmount, wallet_1)
+        ]);
+
+        chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
+
+        chain.mineBlock([
+          client.stackTokens(tokensAmount, 105, 1, wallet_1),
+        ]);
+
+        chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
+        chain.mineBlock([
+          client.mineTokens(ustxAmount, wallet_1)          
+        ]);        
+
+        const expectedTuple = {
+          "total-tokens": types.uint(tokensAmount),
+          "total-ustx": types.uint(ustxAmount*0.7)
+        };
+
+        const result = client.getTokensPerCycle(1).result;
+        const tuple = result.expectTuple();
+
+        assertEquals(tuple, expectedTuple);
+      });
+    });
   });
 
   describe("Public:", () => {
