@@ -1,5 +1,5 @@
 ;; citycoin implementation of the PoX-lite contract, MVP.
-
+(define-constant CONTRACT-OWNER tx-sender)
 ;; error codes
 (define-constant ERR-NO-WINNER u0)
 (define-constant ERR-NO-SUCH-MINER u1)
@@ -63,6 +63,15 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
     0xe0 0xe1 0xe2 0xe3 0xe4 0xe5 0xe6 0xe7 0xe8 0xe9 0xea 0xeb 0xec 0xed 0xee 0xef
     0xf0 0xf1 0xf2 0xf3 0xf4 0xf5 0xf6 0xf7 0xf8 0xf9 0xfa 0xfb 0xfc 0xfd 0xfe 0xff
 ))
+
+(define-data-var token-uri (optional (string-utf8 256)) (some u"https://cdn.citycoins.co/metadata/citycoin.json"))
+
+(define-public (set-token-uri (new-uri (optional (string-utf8 256))))
+    (begin
+        (asserts! (is-eq tx-sender CONTRACT-OWNER) (err ERR-UNAUTHORIZED))
+        (ok (var-set token-uri new-uri))
+    )
+)
 
 ;; Convert a 1-byte buffer into its uint representation.
 (define-private (buff-to-u8 (byte (buff 1)))
@@ -212,7 +221,7 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
 
 ;; Who has locked up how many tokens for a given reward cycle.
 (define-map stacked-per-cycle
-    { owner: principal, reward-cycle: uint }
+    { stacker: principal, reward-cycle: uint }
     { amount-token: uint }
 )
 
@@ -325,8 +334,8 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
 )
 
 ;; Getter for getting how many tokens are Stacked by the given principal in the given reward cycle.
-(define-read-only (get-stacked-in-cycle (miner-id principal) (reward-cycle uint))
-    (match (map-get? stacked-per-cycle { owner: miner-id, reward-cycle: reward-cycle })
+(define-read-only (get-stacked-in-cycle (stacker principal) (reward-cycle uint))
+    (match (map-get? stacked-per-cycle { stacker: stacker, reward-cycle: reward-cycle })
         stacked-rec (get amount-token stacked-rec)
         u0
     )
@@ -547,7 +556,7 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
 ;; * The first reward cycle must be _after_ the current reward cycle
 ;; * The lock period must be valid (positive, but no greater than the maximum allowed period)
 ;; * The Stacker must have tokens to Stack.
-(define-read-only (can-stack-tokens (stacker-id principal) (amount-tokens uint) (now-stacks-ht uint) (start-stacks-ht uint) (lock-period uint))
+(define-read-only (can-stack-tokens (stacker principal) (amount-tokens uint) (now-stacks-ht uint) (start-stacks-ht uint) (lock-period uint))
     (let (
         (cur-reward-cycle (unwrap! (get-reward-cycle now-stacks-ht) (err ERR-STACKING-NOT-AVAILABLE)))
         (start-reward-cycle (+ u1 (unwrap! (get-reward-cycle start-stacks-ht) (err ERR-STACKING-NOT-AVAILABLE))))
@@ -563,7 +572,7 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
         (asserts! (> amount-tokens u0)
             (err ERR-CANNOT-STACK))
 
-        (asserts! (<= amount-tokens (ft-get-balance citycoins stacker-id))
+        (asserts! (<= amount-tokens (ft-get-balance citycoins stacker))
             (err ERR-INSUFFICIENT-BALANCE))
 
         (ok true)
@@ -577,12 +586,12 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
 ;; * The Stacker locked up _enough_ tokens to get at least one uSTX.
 ;; It's possible to Stack tokens but not receive uSTX.  For example, no miners may have mined in this reward cycle.
 ;; As another example, you may have Stacked so few that you'd be entitled to less than 1 uSTX.
-(define-read-only (get-entitled-stacking-reward (stacker-id principal) (target-reward-cycle uint) (cur-block-height uint))
+(define-read-only (get-entitled-stacking-reward (stacker principal) (target-reward-cycle uint) (cur-block-height uint))
     (let (
         (stacked-this-cycle
             (get amount-token
                 (default-to { amount-token: u0 }
-                    (map-get? stacked-per-cycle { owner: stacker-id, reward-cycle: target-reward-cycle }))))
+                    (map-get? stacked-per-cycle { stacker: stacker, reward-cycle: target-reward-cycle }))))
         (total-tokens-this-cycle
             (default-to { total-ustx: u0, total-tokens: u0 }
                 (map-get? tokens-per-cycle { reward-cycle: target-reward-cycle })))
@@ -751,14 +760,14 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
 
 ;; Inner fold function for Stacking tokens.  Populates the stacked-per-cycle and tokens-per-cycle tables for each
 ;; reward cycle the Stacker is Stacking in.
-(define-private (stack-tokens-closure (reward-cycle-idx uint) (stacker { id: principal, amt: uint, first: uint, last: uint }))
+(define-private (stack-tokens-closure (reward-cycle-idx uint) (commitment { stacker: principal, amt: uint, first: uint, last: uint }))
     (let (
-        (stacker-id (get id stacker))
-        (amount-token (get amt stacker))
-        (first-reward-cycle (get first stacker))
-        (last-reward-cycle (get last stacker))
+        (stacker (get stacker commitment))
+        (amount-token (get amt commitment))
+        (first-reward-cycle (get first commitment))
+        (last-reward-cycle (get last commitment))
         (target-reward-cycle (+ first-reward-cycle reward-cycle-idx))
-        (stacked-already (match (map-get? stacked-per-cycle { owner: stacker-id, reward-cycle: target-reward-cycle })
+        (stacked-already (match (map-get? stacked-per-cycle { stacker: stacker, reward-cycle: target-reward-cycle })
                                 rec (get amount-token rec)
                                 u0))
         (tokens-this-cycle (match (map-get? tokens-per-cycle { reward-cycle: target-reward-cycle })
@@ -769,7 +778,7 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
         (if (and (>= target-reward-cycle first-reward-cycle) (< target-reward-cycle last-reward-cycle))
             (begin
                 (map-set stacked-per-cycle
-                    { owner: stacker-id, reward-cycle: target-reward-cycle }
+                    { stacker: stacker, reward-cycle: target-reward-cycle }
                     { amount-token: (+ amount-token stacked-already) })
 
                 (map-set tokens-per-cycle
@@ -778,7 +787,7 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
 
                 true)
            false)
-        { id: stacker-id, amt: amount-token, first: first-reward-cycle, last: last-reward-cycle }
+        { stacker: stacker, amt: amount-token, first: first-reward-cycle, last: last-reward-cycle }
     ))
 )
 
@@ -797,7 +806,7 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
             (err ERR-INSUFFICIENT-BALANCE))
 
         (fold stack-tokens-closure REWARD-CYCLE-INDEXES
-            { id: tx-sender, amt: amount-tokens, first: start-reward-cycle, last: (+ start-reward-cycle lock-period) })
+            { stacker: tx-sender, amt: amount-tokens, first: start-reward-cycle, last: (+ start-reward-cycle lock-period) })
 
         (ok true)
     ))
@@ -926,8 +935,9 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
 ;; they locked up).
 (define-public (claim-stacking-reward (target-reward-cycle uint))
     (let (
+        (stacker tx-sender)    
         (entitled-ustx (get-entitled-stacking-reward tx-sender target-reward-cycle block-height))
-        (stacker-id tx-sender)
+        (stacked-in-cycle (get-stacked-in-cycle tx-sender target-reward-cycle))
     )
     (begin
         (asserts! (> entitled-ustx u0)
@@ -935,12 +945,11 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
 
         ;; can't claim again
         (map-set stacked-per-cycle
-            { owner: tx-sender, reward-cycle: target-reward-cycle }
+            { stacker: tx-sender, reward-cycle: target-reward-cycle }
             { amount-token: u0 })
 
-        (unwrap-panic 
-            (as-contract
-                (stx-transfer? entitled-ustx tx-sender stacker-id)))
+        (try! (as-contract (stx-transfer? entitled-ustx tx-sender stacker)))
+        (try! (as-contract (ft-transfer? citycoins stacked-in-cycle tx-sender stacker)))
 
         (ok true)
     ))
@@ -979,4 +988,4 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
     (ok (ft-get-supply citycoins)))
 
 (define-read-only (get-token-uri)
-    (ok (some u"https://cdn.citycoins.co/metadata/citycoin.json")))
+    (ok (var-get token-uri)))

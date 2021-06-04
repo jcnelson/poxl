@@ -238,7 +238,7 @@ export class CityCoinClient {
   }
 
   canStackTokens(
-    stackerId: Account,
+    stacker: Account,
     amountTokens: number,
     nowStacksHeight: number,
     startStacksHeight: number,
@@ -247,7 +247,7 @@ export class CityCoinClient {
     return this.callReadOnlyFn(
       "can-stack-tokens",
       [
-        types.principal(stackerId.address),
+        types.principal(stacker.address),
         types.uint(amountTokens),
         types.uint(nowStacksHeight),
         types.uint(startStacksHeight),
@@ -257,14 +257,14 @@ export class CityCoinClient {
   }
 
   getEntitledStackingReward(
-    stackerId: Account,
+    stacker: Account,
     targetRewardCycle: number,
     currentBlockHeight: number
   ): Result {
     return this.callReadOnlyFn(
       "get-entitled-stacking-reward",
       [
-        types.principal(stackerId.address),
+        types.principal(stacker.address),
         types.uint(targetRewardCycle),
         types.uint(currentBlockHeight)
       ],
@@ -387,6 +387,25 @@ export class CityCoinClient {
 
   getTotalSupplyUstx(): Result {
     return this.callReadOnlyFn("get-total-supply-ustx");
+  }
+
+  setTokenUri(sender: Account, newUri?:string|undefined): Tx {
+    let newUriVal: string;
+
+    if ( typeof newUri == "undefined" ) {
+      newUriVal = types.none();
+    } else {
+      newUriVal = types.some(types.utf8(newUri));
+    }
+
+    return Tx.contractCall(
+      this.contractName,
+      "set-token-uri",
+      [
+        newUriVal
+      ],
+      sender.address
+    )
   }
 
   // SIP-010 functions
