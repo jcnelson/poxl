@@ -1304,6 +1304,38 @@ describe('[CityCoin]', () => {
         // TODO: think about validating content of this list.
       });
     });
+
+    describe("get-stacked-in-cycle()", () => {
+      beforeEach(() => {
+        setupCleanEnv();
+      });
+
+      it("returns 0 when miner didn't stack in a cycle", () => {
+        const result = client.getStackedInCycle(wallet_1, 100).result;
+
+        result.expectUint(0);
+      });
+
+      it("returns 200 when miner stacked 200 tokens in cycle", () => {
+        const amount = 200;
+
+        chain.mineBlock([
+          client.setMiningActivationThreshold(1),
+          client.registerMiner(wallet_1),
+          client.ftMint(amount, wallet_1)
+        ]);
+
+        chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
+
+        chain.mineBlock([
+          client.stackTokens(amount, 105, 1, wallet_1)
+        ]);
+
+        const result = client.getStackedInCycle(wallet_1, 1).result;
+
+        result.expectUint(amount);
+      });
+    });
   });
 
   describe("Public:", () => {
