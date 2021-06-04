@@ -365,15 +365,30 @@ export class CityCoinClient {
     )
   }
 
-  setCityWallet(sender: Account): Tx {
+  setCityWalletUnsafe(cityWallet: Account): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "set-city-wallet-unsafe",
+      [
+        types.principal(cityWallet.address)
+      ],
+      this.deployer.address
+    )
+  }
+
+  setCityWallet(cityWallet:Account, sender: Account): Tx {
     return Tx.contractCall(
       this.contractName,
       "set-city-wallet",
       [
-        types.principal(sender.address)
+        types.principal(cityWallet.address)
       ],
       sender.address
     )
+  }
+
+  getCityWallet(): Result {
+    return this.callReadOnlyFn("get-city-wallet");
   }
 
   getTotalSupplyUstx(): Result {

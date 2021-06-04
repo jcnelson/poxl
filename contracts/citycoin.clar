@@ -959,6 +959,17 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
     (ok (stx-get-balance (as-contract tx-sender)))
 )
 
+(define-read-only (get-city-wallet)
+    (var-get city-wallet)
+)
+
+(define-public (set-city-wallet (wallet-address principal))
+  (begin
+    (asserts! (is-eq tx-sender (var-get city-wallet)) (err ERR-UNAUTHORIZED))
+    (ok (var-set city-wallet wallet-address))
+  )
+)
+
 ;;;;;;;;;;;;;;;;;;;;; SIP 010 ;;;;;;;;;;;;;;;;;;;;;;
 ;; testnet: (impl-trait 'STR8P3RD1EHA8AA37ERSSSZSWKS9T2GYQFGXNA4C.sip-010-trait-ft-standard.sip-010-trait)
 (impl-trait 'SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.sip-010-trait-ft-standard.sip-010-trait)
