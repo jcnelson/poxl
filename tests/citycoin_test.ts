@@ -139,7 +139,21 @@ describe('[CityCoin]', () => {
         block.receipts[0].result.expectErr().expectUint(1);
       });
 
-      // TODO: add fails with u2 error test
+      it("fails with u2 when sender and recipient are the same", () => {
+        const from = wallet_1;
+        const to = wallet_1;
+
+        chain.mineBlock([
+          client.ftMint(100, from)
+        ])
+
+        const block = chain.mineBlock([
+          client.transfer(100, from, to, from)
+        ]);
+
+        assertEquals(block.receipts.length, 1);
+        block.receipts[0].result.expectErr().expectUint(2);
+      });
 
       it("fails with u3 when token sender is different than transaction sender", () => {
         const from = wallet_1;
