@@ -1142,10 +1142,25 @@ describe('[CityCoin]', () => {
     });
 
     describe("get-miner-id()", () => {
-      it("should return none if no miners have mined", () => {
+      beforeEach(() => {
+        setupCleanEnv();
+      });
+
+      it("should return none if no miners are registered", () => {
         const result = client.getMinerId(wallet_1).result;
 
         result.expectNone();
+      });
+
+      it("should return u1 if one miner registered", () => {
+        chain.mineBlock([
+          client.setMiningActivationThreshold(1),
+          client.registerMiner(wallet_1)
+        ]);
+
+        const result = client.getMinerId(wallet_1).result;
+
+        result.expectSome().expectUint(1);
       });
     });
   });

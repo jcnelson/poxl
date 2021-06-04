@@ -195,7 +195,7 @@ export class CityCoinClient {
   return this.callReadOnlyFn(
       "has-mined",
       [
-        this.getMinerId(miner),
+        types.uint(this.getMinerIdNum(miner)),
         types.uint(blockHeight)
       ]
     );
