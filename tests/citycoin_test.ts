@@ -1231,6 +1231,46 @@ describe('[CityCoin]', () => {
         result.expectUint(threshold);
       });
     });
+
+    describe("get-registered-miners-nonce()", () => {
+      beforeEach(() => {
+        setupCleanEnv();
+      });
+
+      it("should return 0 when no miner registered", () => {
+        const result = client.getRegisteredMinersNonce().result;
+
+        result.expectUint(0);
+      });
+
+      it("should return 3 when 3 miners registered", () => {
+        chain.mineBlock([
+          client.registerMiner(wallet_1),
+          client.registerMiner(wallet_2),
+          client.registerMiner(wallet_3)
+        ]);
+        
+        const result = client.getRegisteredMinersNonce().result;
+        result.expectUint(3);
+      });
+
+      it("should return 3 when 1 miner registered and 2 other mined block", () => {
+        chain.mineBlock([
+          client.setMiningActivationThreshold(1),
+          client.registerMiner(wallet_1)
+        ]);
+
+        chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
+
+        chain.mineBlock([
+          client.mineTokens(200, wallet_2),
+          client.mineTokens(250, wallet_3)
+        ]);
+
+        const result = client.getRegisteredMinersNonce().result;
+        result.expectUint(3);
+      });
+    });
   });
 
   describe("Public:", () => {

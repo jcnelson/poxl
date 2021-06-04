@@ -416,6 +416,10 @@ export class CityCoinClient {
     return this.callReadOnlyFn("get-registered-miners-threshold");
   }
 
+  getRegisteredMinersNonce(): Result {
+    return this.callReadOnlyFn("get-registered-miners-nonce");
+  }
+
   // SIP-010 functions
 
   transfer(amount: number, from: Account, to: Account, sender: Account, memo: ArrayBuffer|undefined = undefined): Tx {
