@@ -1207,6 +1207,30 @@ describe('[CityCoin]', () => {
         result.expectBool(true);
       });
     });
+
+    describe("get-registered-miners-threshold()", () => {
+      beforeEach(() => {
+        setupCleanEnv();
+      });
+
+      it("should return 20 by default", () => {
+        const result = client.getRegisteredMinersThreshold().result;
+
+        result.expectUint(20);
+      });
+
+      it("should return value set by test add-on function", () => {
+        const threshold = 5;
+        
+        chain.mineBlock([
+          client.setMiningActivationThreshold(threshold)
+        ]);
+
+        const result = client.getRegisteredMinersThreshold().result;
+
+        result.expectUint(threshold);
+      });
+    });
   });
 
   describe("Public:", () => {
