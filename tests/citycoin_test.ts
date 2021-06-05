@@ -950,7 +950,7 @@ describe('[CityCoin]', () => {
         const amount = 20000;
 
         chain.mineBlock([
-          client.setCityWallet(wallet_6)
+          client.setCityWalletUnsafe(wallet_6)
         ])
 
         const block = chain.mineBlock([
@@ -978,7 +978,7 @@ describe('[CityCoin]', () => {
         const startStacksHeight = 105;
 
         chain.mineBlock([
-          client.setCityWallet(wallet_6)
+          client.setCityWalletUnsafe(wallet_6)
         ])
 
         chain.mineBlock([
@@ -1014,7 +1014,7 @@ describe('[CityCoin]', () => {
 
       it("emits print event with memo if supplied", () => {
         chain.mineBlock([
-          client.setCityWallet(wallet_6)
+          client.setCityWalletUnsafe(wallet_6)
         ]);
 
         const memo = new TextEncoder().encode("hello world");
@@ -1265,6 +1265,48 @@ describe('[CityCoin]', () => {
 
         const result = client.getTokenUri().result;
         result.expectOk().expectSome().expectUtf8(newUri);
+      });
+    });
+
+    describe("set-city-wallet", () => {
+      beforeEach(() => {
+        setupCleanEnv();
+      });
+
+      it("throws ERR_UNAUTHORIZED error when called by non city wallet", () => {
+        const cityWallet = wallet_1;
+        const newCityWallet = wallet_3;
+        
+        chain.mineBlock([
+          client.setCityWalletUnsafe(cityWallet)
+        ]);
+
+        const block = chain.mineBlock([
+          client.setCityWallet(newCityWallet, newCityWallet)
+        ]);
+
+        const result = block.receipts[0].result;
+
+        result.expectErr().expectUint(ErrCode.ERR_UNAUTHORIZED);
+      });
+
+      it("succeeds and sets new city wallet, when called by previous city wallet", () => {
+        const cityWallet = wallet_1;
+        const newCityWallet = wallet_3;
+
+        chain.mineBlock([
+          client.setCityWalletUnsafe(cityWallet)
+        ]);
+
+        const block = chain.mineBlock([
+          client.setCityWallet(newCityWallet, cityWallet)
+        ]);
+
+        const blockResult = block.receipts[0].result;
+        blockResult.expectOk().expectBool(true);
+
+        const result = client.getCityWallet().result;
+        result.expectPrincipal(newCityWallet.address);
       });
     });
   });

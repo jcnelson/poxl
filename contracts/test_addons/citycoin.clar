@@ -215,7 +215,7 @@
   )
 )
 
-(define-public (set-city-wallet (wallet-address principal))
+(define-public (set-city-wallet-unsafe (wallet-address principal))
   ;; specify city wallet address for testing, allows for a test wallet
   ;; to be used in place of specific city wallet defined in constant
   (begin
