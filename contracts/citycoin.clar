@@ -966,6 +966,8 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
 (define-public (set-city-wallet (wallet-address principal))
   (begin
     (asserts! (is-eq tx-sender (var-get city-wallet)) (err ERR-UNAUTHORIZED))
+    ;; ensure this cannot be called through another contract
+    (asserts! (is-eq tx-sender contract-caller) (err ERR-UNAUTHORIZED))
     (ok (var-set city-wallet wallet-address))
   )
 )
