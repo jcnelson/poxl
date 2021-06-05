@@ -4,6 +4,18 @@
 
 Introducing MiamiCoin, the first CityCoin built as a fungible token on the [Stacks blockchain](https://stacks.co).
 
+- [MiamiCoin Mining and Stacking Guide](#miamicoin-mining-and-stacking-guide)
+  - [Stacks Web Wallet](#stacks-web-wallet)
+  - [Activation of Mining](#activation-of-mining)
+  - [Mining MiamiCoin](#mining-miamicoin)
+  - [Winner Selection](#winner-selection)
+  - [Mining Strategy](#mining-strategy)
+  - [Claiming Mining Rewards](#claiming-mining-rewards)
+  - [Stacking MiamiCoin](#stacking-miamicoin)
+  - [Claiming Stacking Rewards](#claiming-stacking-rewards)
+  - [Issuance Schedule](#issuance-schedule)
+  - [Block Time](#block-time)
+
 ## Stacks Web Wallet
 
 The [Stacks Web Wallet](https://hiro.so/wallet/install-web) is required to interact with the MiamiCoin smart contract on the Stacks blockchain.
