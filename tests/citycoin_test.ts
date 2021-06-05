@@ -1519,6 +1519,35 @@ describe('[CityCoin]', () => {
         );
 
       });
+
+      it("succeeds when called multiple times", () => {
+        chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
+        const startStacksHeight = 105;
+
+        chain.mineBlock([
+          client.ftMint(1000, wallet_1),
+          client.stackTokens(100, startStacksHeight, 1, wallet_1)
+        ]);
+
+        const block = chain.mineBlock([
+          client.stackTokens(100, startStacksHeight, 1, wallet_1)
+        ]);
+        const result = client.getStackedInCycle(wallet_1, 1).result;
+
+        // check number of events 
+        assertEquals(block.receipts[0].events.length, 1);
+
+        // check events
+        block.receipts[0].events.expectFungibleTokenTransferEvent(
+          100,
+          wallet_1.address,
+          client.getContractAddress(),
+          "citycoins"
+        );
+
+        // check total amount of tokens stacked in cycle
+        result.expectUint(200);
+      })
     });
 
     describe("mine-tokens()", () => {
