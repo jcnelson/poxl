@@ -262,7 +262,7 @@ describe('[CityCoin]', () => {
     });
 
     describe("get-token-uri()", () => {
-      it("should return correct uri", () => {
+      it("returns correct uri", () => {
         const result = client.getTokenUri().result;
         const tokenUri = "https://cdn.citycoins.co/metadata/citycoin.json";
 
@@ -1167,13 +1167,13 @@ describe('[CityCoin]', () => {
         setupCleanEnv();
       });
 
-      it("should return none if no miners are registered", () => {
+      it("returns none if no miners are registered", () => {
         const result = client.getMinerId(wallet_1).result;
 
         result.expectNone();
       });
 
-      it("should return u1 if one miner registered", () => {
+      it("returns u1 if one miner registered", () => {
         chain.mineBlock([
           client.setMiningActivationThreshold(1),
           client.registerMiner(wallet_1)
@@ -1190,13 +1190,13 @@ describe('[CityCoin]', () => {
         setupCleanEnv();
       });
 
-      it("should return false when mining activation threshold has not been reached", () => {
+      it("returns false when mining activation threshold has not been reached", () => {
         const result = client.getMiningActivationStatus().result;
 
         result.expectBool(false);
       });
 
-      it("should return true when mining activation threshold has been reached.", () => {
+      it("returns true when mining activation threshold has been reached.", () => {
         chain.mineBlock([
           client.setMiningActivationThreshold(1),
           client.registerMiner(wallet_1)
@@ -1213,13 +1213,13 @@ describe('[CityCoin]', () => {
         setupCleanEnv();
       });
 
-      it("should return 20 by default", () => {
+      it("returns 20 by default", () => {
         const result = client.getRegisteredMinersThreshold().result;
 
         result.expectUint(20);
       });
 
-      it("should return value set by test add-on function", () => {
+      it("returns value set by test add-on function", () => {
         const threshold = 5;
         
         chain.mineBlock([
@@ -1237,13 +1237,13 @@ describe('[CityCoin]', () => {
         setupCleanEnv();
       });
 
-      it("should return 0 when no miner registered", () => {
+      it("returns 0 when no miner registered", () => {
         const result = client.getRegisteredMinersNonce().result;
 
         result.expectUint(0);
       });
 
-      it("should return 3 when 3 miners registered", () => {
+      it("returns 3 when 3 miners registered", () => {
         chain.mineBlock([
           client.registerMiner(wallet_1),
           client.registerMiner(wallet_2),
@@ -1254,7 +1254,7 @@ describe('[CityCoin]', () => {
         result.expectUint(3);
       });
 
-      it("should return 3 when 1 miner registered and 2 other mined block", () => {
+      it("returns 3 when 1 miner registered and 2 other mined block", () => {
         chain.mineBlock([
           client.setMiningActivationThreshold(1),
           client.registerMiner(wallet_1)
@@ -1277,13 +1277,13 @@ describe('[CityCoin]', () => {
         setupCleanEnv();
       });
       
-      it("should return empty list when no miners mined specific block", () => {
+      it("returns empty list when no miners mined specific block", () => {
         const result = client.getMinersAtBlock(10).result;
 
         assertEquals(result.expectList().length, 0);
       });
 
-      it("should return list with 3 miners when 3 miners mined block", () => {
+      it("returns list with 3 miners when 3 miners mined block", () => {
         chain.mineBlock([
           client.setMiningActivationThreshold(1),
           client.registerMiner(wallet_1)
