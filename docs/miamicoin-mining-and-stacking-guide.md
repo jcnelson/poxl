@@ -6,6 +6,7 @@ Introducing MiamiCoin, the first CityCoin built as a fungible token on the [Stac
 
 - [MiamiCoin Mining and Stacking Guide](#miamicoin-mining-and-stacking-guide)
   - [Stacks Web Wallet](#stacks-web-wallet)
+  - [How to Acquire Stacks (STX)](#how-to-acquire-stacks-stx)
   - [Activation of Mining](#activation-of-mining)
   - [Mining MiamiCoin](#mining-miamicoin)
   - [Winner Selection](#winner-selection)
@@ -23,6 +24,12 @@ The [Stacks Web Wallet](https://hiro.so/wallet/install-web) is required to inter
 It is a browser extension available for both Chrome and Firefox, and at this time the actions below are intended to be performed from a desktop or laptop.
 
 In addition, each of the actions below requires sending a transaction to the smart contract, with transaction fees paid in Stacks (STX).
+
+## How to Acquire Stacks (STX)
+
+As mentioned above, all transactions with CityCoins require Stacks (STX) as fuel.
+
+To acquire Stacks, please see the [market list on CoinMarketCap](https://coinmarketcap.com/currencies/stacks/markets/) for supported exchanges.
 
 ## Activation of Mining
 
