@@ -8,6 +8,7 @@ Introducing MiamiCoin, the first CityCoin built as a fungible token on the [Stac
   - [What is MiamiCoin?](#what-is-miamicoin)
   - [Stacks Web Wallet](#stacks-web-wallet)
   - [How to Acquire Stacks (STX)](#how-to-acquire-stacks-stx)
+  - [How to Hold $MIA](#how-to-hold-mia)
   - [Activation of Mining](#activation-of-mining)
   - [Mining MiamiCoin](#mining-miamicoin)
   - [Winner Selection](#winner-selection)
@@ -41,6 +42,10 @@ In addition, each of the actions below requires sending a transaction to the sma
 As mentioned above, all transactions with CityCoins require Stacks (STX) as fuel.
 
 To acquire Stacks, please see the [market list on CoinMarketCap](https://coinmarketcap.com/currencies/stacks/markets/) for supported exchanges.
+
+## How to Hold $MIA
+
+MiamiCoins are a fungible token on the Stacks blockchain, meaning they are stored, displayed, and used in the Stacks Web Wallet in the same way as STX tokens.
 
 ## Activation of Mining
 
