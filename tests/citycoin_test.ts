@@ -1484,7 +1484,7 @@ describe('[CityCoin]', () => {
       it("throws ERR_INSUFFICIENT_BALANCE error", () => {
         chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
 
-        const startStacksHeight = 105;
+        const startStacksHeight = MINING_ACTIVATION_DELAY + 5;
 
         const block = chain.mineBlock([
           client.stackTokens(100, startStacksHeight, 1, wallet_1)
@@ -1496,7 +1496,7 @@ describe('[CityCoin]', () => {
 
       it("succeeds and causes one ft_transfer_event", () => {
         chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
-        const startStacksHeight = 105;
+        const startStacksHeight = MINING_ACTIVATION_DELAY + 5;
 
         const block = chain.mineBlock([
           client.ftMint(100, wallet_1),
@@ -1521,7 +1521,7 @@ describe('[CityCoin]', () => {
 
       it("succeeds when called multiple times", () => {
         chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
-        const startStacksHeight = 105;
+        const startStacksHeight = MINING_ACTIVATION_DELAY + 5;
 
         chain.mineBlock([
           client.ftMint(1000, wallet_1),
