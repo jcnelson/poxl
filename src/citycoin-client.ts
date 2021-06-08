@@ -167,13 +167,22 @@ export class CityCoinClient {
     )
   }
 
-  getMinerId(miner: Account): number {
-    const result =  this.callReadOnlyFn(
+  getMinerId(miner: Account): Result {
+    return this.callReadOnlyFn(
       "get-miner-id",
       [
         types.principal(miner.address)
       ]
-    ).result
+    );
+  }
+
+  getMinerIdNum(miner: Account): number {
+    const result = this.callReadOnlyFn(
+      "get-miner-id",
+      [
+        types.principal(miner.address)
+      ]
+    ).result;
 
     const regex = /\(some u(\d+)\)/g;
     const match = regex.exec(result);
@@ -186,7 +195,7 @@ export class CityCoinClient {
   return this.callReadOnlyFn(
       "has-mined",
       [
-        types.uint(this.getMinerId(miner)),
+        types.uint(this.getMinerIdNum(miner)),
         types.uint(blockHeight)
       ]
     );
@@ -414,9 +423,29 @@ export class CityCoinClient {
     )
   }
 
+  getMiningActivationStatus(): Result {
+    return this.callReadOnlyFn("get-mining-activation-status");
+  }
+
+  getRegisteredMinersThreshold(): Result {
+    return this.callReadOnlyFn("get-registered-miners-threshold");
+  }
+
+  getRegisteredMinersNonce(): Result {
+    return this.callReadOnlyFn("get-registered-miners-nonce");
+  }
+
   // SIP-010 functions
 
-  transfer(amount: number, from: Account, to: Account, sender: Account): Tx {
+  transfer(amount: number, from: Account, to: Account, sender: Account, memo: ArrayBuffer|undefined = undefined): Tx {
+    let memoVal: string;
+
+    if ( typeof memo == "undefined" ) {
+      memoVal = types.none();
+    } else {
+      memoVal = types.some(types.buff(memo));
+    }
+
     return Tx.contractCall(
       this.contractName,
       "transfer",
@@ -424,7 +453,7 @@ export class CityCoinClient {
         types.uint(amount),
         types.principal(from.address),
         types.principal(to.address),
-        types.none()
+        memoVal
       ],
       sender.address
     );
@@ -454,6 +483,12 @@ export class CityCoinClient {
 
   getTokenUri(): Result {
     return this.callReadOnlyFn("get-token-uri");
+  }
+
+  findLeastCommitment(stacksBlockHeight: number): Result {
+    return this.callReadOnlyFn("find-least-commitment", [
+      types.uint(stacksBlockHeight)
+    ]);
   }
 }
 
