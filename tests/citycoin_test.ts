@@ -1327,7 +1327,7 @@ describe('[CityCoin]', () => {
         chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
 
         chain.mineBlock([
-          client.stackTokens(amount, 105, 1, wallet_1)
+          client.stackTokens(amount, MINING_ACTIVATION_DELAY + 5, 1, wallet_1)
         ]);
 
         const result = client.getStackedInCycle(wallet_1, 1).result;
