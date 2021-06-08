@@ -1367,7 +1367,7 @@ describe('[CityCoin]', () => {
         chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
 
         chain.mineBlock([
-          client.stackTokens(tokensAmount, 105, 1, wallet_1),
+          client.stackTokens(tokensAmount, MINING_ACTIVATION_DELAY + 5, 1, wallet_1),
         ]);
 
         chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
@@ -1377,7 +1377,7 @@ describe('[CityCoin]', () => {
 
         const expectedTuple = {
           "total-tokens": types.uint(tokensAmount),
-          "total-ustx": types.uint(ustxAmount*0.7)
+          "total-ustx": types.uint(ustxAmount * SPLIT_STACKER_PERCENTAGE)
         };
 
         const result = client.getTokensPerCycle(1).result;
