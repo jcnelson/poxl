@@ -1756,7 +1756,7 @@ describe('[CityCoin]', () => {
         // add tokens and stack them at the next cycle
         chain.mineBlock([
           client.ftMint(stackedAmount, stacker),
-          client.stackTokens(stackedAmount, 105, 1, stacker),
+          client.stackTokens(stackedAmount, MINING_ACTIVATION_DELAY + 5, 1, stacker),
         ]);
 
         // advance chain forward to jump into 1st stacking cycle
