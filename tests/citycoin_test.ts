@@ -1624,7 +1624,7 @@ describe('[CityCoin]', () => {
       it("succeeds and causes two stx_transfer_events if stackers are stacking, one to stackers, one to city", () => {      
 
         const amount = 20000;
-        const startStacksHeight = 105;
+        const startStacksHeight = MINING_ACTIVATION_DELAY + 5;
 
         chain.mineBlock([
           client.setCityWalletUnsafe(wallet_6)
