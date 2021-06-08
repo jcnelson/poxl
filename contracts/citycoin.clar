@@ -21,7 +21,7 @@
 ;; Tailor to your needs.
 (define-constant TOKEN-REWARD-MATURITY u100)        ;; how long a miner must wait before claiming their minted tokens
 (define-constant FIRST-STACKING-BLOCK u340282366920938463463374607431768211455)    ;; Stacks block height when Stacking is available
-(define-constant REWARD-CYCLE-LENGTH u500)          ;; how long a reward cycle is
+(define-constant REWARD-CYCLE-LENGTH u2100)          ;; how long a reward cycle is
 (define-constant MAX-REWARD-CYCLES u32)             ;; how many reward cycles a Stacker can Stack their tokens for
 (define-constant MAX-MINERS-COUNT u128)             ;; maximum amount of miners in one block
 (define-constant LONG-UINT-LIST (list
@@ -129,7 +129,7 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
 (define-constant MINING-ACTIVATION-THRESHOLD u20)     ;; how many miners have to register to kickoff countdown to mining activation
 (define-data-var mining-activation-threshold uint MINING-ACTIVATION-THRESHOLD) ;; variable used in place of constant for easier testing
 (define-data-var mining-activation-threshold-reached bool false)  ;; variable used to track if mining is active
-(define-constant MINING-ACTIVATION-DELAY u100)       ;; how many blocks after last miner registration mining will be activated (~24hrs)
+(define-constant MINING-ACTIVATION-DELAY u150)       ;; how many blocks after last miner registration mining will be activated (~24hrs)
 (define-constant MINING-HALVING-BLOCKS u210000)      ;; how many blocks until the next halving occurs
 (define-data-var miners-nonce uint u0)               ;; variable used to generate unique miner-id's
 (define-data-var coinbase-threshold-1 uint u0)       ;; block height of the 1st halving, set by register-miner
