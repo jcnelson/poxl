@@ -311,14 +311,10 @@ describe('[CityCoin]', () => {
           client.registerMiner(wallet_1)
         ]);
         chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
-        const startStacksHeight = 105;
+        const startStacksHeight = MINING_ACTIVATION_DELAY + 5;
 
         chain.mineBlock([
           client.ftMint(100, wallet_1),
-          client.stackTokens(100, startStacksHeight, 1, wallet_1)
-        ]);
-
-        chain.mineBlock([
           client.stackTokens(100, startStacksHeight, 1, wallet_1)
         ]);
 
