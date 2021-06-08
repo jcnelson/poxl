@@ -792,15 +792,17 @@ describe('[CityCoin]', () => {
     describe("can-stack-tokens()", () => {
       it("returns true if stacker can stack", () => {
         setupCleanEnv();
+
         chain.mineBlock([
           client.ftMint(100, wallet_1),
           client.setMiningActivationThreshold(1),
           client.registerMiner(wallet_3)
         ]);
-        chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
+        
+        const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
 
-        const nowStacksHeight = 501;
-        const startStacksHeight = 510;
+        const nowStacksHeight = block.block_height;
+        const startStacksHeight = block.block_height + 5;
 
         const result = client.canStackTokens(wallet_1, 100, nowStacksHeight, startStacksHeight, 1).result;
 
