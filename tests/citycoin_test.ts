@@ -1290,6 +1290,27 @@ describe('[CityCoin]', () => {
         result.expectErr().expectUint(ErrCode.ERR_UNAUTHORIZED);
       });
 
+      it("throws ERR_UNAUTHORIZED error when called via contract-call", () => {
+        const cityWallet = wallet_1;
+        
+        chain.mineBlock([
+          client.setCityWalletUnsafe(cityWallet)
+        ]);
+      
+        const block = chain.mineBlock([
+          Tx.contractCall(
+            'malicious',
+            'attack',
+            [],
+            wallet_1.address
+          )
+        ]);
+      
+        const result = block.receipts[0].result;
+      
+        result.expectErr().expectUint(ErrCode.ERR_UNAUTHORIZED);
+      })
+
       it("succeeds and sets new city wallet, when called by previous city wallet", () => {
         const cityWallet = wallet_1;
         const newCityWallet = wallet_3;
@@ -1308,6 +1329,39 @@ describe('[CityCoin]', () => {
         const result = client.getCityWallet().result;
         result.expectPrincipal(newCityWallet.address);
       });
+
+      it("succeeds and sets new city wallet, when called by contract that was a previous city wallet", () => {
+        const cityWallet: Account = {
+          name: 'city_wallet',
+          address: 'ST1HTBVD3JG9C05J7HBJTHGR0GGW7KXW28M5JS8QE.city_wallet',
+          balance: 0,
+          mnemonic: 'unknown',
+          derivation: 'unknown'
+        };
+        const newCityWallet = wallet_3;
+
+        
+        chain.mineBlock([
+          client.setCityWalletUnsafe(cityWallet)
+        ]);
+
+        client.getCityWallet().result.expectPrincipal('ST1HTBVD3JG9C05J7HBJTHGR0GGW7KXW28M5JS8QE.city_wallet');
+
+        const block = chain.mineBlock([
+          Tx.contractCall(
+            'city_wallet', 
+            'set-city-wallet',
+            [
+              types.principal(newCityWallet.address)
+            ],
+            deployer.address
+            )
+        ]);
+
+        const receipt = block.receipts[0];
+        console.info(block)
+        receipt.result.expectOk().expectBool(true);
+      })
     });
   });
 });

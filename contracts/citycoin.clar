@@ -963,9 +963,13 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
     (var-get city-wallet)
 )
 
+;; Update the city-wallet variable
+;; This can only be called by the city-wallet principal.
+;; Calling `set-city-wallet` from an outside contract (that is not the city-wallet principal)
+;; is not allowed
 (define-public (set-city-wallet (wallet-address principal))
   (begin
-    (asserts! (is-eq tx-sender (var-get city-wallet)) (err ERR-UNAUTHORIZED))
+    (asserts! (is-eq contract-caller (var-get city-wallet)) (err ERR-UNAUTHORIZED))
     (ok (var-set city-wallet wallet-address))
   )
 )
