@@ -963,7 +963,7 @@ describe('[CityCoin]', () => {
         // add tokens and stack them at the next cycle
         chain.mineBlock([
           client.ftMint(5000, stacker),
-          client.stackTokens(5000, 105, targetRewardCycle, stacker),
+          client.stackTokens(5000, MINING_ACTIVATION_DELAY + 5, targetRewardCycle, stacker),
         ]);
 
         // move chain forward to jump into 1st stacking cycle (skip mining activation delay period)
@@ -1002,8 +1002,8 @@ describe('[CityCoin]', () => {
         chain.mineBlock([
           client.ftMint(stackerOneStacked, stackerOne),
           client.ftMint(stackerTwoStacked, stackerTwo),
-          client.stackTokens(stackerOneStacked, 105, targetRewardCycle, stackerOne),
-          client.stackTokens(stackerTwoStacked, 105, targetRewardCycle, stackerTwo)
+          client.stackTokens(stackerOneStacked, MINING_ACTIVATION_DELAY + 5, targetRewardCycle, stackerOne),
+          client.stackTokens(stackerTwoStacked, MINING_ACTIVATION_DELAY + 5, targetRewardCycle, stackerTwo)
         ]);
 
         // move chain forward to jump into 1st stacking cycle (skip mining activation delay period)
@@ -1048,8 +1048,8 @@ describe('[CityCoin]', () => {
         chain.mineBlock([
           client.ftMint(stackerOneStacked, stackerOne),
           client.ftMint(stackerTwoStacked, stackerTwo),
-          client.stackTokens(stackerOneStacked, 105, targetRewardCycle, stackerOne),
-          client.stackTokens(stackerTwoStacked, 105, targetRewardCycle, stackerTwo)
+          client.stackTokens(stackerOneStacked, MINING_ACTIVATION_DELAY + 5, targetRewardCycle, stackerOne),
+          client.stackTokens(stackerTwoStacked, MINING_ACTIVATION_DELAY + 5, targetRewardCycle, stackerTwo)
         ]);
 
         // move chain forward to jump into 1st stacking cycle (skip mining activation delay period)
