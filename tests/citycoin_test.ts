@@ -810,15 +810,15 @@ describe('[CityCoin]', () => {
 
       });
 
-      it("throws ERR_CANNOT_STACK error if nowStacksHeight < startStacksHeight", () => {
+      it("throws ERR_CANNOT_STACK error if nowStacksHeight > startStacksHeight", () => {
         setupCleanEnv();
         chain.mineBlock([
           client.setMiningActivationThreshold(1),
           client.registerMiner(wallet_3)
         ]);
 
-        const nowStacksHeight = 103;
-        const startStacksHeight = 102;
+        const nowStacksHeight = MINING_ACTIVATION_DELAY + 5;
+        const startStacksHeight = MINING_ACTIVATION_DELAY + 3;
 
         const result = client.canStackTokens(wallet_1, 100, nowStacksHeight, startStacksHeight, 1).result;
 
