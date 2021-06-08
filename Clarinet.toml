@@ -9,6 +9,11 @@ depends_on = []
 path = "contracts/clarinet/citycoin.clar"
 depends_on = ["sip-010-trait"]
 
+# contracts listed below are used only in test suite
 [contracts.malicious]
 path = "contracts/clarinet/malicious.clar"
+depends_on = ["citycoin"]
+
+[contracts.city_wallet]
+path = "contracts/clarinet/city_wallet.clar"
 depends_on = ["citycoin"]
