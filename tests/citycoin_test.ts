@@ -1082,14 +1082,15 @@ describe('[CityCoin]', () => {
         result.expectNone()
       });
 
-      it("returns Some with correct value when stacksBlockHeight > 100", () => {
+      it("returns Some with correct value when stacksBlockHeight > MINING_ACTIVATION_DELAY", () => {
         setupCleanEnv();
         chain.mineBlock([
           client.setMiningActivationThreshold(1),
           client.registerMiner(wallet_3)
         ]);
 
-        const blockHeights = [101, 105, 499, 500, 501, 1001, 1501, 2001];
+        // starts after MINING_ACTIVATION_DELAY
+        const blockHeights = [151, 155, 499, 500, 501, 1001, 1501, 1999, 2000, 2001];
 
         console.log("\n  formula: (stacksBlockHeight - FIRST_STACKING_BLOCK) / REWARD_CYCLE_LENGTH)")
 
