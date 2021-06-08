@@ -516,7 +516,7 @@ describe('[CityCoin]', () => {
         // stack in cycle 1 while cycle 0 is active
         chain.mineBlock([
           client.ftMint(100, wallet_2),
-          client.stackTokens(100, 105, 1, wallet_2)
+          client.stackTokens(100, MINING_ACTIVATION_DELAY + 5, 1, wallet_2)
         ]);
 
         // progress into reward cycle 1
