@@ -856,8 +856,8 @@ describe('[CityCoin]', () => {
           client.registerMiner(wallet_3)
         ]);
 
-        const nowStacksHeight = 102;
-        const startStacksHeight = 103;
+        const nowStacksHeight = MINING_ACTIVATION_DELAY + 5;
+        const startStacksHeight = MINING_ACTIVATION_DELAY + 6;
         const amountToken = 100000;
 
         const result = client.canStackTokens(wallet_1, amountToken, nowStacksHeight, startStacksHeight, 1).result;
