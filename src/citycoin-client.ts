@@ -146,13 +146,12 @@ export class CityCoinClient {
     );
   }
 
-  getBlockWinner(stacksBlockHeight: number, randomSampleUint: number, miners: MinersList): Result {
+  getBlockWinner(stacksBlockHeight: number, randomSampleUint: number): Result {
     return this.callReadOnlyFn(
       "get-block-winner",
       [
         types.uint(stacksBlockHeight),
         types.uint(randomSampleUint),
-        miners.convert()
       ]
     )
   }
@@ -168,13 +167,22 @@ export class CityCoinClient {
     )
   }
 
-  getMinerId(miner: Account): number {
-    const result =  this.callReadOnlyFn(
+  getMinerId(miner: Account): Result {
+    return this.callReadOnlyFn(
       "get-miner-id",
       [
         types.principal(miner.address)
       ]
-    ).result
+    );
+  }
+
+  getMinerIdNum(miner: Account): number {
+    const result = this.callReadOnlyFn(
+      "get-miner-id",
+      [
+        types.principal(miner.address)
+      ]
+    ).result;
 
     const regex = /\(some u(\d+)\)/g;
     const match = regex.exec(result);
@@ -187,7 +195,7 @@ export class CityCoinClient {
   return this.callReadOnlyFn(
       "has-mined",
       [
-        types.uint(this.getMinerId(miner)),
+        types.uint(this.getMinerIdNum(miner)),
         types.uint(blockHeight)
       ]
     );
@@ -197,7 +205,7 @@ export class CityCoinClient {
     claimer: Account,
     claimerStacksBlockHeight: number,
     randomSample: number,
-    minersRec: MinersRec,
+    minedBlock: MinedBlock,
     currentStacksBlock: number
   ): Result {
     return this.callReadOnlyFn(
@@ -206,7 +214,7 @@ export class CityCoinClient {
         types.principal(claimer.address),
         types.uint(claimerStacksBlockHeight),
         types.uint(randomSample),
-        minersRec.convert(),
+        minedBlock.convert(),
         types.uint(currentStacksBlock)
       ]
     );
@@ -230,7 +238,7 @@ export class CityCoinClient {
   }
 
   canStackTokens(
-    stackerId: Account,
+    stacker: Account,
     amountTokens: number,
     nowStacksHeight: number,
     startStacksHeight: number,
@@ -239,7 +247,7 @@ export class CityCoinClient {
     return this.callReadOnlyFn(
       "can-stack-tokens",
       [
-        types.principal(stackerId.address),
+        types.principal(stacker.address),
         types.uint(amountTokens),
         types.uint(nowStacksHeight),
         types.uint(startStacksHeight),
@@ -249,14 +257,14 @@ export class CityCoinClient {
   }
 
   getEntitledStackingReward(
-    stackerId: Account,
+    stacker: Account,
     targetRewardCycle: number,
     currentBlockHeight: number
   ): Result {
     return this.callReadOnlyFn(
       "get-entitled-stacking-reward",
       [
-        types.principal(stackerId.address),
+        types.principal(stacker.address),
         types.uint(targetRewardCycle),
         types.uint(currentBlockHeight)
       ],
@@ -305,12 +313,21 @@ export class CityCoinClient {
     );
   }
 
-  mineTokens(amountUstx: number, sender: Account): Tx {
+  mineTokens(amountUstx: number, sender: Account, memo: ArrayBuffer|undefined = undefined): Tx {
+    let memoVal: string;
+
+    if ( typeof memo == "undefined" ) {
+      memoVal = types.none();
+    } else {
+      memoVal = types.some(types.buff(memo));
+    }
+
     return Tx.contractCall(
       this.contractName,
       "mine-tokens",
       [
-        types.uint(amountUstx)
+        types.uint(amountUstx),
+        memoVal
       ],
       sender.address
     );
@@ -338,33 +355,97 @@ export class CityCoinClient {
     );
   }
 
-  registerMiner(sender: Account): Tx {
+  registerMiner(sender: Account, memo: ArrayBuffer|undefined = undefined): Tx {
+    let memoVal: string;
+    
+    if ( typeof memo == "undefined" ) {
+      memoVal = types.none();
+    } else {
+      memoVal = types.some(types.buff(memo));
+    }
+    
     return Tx.contractCall(
       this.contractName,
       "register-miner",
-      [],
+      [
+        memoVal
+      ],
       sender.address
     )
   }
 
-  setCityWallet(sender: Account): Tx {
+  setCityWalletUnsafe(cityWallet: Account): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "set-city-wallet-unsafe",
+      [
+        types.principal(cityWallet.address)
+      ],
+      this.deployer.address
+    )
+  }
+
+  setCityWallet(cityWallet:Account, sender: Account): Tx {
     return Tx.contractCall(
       this.contractName,
       "set-city-wallet",
       [
-        types.principal(sender.address)
+        types.principal(cityWallet.address)
       ],
       sender.address
     )
+  }
+
+  getCityWallet(): Result {
+    return this.callReadOnlyFn("get-city-wallet");
   }
 
   getTotalSupplyUstx(): Result {
     return this.callReadOnlyFn("get-total-supply-ustx");
   }
 
+  setTokenUri(sender: Account, newUri?:string|undefined): Tx {
+    let newUriVal: string;
+
+    if ( typeof newUri == "undefined" ) {
+      newUriVal = types.none();
+    } else {
+      newUriVal = types.some(types.utf8(newUri));
+    }
+
+    return Tx.contractCall(
+      this.contractName,
+      "set-token-uri",
+      [
+        newUriVal
+      ],
+      sender.address
+    )
+  }
+
+  getMiningActivationStatus(): Result {
+    return this.callReadOnlyFn("get-mining-activation-status");
+  }
+
+  getRegisteredMinersThreshold(): Result {
+    return this.callReadOnlyFn("get-registered-miners-threshold");
+  }
+
+  getRegisteredMinersNonce(): Result {
+    return this.callReadOnlyFn("get-registered-miners-nonce");
+  }
+
   // SIP-010 functions
 
-  transfer(amount: number, from: Account, to: Account, sender: Account): Tx {
+  transfer(amount: number, from: Account, to: Account, sender: Account, memo: ArrayBuffer|undefined = undefined): Tx {
+    let memoVal: string;
+
+    if ( typeof memo == "undefined" ) {
+      memoVal = types.none();
+    } else {
+      memoVal = types.some(types.buff(memo));
+    }
+
     return Tx.contractCall(
       this.contractName,
       "transfer",
@@ -372,7 +453,7 @@ export class CityCoinClient {
         types.uint(amount),
         types.principal(from.address),
         types.principal(to.address),
-        types.none()
+        memoVal
       ],
       sender.address
     );
@@ -390,8 +471,8 @@ export class CityCoinClient {
     return this.callReadOnlyFn("get-decimals");
   }
 
-  getBalanceOf(user: Account): Result {
-    return this.callReadOnlyFn("get-balance-of", [
+  getBalance(user: Account): Result {
+    return this.callReadOnlyFn("get-balance", [
       types.principal(user.address)
     ])
   }
@@ -403,6 +484,37 @@ export class CityCoinClient {
   getTokenUri(): Result {
     return this.callReadOnlyFn("get-token-uri");
   }
+
+  findLeastCommitment(stacksBlockHeight: number): Result {
+    return this.callReadOnlyFn("find-least-commitment", [
+      types.uint(stacksBlockHeight)
+    ]);
+  }
+}
+
+export class MinedBlock {
+
+  minersCount: number;
+  leastCommitmentIdx: number;
+  leastCommitmentUstx: number;
+  claimed: boolean;
+
+  constructor(minersCount: number, leastCommitmentIdx: number, leastCommitmentUstx: number, claimed: boolean) {
+    this.minersCount = minersCount;
+    this.leastCommitmentIdx = leastCommitmentIdx;
+    this.leastCommitmentUstx = leastCommitmentUstx;
+    this.claimed = claimed;
+  }
+
+  convert(): string {
+    return types.tuple({
+      "miners-count": types.uint(this.minersCount),
+      "least-commitment-idx": types.uint(this.leastCommitmentIdx),
+      "least-commitment-ustx": types.uint(this.leastCommitmentUstx),
+      "claimed": types.bool(this.claimed)
+    })
+  }
+
 }
 
 export interface MinerCommit {
@@ -431,7 +543,7 @@ export class MinersList extends Array<MinerCommit> {
     let item = this[index];
     return {
       "miner-id": types.uint(item.minerId),
-      "amount-ustx": types.uint(item.amountUstx)
+      "ustx": types.uint(item.amountUstx)
     }
   }
 }

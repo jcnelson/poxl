@@ -10,8 +10,6 @@ Coming *very* soon!
   - [Abstract](#abstract)
   - [Contributing](#contributing)
   - [Testing](#testing)
-    - [clarity-cli](#clarity-cli)
-    - [clarinet](#clarinet)
   - [Definitions and Resources](#definitions-and-resources)
   - [References](#references)
 
@@ -24,26 +22,14 @@ PRs are welcome! Please see the [open issues](https://github.com/citycoins/cityc
 All code submitted should be thoroughly commented and tested where applicable. Configurable options for the smart contract or the web UI should be listed as constants.
 
 - Website: https://citycoins.co
-- App UI Template: deployed at subdomain per city, e.g. https://miami.citycoins.co ([repo](https://github.com/citycoins/citycoin-ui))
-- Smart Contract Template: [citycoin.clar](./contracts/citycoin.clar)
+- App UI Template: deployed at a unique domain per city, e.g. https://minemiamicoin.com ([repo](https://github.com/citycoins/citycoin-ui))
+- Smart Contract Template, cloned and deployed with details for each city: [citycoin.clar](./contracts/citycoin.clar)
 
 ## Testing
 
-There are two tools available to test the contract: `clarity-cli` and `clarinet`.
+Contracts are tested via [clarinet](https://github.com/hirosystems/clarinet) and javascript.
 
-### clarity-cli
-
-To test the contract using `clarity-cli`, first build the binary file using the [setup instructions here](./setup-clarity-cli.md), then run the testing script via `bash`:
-
-```bash
-bash ./tests/run-tests.sh
-```
-
-This will run a set of unit tests and return their output.
-
-### clarinet
-
-To test the contract using `clarinet`, first [install the tool](https://github.com/lgalabru/clarinet#installation) to make it available on your system.
+To test the contract using `clarinet`, first [install the tool](https://github.com/hirosystems/clarinet#installation) to make it available on your system.
 
 The following commands are used to run the tests:
 
@@ -51,7 +37,6 @@ The following commands are used to run the tests:
 - `npm run clarinet:test`, `npm test`, `npm run test`
 - `npm run clarinet:check`
 - `npm run clarinet:console`
-- `npm test:native`
 
 A bash script is provided to prepare the tests as part of `clarinet:prepare`, and executes the following steps:
 
