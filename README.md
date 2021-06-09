@@ -1,5 +1,7 @@
 # CityCoins on Stacks
 
+[![Contract Tests](https://github.com/citycoins/citycoin/actions/workflows/test-contract.yaml/badge.svg)](https://github.com/citycoins/citycoin/actions/workflows/test-contract.yaml)
+
 ## Abstract
 
 Support a city by mining, buying, or holding their CityCoin, all while generating yield in STX and BTC.
