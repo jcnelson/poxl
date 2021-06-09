@@ -1,5 +1,5 @@
-;; citycoin implementation of the PoX-lite contract, MVP.
-(define-constant CONTRACT-OWNER tx-sender)
+;; CityCoins on Stacks, simulating PoX in a smart contract
+
 ;; error codes
 (define-constant ERR-NO-WINNER u0)
 (define-constant ERR-NO-SUCH-MINER u1)
@@ -20,10 +20,10 @@
 
 ;; Tailor to your needs.
 (define-constant TOKEN-REWARD-MATURITY u100)        ;; how long a miner must wait before claiming their minted tokens
-(define-constant FIRST-STACKING-BLOCK u340282366920938463463374607431768211455)           ;; Stacks block height when Stacking is available
-(define-constant REWARD-CYCLE-LENGTH u500)          ;; how long a reward cycle is
+(define-constant FIRST-STACKING-BLOCK u340282366920938463463374607431768211455)    ;; Stacks block height when Stacking is available
+(define-constant REWARD-CYCLE-LENGTH u2100)          ;; how long a reward cycle is
 (define-constant MAX-REWARD-CYCLES u32)             ;; how many reward cycles a Stacker can Stack their tokens for
-(define-constant MAX-MINERS-COUNT u128)                ;; 
+(define-constant MAX-MINERS-COUNT u128)             ;; maximum amount of miners in one block
 (define-constant LONG-UINT-LIST (list
 u1 u2 u3 u4 u5 u6 u7 u8 u9 u10 u11 u12 u13 u14 u15 u16 
 u17 u18 u19 u20 u21 u22 u23 u24 u25 u26 u27 u28 u29 u30 u31 u32 
@@ -64,8 +64,10 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
     0xf0 0xf1 0xf2 0xf3 0xf4 0xf5 0xf6 0xf7 0xf8 0xf9 0xfa 0xfb 0xfc 0xfd 0xfe 0xff
 ))
 
+;; define initial token URI
 (define-data-var token-uri (optional (string-utf8 256)) (some u"https://cdn.citycoins.co/metadata/citycoin.json"))
 
+;; set token URI to new value, only accessible by CONTRACT-OWNER
 (define-public (set-token-uri (new-uri (optional (string-utf8 256))))
     (begin
         (asserts! (is-eq tx-sender CONTRACT-OWNER) (err ERR-UNAUTHORIZED))
@@ -120,11 +122,14 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; set constant for contract owner, used for updating token-uri
+(define-constant CONTRACT-OWNER tx-sender)
+
 ;; Mining configuration
 (define-constant MINING-ACTIVATION-THRESHOLD u20)     ;; how many miners have to register to kickoff countdown to mining activation
 (define-data-var mining-activation-threshold uint MINING-ACTIVATION-THRESHOLD) ;; variable used in place of constant for easier testing
 (define-data-var mining-activation-threshold-reached bool false)  ;; variable used to track if mining is active
-(define-constant MINING-ACTIVATION-DELAY u100)       ;; how many blocks after last miner registration mining will be activated (~24hrs)
+(define-constant MINING-ACTIVATION-DELAY u150)       ;; how many blocks after last miner registration mining will be activated (~24hrs)
 (define-constant MINING-HALVING-BLOCKS u210000)      ;; how many blocks until the next halving occurs
 (define-data-var miners-nonce uint u0)               ;; variable used to generate unique miner-id's
 (define-data-var coinbase-threshold-1 uint u0)       ;; block height of the 1st halving, set by register-miner
