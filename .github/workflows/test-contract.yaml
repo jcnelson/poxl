@@ -23,9 +23,13 @@ jobs:
       - uses: actions/checkout@v2
       - name: "Prepare contract files"
         run: ./scripts/clarinet-prepare.sh
+      - name: "Check contract"
+        uses: docker://ludovic/clarinet:latest
+        with:
+          args: check
       - name: "Execute test suite"
         uses: docker://ludovic/clarinet:latest
-        with: 
+        with:
           args: test --coverage
       - name: "Export code coverage"
         uses: codecov/codecov-action@v1
