@@ -1,4 +1,4 @@
-import { Tx, Chain, Account, types } from 'https://deno.land/x/clarinet@v0.6.0/index.ts';
+import { Tx, Chain, Account, types, ReadOnlyFn } from 'https://deno.land/x/clarinet@v0.10.0/index.ts';
 
 //used only for better intellisense 
 export interface Result {
@@ -44,7 +44,7 @@ export class CityCoinClient {
     this.deployer = deployer;
   }
 
-  private callReadOnlyFn(method: string, args: Array<any> = [], sender: Account = this.deployer): Result {
+  private callReadOnlyFn(method: string, args: Array<any> = [], sender: Account = this.deployer): ReadOnlyFn {
     const result = this.chain.callReadOnlyFn(
       this.contractName,
       method,
@@ -90,36 +90,36 @@ export class CityCoinClient {
 
   // read only functions
 
-  getCoinbaseAmount(stacksBlockHeight: number): Result {
+  getCoinbaseAmount(stacksBlockHeight: number): ReadOnlyFn {
     return this.callReadOnlyFn("get-coinbase-amount", [
       types.uint(stacksBlockHeight)
     ]);
   }
 
-  getMinersAtBlock(stacksBlockHeight: number): Result {
+  getMinersAtBlock(stacksBlockHeight: number): ReadOnlyFn {
     return this.callReadOnlyFn("get-miners-at-block", [
       types.uint(stacksBlockHeight)
     ]);
   }
 
-  getStackedInCycle(miner: Account, rewardCycle: number): Result {
+  getStackedInCycle(miner: Account, rewardCycle: number): ReadOnlyFn {
     return this.callReadOnlyFn("get-stacked-in-cycle", [
       types.principal(miner.address),
       types.uint(rewardCycle)
     ]);
   }
 
-  getTokensPerCycle(rewardCycle: number): Result {
+  getTokensPerCycle(rewardCycle: number): ReadOnlyFn {
     return this.callReadOnlyFn("get-tokens-per-cycle", [
       types.uint(rewardCycle)
     ]);
   }
 
-  getPoxLiteInfo(): Result {
+  getPoxLiteInfo(): ReadOnlyFn {
     return this.callReadOnlyFn("get-pox-lite-info");
   }
 
-  getBlockCommitTotal(stacksBlockHeight: number): Result {
+  getBlockCommitTotal(stacksBlockHeight: number): ReadOnlyFn {
     return this.callReadOnlyFn(
       "get-block-commit-total",
       [
@@ -128,7 +128,7 @@ export class CityCoinClient {
     );
   }
 
-  getBlockCommitToStackers(stacksBlockHeight: number): Result {
+  getBlockCommitToStackers(stacksBlockHeight: number): ReadOnlyFn {
     return this.callReadOnlyFn(
       "get-block-commit-to-stackers",
       [
@@ -137,7 +137,7 @@ export class CityCoinClient {
     );
   }
 
-  getBlockCommitToCity(stacksBlockHeight: number): Result {
+  getBlockCommitToCity(stacksBlockHeight: number): ReadOnlyFn {
     return this.callReadOnlyFn(
       "get-block-commit-to-city",
       [
@@ -146,7 +146,7 @@ export class CityCoinClient {
     );
   }
 
-  getBlockWinner(stacksBlockHeight: number, randomSampleUint: number): Result {
+  getBlockWinner(stacksBlockHeight: number, randomSampleUint: number): ReadOnlyFn {
     return this.callReadOnlyFn(
       "get-block-winner",
       [
@@ -167,7 +167,7 @@ export class CityCoinClient {
     )
   }
 
-  getMinerId(miner: Account): Result {
+  getMinerId(miner: Account): ReadOnlyFn {
     return this.callReadOnlyFn(
       "get-miner-id",
       [
@@ -191,7 +191,7 @@ export class CityCoinClient {
     return Number(minerId);
   }
 
-  hasMined(miner: Account, blockHeight: number): Result {
+  hasMined(miner: Account, blockHeight: number): ReadOnlyFn {
   return this.callReadOnlyFn(
       "has-mined",
       [
@@ -207,7 +207,7 @@ export class CityCoinClient {
     randomSample: number,
     minedBlock: MinedBlock,
     currentStacksBlock: number
-  ): Result {
+  ): ReadOnlyFn {
     return this.callReadOnlyFn(
       'can-claim-tokens',
       [
@@ -225,7 +225,7 @@ export class CityCoinClient {
     minerId: number,
     stacksBlockHeight: number,
     amountUstx: number,
-  ): Result {
+  ): ReadOnlyFn {
     return this.callReadOnlyFn(
       "can-mine-tokens",
       [
@@ -243,7 +243,7 @@ export class CityCoinClient {
     nowStacksHeight: number,
     startStacksHeight: number,
     lockPeriod: number
-  ): Result {
+  ): ReadOnlyFn {
     return this.callReadOnlyFn(
       "can-stack-tokens",
       [
@@ -260,7 +260,7 @@ export class CityCoinClient {
     stacker: Account,
     targetRewardCycle: number,
     currentBlockHeight: number
-  ): Result {
+  ): ReadOnlyFn {
     return this.callReadOnlyFn(
       "get-entitled-stacking-reward",
       [
@@ -271,7 +271,7 @@ export class CityCoinClient {
     )
   }
 
-  getRewardCycle(stacksBlockHeight: number): Result {
+  getRewardCycle(stacksBlockHeight: number): ReadOnlyFn {
     return this.callReadOnlyFn(
       "get-reward-cycle",
       [
@@ -280,7 +280,7 @@ export class CityCoinClient {
     )
   }
 
-  getFirstBlockHeightInRewardCycle(rewardCycle: number): Result {
+  getFirstBlockHeightInRewardCycle(rewardCycle: number): ReadOnlyFn {
     return this.callReadOnlyFn(
       "get-first-block-height-in-reward-cycle",
       [
@@ -289,7 +289,7 @@ export class CityCoinClient {
     );
   }
 
-  getRandomUintAtBlock(stacksBlock: number): Result {
+  getRandomUintAtBlock(stacksBlock: number): ReadOnlyFn {
     return this.callReadOnlyFn(
       "get-random-uint-at-block",
       [
@@ -396,11 +396,11 @@ export class CityCoinClient {
     )
   }
 
-  getCityWallet(): Result {
+  getCityWallet(): ReadOnlyFn {
     return this.callReadOnlyFn("get-city-wallet");
   }
 
-  getTotalSupplyUstx(): Result {
+  getTotalSupplyUstx(): ReadOnlyFn {
     return this.callReadOnlyFn("get-total-supply-ustx");
   }
 
@@ -423,15 +423,15 @@ export class CityCoinClient {
     )
   }
 
-  getMiningActivationStatus(): Result {
+  getMiningActivationStatus(): ReadOnlyFn {
     return this.callReadOnlyFn("get-mining-activation-status");
   }
 
-  getRegisteredMinersThreshold(): Result {
+  getRegisteredMinersThreshold(): ReadOnlyFn {
     return this.callReadOnlyFn("get-registered-miners-threshold");
   }
 
-  getRegisteredMinersNonce(): Result {
+  getRegisteredMinersNonce(): ReadOnlyFn {
     return this.callReadOnlyFn("get-registered-miners-nonce");
   }
 
@@ -459,33 +459,33 @@ export class CityCoinClient {
     );
   }
 
-  getName(): Result {
+  getName(): ReadOnlyFn {
     return this.callReadOnlyFn("get-name");
   }
 
-  getSymbol(): Result {
+  getSymbol(): ReadOnlyFn {
     return this.callReadOnlyFn("get-symbol");
   }
 
-  getDecimals(): Result {
+  getDecimals(): ReadOnlyFn {
     return this.callReadOnlyFn("get-decimals");
   }
 
-  getBalance(user: Account): Result {
+  getBalance(user: Account): ReadOnlyFn {
     return this.callReadOnlyFn("get-balance", [
       types.principal(user.address)
     ])
   }
 
-  getTotalSupply(): Result {
+  getTotalSupply(): ReadOnlyFn {
     return this.callReadOnlyFn("get-total-supply");
   }
 
-  getTokenUri(): Result {
+  getTokenUri(): ReadOnlyFn {
     return this.callReadOnlyFn("get-token-uri");
   }
 
-  findLeastCommitment(stacksBlockHeight: number): Result {
+  findLeastCommitment(stacksBlockHeight: number): ReadOnlyFn {
     return this.callReadOnlyFn("find-least-commitment", [
       types.uint(stacksBlockHeight)
     ]);
