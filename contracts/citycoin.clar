@@ -1,6 +1,5 @@
 ;; citycoin implementation of the PoX-lite contract, MVP.
 
-this-will-cause-an-error
 
 ;; error codes
 (define-constant ERR-NO-WINNER u0)
