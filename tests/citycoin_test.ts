@@ -1,4 +1,4 @@
-import { Tx, Chain, Account, types } from 'https://deno.land/x/clarinet@v0.6.0/index.ts';
+import { Tx, Chain, Account, types } from 'https://deno.land/x/clarinet@v0.10.0/index.ts';
 import { assertEquals, assert } from "https://deno.land/std@0.93.0/testing/asserts.ts";
 
 import {
@@ -38,6 +38,7 @@ describe('[CityCoin]', () => {
     (Deno as any).core.ops();
     let transactions: Array<Tx> = [];
     let result = (Deno as any).core.jsonOpSync("setup_chain", {
+      name: 'citycoin',
       transactions: transactions,
     });
 
