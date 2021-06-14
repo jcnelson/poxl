@@ -64,6 +64,30 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
     0xf0 0xf1 0xf2 0xf3 0xf4 0xf5 0xf6 0xf7 0xf8 0xf9 0xfa 0xfb 0xfc 0xfd 0xfe 0xff
 ))
 
+(define-map UintLists
+    uint                ;; size
+    (list 128 uint)     ;; actual list
+)
+
+(define-private (get-uint-list (size uint))
+    (default-to (list ) (map-get? UintLists size))
+)
+
+(fold fill-uint-list-closure LONG-UINT-LIST true)
+
+(define-private (fill-uint-list-closure (idx uint) (x bool))
+    (if (is-eq idx u1)
+        (map-insert UintLists
+            idx
+            (unwrap-panic (as-max-len? (list u1) u128))
+        )
+        (map-insert UintLists
+            idx
+            (unwrap-panic (as-max-len? (append (unwrap-panic (map-get? UintLists (- idx u1))) idx) u128))
+        )
+    )
+)
+
 ;; define initial token URI
 (define-data-var token-uri (optional (string-utf8 256)) (some u"https://cdn.citycoins.co/metadata/citycoin.json"))
 
@@ -324,7 +348,11 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
 
 ;; Getter for getting the list of miners and uSTX committments for a given block.
 (define-read-only (get-miners-at-block (stacks-block-height uint))
-    (get miners (fold get-miners-at-block-closure LONG-UINT-LIST { stacks-block-height: stacks-block-height, miners: (list )}))
+    (get miners (fold 
+        get-miners-at-block-closure 
+        (get-uint-list (get miners-count (get-mined-block-or-default stacks-block-height))) 
+        { stacks-block-height: stacks-block-height, miners: (list )}
+    ))
 )
 
 (define-private (get-miners-at-block-closure (idx uint) (data { stacks-block-height: uint, miners: (list 128 { miner-id: uint, ustx: uint })}))
@@ -450,7 +478,9 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
             (commit-total (get-block-commit-total stacks-block-height))
         )
         (if (> commit-total u0)
-            (get winner (fold get-block-winner-closure LONG-UINT-LIST 
+            (get winner (fold 
+                get-block-winner-closure 
+                (get-uint-list (get miners-count (get-mined-block-or-default stacks-block-height)))
                 { 
                     stacks-block-height: stacks-block-height,
                     sample: (mod random-sample commit-total), 
