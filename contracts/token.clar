@@ -10,6 +10,11 @@
 ;; define initial token URI
 (define-data-var token-uri (optional (string-utf8 256)) (some u"https://cdn.citycoins.co/metadata/citycoin.json"))
 
+(define-map trusted-callers
+    principal
+    bool
+)
+
 ;; set token URI to new value, only accessible by CONTRACT-OWNER
 (define-public (set-token-uri (new-uri (optional (string-utf8 256))))
     (begin
@@ -58,6 +63,33 @@
 ;; Other functionality
 (define-public (mint (amount uint) (recipient principal))
   (begin
+    (asserts! (is-trusted-caller contract-caller) (err ERR-UNAUTHORIZED))
     (ft-mint? citycoins amount recipient)
   )
 )
+
+(define-read-only (is-trusted-caller (caller principal))
+    (default-to false (map-get? trusted-callers caller))
+)
+
+(define-public (add-trusted-caller (caller principal))
+    (begin
+        (asserts! (is-eq contract-caller CONTRACT-OWNER) (err ERR-UNAUTHORIZED))
+        (map-set trusted-callers caller true)
+        (ok true)
+    )
+)
+
+(define-public (remove-trusted-caller (caller principal))
+    (begin
+        (asserts! (is-eq contract-caller CONTRACT-OWNER) (err ERR-UNAUTHORIZED))
+        (map-set trusted-callers caller false)
+        (ok true)
+    )
+)
+
+;;---------------------------------------
+;; Contract initialization
+
+;; add main contract to list of trusted callers
+(map-set trusted-callers .citycoin true)

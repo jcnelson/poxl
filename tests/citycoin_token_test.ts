@@ -21,6 +21,7 @@ describe("[CityCoin token]", () => {
   let deployer: Account;
   let wallet_1: Account;
   let wallet_2: Account;
+  let wallet_3: Account;
 
   function setupCleanEnv() {
     (Deno as any).core.ops();
@@ -40,6 +41,7 @@ describe("[CityCoin token]", () => {
     deployer = accounts.get("deployer")!;
     wallet_1 = accounts.get("wallet_1")!;
     wallet_2 = accounts.get("wallet_2")!;
+    wallet_3 = accounts.get("wallet_3")!;
 
     client = new TokenClient("token", chain, deployer);
   }
@@ -212,40 +214,167 @@ describe("[CityCoin token]", () => {
         result.expectOk().expectSome().expectUtf8(tokenUri);
       });
     });
+  });
 
-    describe("set-token-uri", () => {
-      it("fails with ERR_UNAUTHORIZED when called by someone who is not contract owner", () => {
-        const block = chain.mineBlock([
-          client.setTokenUri(wallet_2, "http://something-something.com"),
-        ]);
+  describe("set-token-uri", () => {
+    it("fails with ERR_UNAUTHORIZED when called by someone who is not contract owner", () => {
+      const block = chain.mineBlock([
+        client.setTokenUri(wallet_2, "http://something-something.com"),
+      ]);
 
-        const receipt = block.receipts[0];
+      const receipt = block.receipts[0];
 
-        receipt.result
-          .expectErr()
-          .expectUint(TokenClient.ErrCode.ERR_UNAUTHORIZED);
-      });
+      receipt.result
+        .expectErr()
+        .expectUint(TokenClient.ErrCode.ERR_UNAUTHORIZED);
+    });
 
-      it("changes token uri to none if no new value is provided", () => {
-        const block = chain.mineBlock([client.setTokenUri(deployer)]);
+    it("changes token uri to none if no new value is provided", () => {
+      const block = chain.mineBlock([client.setTokenUri(deployer)]);
 
-        const receipt = block.receipts[0];
-        receipt.result.expectOk().expectBool(true);
+      const receipt = block.receipts[0];
+      receipt.result.expectOk().expectBool(true);
 
-        const result = client.getTokenUri().result;
-        result.expectOk().expectNone();
-      });
+      const result = client.getTokenUri().result;
+      result.expectOk().expectNone();
+    });
 
-      it("changes token uri to new value if provided", () => {
-        const newUri = "http://something-something.com";
-        const block = chain.mineBlock([client.setTokenUri(deployer, newUri)]);
+    it("changes token uri to new value if provided", () => {
+      const newUri = "http://something-something.com";
+      const block = chain.mineBlock([client.setTokenUri(deployer, newUri)]);
 
-        const receipt = block.receipts[0];
-        receipt.result.expectOk().expectBool(true);
+      const receipt = block.receipts[0];
+      receipt.result.expectOk().expectBool(true);
 
-        const result = client.getTokenUri().result;
-        result.expectOk().expectSome().expectUtf8(newUri);
-      });
+      const result = client.getTokenUri().result;
+      result.expectOk().expectSome().expectUtf8(newUri);
+    });
+  });
+
+  describe("add-trusted-caller", () => {
+    beforeEach(() => {
+      setupCleanEnv();
+    });
+
+    it("fails with ERR_UNAUTHORIZED when called who is not contract owner", () => {
+      const block = chain.mineBlock([
+        client.addTrustedCaller(wallet_2, wallet_2),
+      ]);
+
+      const receipt = block.receipts[0];
+
+      receipt.result
+        .expectErr()
+        .expectUint(TokenClient.ErrCode.ERR_UNAUTHORIZED);
+    });
+
+    it("succeeds when called by contract owner", () => {
+      const block = chain.mineBlock([
+        client.addTrustedCaller(wallet_2, deployer),
+      ]);
+
+      const receipt = block.receipts[0];
+
+      receipt.result.expectOk().expectBool(true);
+    });
+  });
+
+  describe("remove-trusted-caller", () => {
+    beforeEach(() => {
+      setupCleanEnv();
+    });
+
+    it("fails with ERR_UNAUTHORIZED when called who is not contract owner", () => {
+      const block = chain.mineBlock([
+        client.removeTrustedCaller(wallet_2, wallet_2),
+      ]);
+
+      const receipt = block.receipts[0];
+
+      receipt.result
+        .expectErr()
+        .expectUint(TokenClient.ErrCode.ERR_UNAUTHORIZED);
+    });
+
+    it("succeeds when called by contract owner", () => {
+      const block = chain.mineBlock([
+        client.removeTrustedCaller(wallet_2, deployer),
+      ]);
+
+      const receipt = block.receipts[0];
+
+      receipt.result.expectOk().expectBool(true);
+    });
+  });
+
+  describe("is-trusted-caller", () => {
+    beforeEach(() => {
+      setupCleanEnv();
+    });
+
+    it("returns false when asked about not trusted caller", () => {
+      const result = client.isTrustedCaller(wallet_2).result;
+
+      result.expectBool(false);
+    });
+
+    it("returns false when asked about caller that has been removed", () => {
+      let block = chain.mineBlock([
+        client.addTrustedCaller(wallet_2, deployer),
+        client.removeTrustedCaller(wallet_2, deployer),
+      ]);
+
+      const result = client.isTrustedCaller(wallet_2).result;
+
+      result.expectBool(false);
+    });
+
+    it("returns true when asked about trusted caller", () => {
+      let block = chain.mineBlock([
+        client.addTrustedCaller(wallet_2, deployer),
+        client.addTrustedCaller(wallet_3, deployer),
+      ]);
+
+      const result1 = client.isTrustedCaller(wallet_2).result;
+      const result2 = client.isTrustedCaller(wallet_3).result;
+
+      result1.expectBool(true);
+      result2.expectBool(true);
+    });
+  });
+
+  describe("mint", () => {
+    beforeEach(() => {
+      setupCleanEnv();
+    });
+
+    it("fails with ERR_UNAUTHORIZED when called by someone who is not a trusted caller", () => {
+      let block = chain.mineBlock([client.mint(200, wallet_2, wallet_2)]);
+
+      let receipt = block.receipts[0];
+
+      receipt.result
+        .expectErr()
+        .expectUint(TokenClient.ErrCode.ERR_UNAUTHORIZED);
+    });
+
+    it("succeeds when called by trusted caller and mints requested amount of tokens", () => {
+      const amount = 200;
+      const recipient = wallet_3;
+
+      let block = chain.mineBlock([
+        client.addTrustedCaller(wallet_2, deployer),
+        client.mint(amount, recipient, wallet_2),
+      ]);
+
+      let receipt = block.receipts[1];
+      receipt.result.expectOk().expectBool(true);
+
+      receipt.events.expectFungibleTokenMintEvent(
+        amount,
+        recipient.address,
+        "citycoins"
+      );
     });
   });
 });
