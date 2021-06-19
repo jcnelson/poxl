@@ -942,7 +942,7 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
     (begin
         (try! (can-claim-tokens tx-sender mined-stacks-block-ht random-sample block block-height))
         (try! (set-tokens-claimed mined-stacks-block-ht))
-        (unwrap-panic (mint-coinbase tx-sender mined-stacks-block-ht))
+        (try! (mint-coinbase tx-sender mined-stacks-block-ht))
 
         (ok true)
     ))

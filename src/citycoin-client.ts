@@ -34,6 +34,7 @@ export const REWARD_CYCLE_LENGTH = 2100;
 export const CITY_CUSTODIED_WALLET = "STRKQ271SRDWB166VNV4FMXPH3X35YPQ5N192EWN";
 export const SPLIT_STACKER_PERCENTAGE = 0.7;
 export const SPLIT_CITY_PERCENTAGE = 0.3;
+export const TOKEN_REWARD_MATURITY = 100;
 
 export class CityCoinClient extends Client {
   
@@ -375,8 +376,6 @@ export class CityCoinClient extends Client {
   getRegisteredMinersNonce(): ReadOnlyFn {
     return this.callReadOnlyFn("get-registered-miners-nonce");
   }
-
-  
 
   findLeastCommitment(stacksBlockHeight: number): ReadOnlyFn {
     return this.callReadOnlyFn("find-least-commitment", [

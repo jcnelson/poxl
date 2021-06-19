@@ -19,7 +19,8 @@ import {
   MINING_ACTIVATION_DELAY,
   MINING_HALVING_BLOCKS,
   SPLIT_STACKER_PERCENTAGE,
-  SPLIT_CITY_PERCENTAGE
+  SPLIT_CITY_PERCENTAGE,
+  TOKEN_REWARD_MATURITY
 } from "../src/citycoin-client.ts"
 import { TokenClient } from "../src/token-client.ts";
 
@@ -1767,6 +1768,98 @@ describe('[CityCoin]', () => {
         console.info(block)
         receipt.result.expectOk().expectBool(true);
       })
+    });
+
+    describe("claim-token-reward", () => {
+      beforeEach(() => {
+        setupCleanEnv();
+        chain.mineBlock([
+          client.setMiningActivationThreshold(1),
+          client.registerMiner(wallet_3)
+        ]);
+        chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
+      });
+
+      it("throws ERR_IMMATURE_TOKEN_REWARD if maturity window has not passed", () => {
+        const miner = wallet_1;
+
+        let setupBlock = chain.mineBlock([
+          client.mineTokens(100, miner)
+        ]);
+
+        chain.mineEmptyBlock(1);
+
+        let block = chain.mineBlock([
+          client.claimTokenReward(setupBlock.height, miner)
+        ]);
+
+        let receipt = block.receipts[0];
+
+        receipt.result.expectErr().expectUint(ErrCode.ERR_IMMATURE_TOKEN_REWARD)
+      });
+
+      it("throws ERR_NO_WINNER if nobody mined at specific block", () => {
+        chain.mineEmptyBlock(20000);
+
+        let block = chain.mineBlock([
+          client.claimTokenReward(5000, wallet_1)
+        ]);
+
+        let receipt = block.receipts[0];
+
+        receipt.result.expectErr().expectUint(ErrCode.ERR_NO_WINNER);
+      });
+
+      it("throws ERR_UNAUTHORIZED if main contract is not token trusted caller", () => {
+        const miner = wallet_1;
+
+        //mock contract account
+        const contract: Account = {
+          address: client.getContractAddress(),
+          balance: 0,
+          name: "contract",
+          mnemonic: "",
+          derivation: ""
+        }
+
+        let setupBlock = chain.mineBlock([
+          client.mineTokens(100, miner),
+          tokenClient.removeTrustedCaller(contract, deployer)
+        ]);
+
+        chain.mineEmptyBlock(TOKEN_REWARD_MATURITY);
+
+        let block = chain.mineBlock([
+          client.claimTokenReward(setupBlock.height-1, miner),
+        ]);
+
+        let receipt = block.receipts[0];
+
+        receipt.result.expectErr().expectUint(TokenClient.ErrCode.ERR_UNAUTHORIZED);
+      });
+
+      it("succeeds and mint proper amount of citycoin tokens", () => {
+        const miner = wallet_1;
+
+        let setupBlock = chain.mineBlock([
+          client.mineTokens(100, miner)
+        ]);
+
+        chain.mineEmptyBlock(TOKEN_REWARD_MATURITY);
+
+        let block = chain.mineBlock([
+          client.claimTokenReward(setupBlock.height-1, miner)
+        ]);
+
+        let receipt = block.receipts[0];
+
+        receipt.result.expectOk().expectBool(true);
+        receipt.events.expectFungibleTokenMintEvent(
+          250000,
+          miner.address,
+          "citycoins"
+        );
+      });
     });
   });
 });
