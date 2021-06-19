@@ -1,4 +1,5 @@
 import { Tx, Chain, Account, types, ReadOnlyFn } from 'https://deno.land/x/clarinet@v0.10.0/index.ts';
+import { Client } from "./client.ts";
 
 //used only for better intellisense 
 export interface Result {
@@ -34,49 +35,8 @@ export const CITY_CUSTODIED_WALLET = "STRKQ271SRDWB166VNV4FMXPH3X35YPQ5N192EWN";
 export const SPLIT_STACKER_PERCENTAGE = 0.7;
 export const SPLIT_CITY_PERCENTAGE = 0.3;
 
-export class CityCoinClient {
-  contractName: string = "citycoin"
-  chain: Chain;
-  deployer: Account;
-
-  constructor(chain: Chain, deployer: Account) {
-    this.chain = chain;
-    this.deployer = deployer;
-  }
-
-  private callReadOnlyFn(method: string, args: Array<any> = [], sender: Account = this.deployer): ReadOnlyFn {
-    const result = this.chain.callReadOnlyFn(
-      this.contractName,
-      method,
-      args,
-      sender?.address
-    );
-
-    return result;
-  }
-
-  public getContractAddress(): string {
-    return `${this.deployer.address}.${this.contractName}`;
-  }
-
-  /**
-   * Mints token to make testing easier.
-   * 
-   * @param amount 
-   * @param recipient 
-   */
-  ftMint(amount: number, recipient: Account): Tx {
-    return Tx.contractCall(
-      this.contractName,
-      "ft-mint",
-      [
-        types.uint(amount),
-        types.principal(recipient.address)
-      ],
-      this.deployer.address
-    );
-  }
-
+export class CityCoinClient extends Client {
+  
   setMiningActivationThreshold(newThreshold: number): Tx {
     return Tx.contractCall(
       this.contractName,
@@ -404,25 +364,6 @@ export class CityCoinClient {
     return this.callReadOnlyFn("get-total-supply-ustx");
   }
 
-  setTokenUri(sender: Account, newUri?:string|undefined): Tx {
-    let newUriVal: string;
-
-    if ( typeof newUri == "undefined" ) {
-      newUriVal = types.none();
-    } else {
-      newUriVal = types.some(types.utf8(newUri));
-    }
-
-    return Tx.contractCall(
-      this.contractName,
-      "set-token-uri",
-      [
-        newUriVal
-      ],
-      sender.address
-    )
-  }
-
   getMiningActivationStatus(): ReadOnlyFn {
     return this.callReadOnlyFn("get-mining-activation-status");
   }
@@ -435,55 +376,7 @@ export class CityCoinClient {
     return this.callReadOnlyFn("get-registered-miners-nonce");
   }
 
-  // SIP-010 functions
-
-  transfer(amount: number, from: Account, to: Account, sender: Account, memo: ArrayBuffer|undefined = undefined): Tx {
-    let memoVal: string;
-
-    if ( typeof memo == "undefined" ) {
-      memoVal = types.none();
-    } else {
-      memoVal = types.some(types.buff(memo));
-    }
-
-    return Tx.contractCall(
-      this.contractName,
-      "transfer",
-      [
-        types.uint(amount),
-        types.principal(from.address),
-        types.principal(to.address),
-        memoVal
-      ],
-      sender.address
-    );
-  }
-
-  getName(): ReadOnlyFn {
-    return this.callReadOnlyFn("get-name");
-  }
-
-  getSymbol(): ReadOnlyFn {
-    return this.callReadOnlyFn("get-symbol");
-  }
-
-  getDecimals(): ReadOnlyFn {
-    return this.callReadOnlyFn("get-decimals");
-  }
-
-  getBalance(user: Account): ReadOnlyFn {
-    return this.callReadOnlyFn("get-balance", [
-      types.principal(user.address)
-    ])
-  }
-
-  getTotalSupply(): ReadOnlyFn {
-    return this.callReadOnlyFn("get-total-supply");
-  }
-
-  getTokenUri(): ReadOnlyFn {
-    return this.callReadOnlyFn("get-token-uri");
-  }
+  
 
   findLeastCommitment(stacksBlockHeight: number): ReadOnlyFn {
     return this.callReadOnlyFn("find-least-commitment", [
