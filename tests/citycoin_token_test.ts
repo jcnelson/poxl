@@ -3,14 +3,13 @@ import {
   Account,
   Tx,
   types,
-} from "https://deno.land/x/clarinet@v0.10.0/index.ts";
+} from "https://deno.land/x/clarinet@v0.12.0/index.ts";
 import { assertEquals } from "https://deno.land/std@0.93.0/testing/asserts.ts";
 import {
   beforeEach,
   describe,
   it,
 } from "https://deno.land/x/test_suite@v0.7.0/mod.ts";
-// import { MINING_ACTIVATION_DELAY } from "../src/citycoin-client.ts";
 
 import { TokenClient } from "../src/token-client.ts";
 
@@ -26,10 +25,10 @@ describe("[CityCoin token]", () => {
   function setupCleanEnv() {
     (Deno as any).core.ops();
     let transactions: Array<Tx> = [];
-    let result = (Deno as any).core.jsonOpSync("setup_chain", {
+    let result = JSON.parse((Deno as any).core.opSync("setup_chain", {
       name: "citycoin",
       transactions: transactions,
-    });
+    }));
 
     chain = new Chain(result["session_id"]);
     accounts = new Map();

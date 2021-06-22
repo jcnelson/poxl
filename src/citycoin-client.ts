@@ -1,12 +1,5 @@
-import { Tx, Chain, Account, types, ReadOnlyFn } from 'https://deno.land/x/clarinet@v0.10.0/index.ts';
+import { Tx, Chain, Account, types, ReadOnlyFn } from 'https://deno.land/x/clarinet@v0.12.0/index.ts';
 import { Client } from "./client.ts";
-
-//used only for better intellisense 
-export interface Result {
-  session_id: number,
-  result: string
-  events: []
-}
 
 export enum ErrCode {
   ERR_NO_WINNER = 0,
