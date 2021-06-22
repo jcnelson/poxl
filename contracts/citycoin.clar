@@ -88,17 +88,6 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
     )
 )
 
-;; define initial token URI
-(define-data-var token-uri (optional (string-utf8 256)) (some u"https://cdn.citycoins.co/metadata/citycoin.json"))
-
-;; set token URI to new value, only accessible by CONTRACT-OWNER
-(define-public (set-token-uri (new-uri (optional (string-utf8 256))))
-    (begin
-        (asserts! (is-eq tx-sender CONTRACT-OWNER) (err ERR-UNAUTHORIZED))
-        (ok (var-set token-uri new-uri))
-    )
-)
-
 ;; Convert a 1-byte buffer into its uint representation.
 (define-private (buff-to-u8 (byte (buff 1)))
     (unwrap-panic (index-of BUFF-TO-BYTE byte)))
@@ -145,9 +134,6 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; set constant for contract owner, used for updating token-uri
-(define-constant CONTRACT-OWNER tx-sender)
 
 ;; Mining configuration
 (define-constant MINING-ACTIVATION-THRESHOLD u20)     ;; how many miners have to register to kickoff countdown to mining activation
@@ -253,9 +239,6 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
     { stacker: principal, reward-cycle: uint }
     { amount-token: uint }
 )
-
-;; The fungible token that can be Stacked.
-(define-fungible-token citycoins)
 
 (define-public (register-miner (memo (optional (buff 34))))
     (let
@@ -390,7 +373,7 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
             (ok
                 (let (
                     (token-info (get-tokens-per-cycle cur-reward-cycle))
-                    (total-ft-supply (ft-get-supply citycoins))
+                    (total-ft-supply (unwrap-panic (contract-call? .token get-total-supply)))
                     (total-ustx-supply (stx-get-balance (as-contract tx-sender)))
                 )
                 {
@@ -410,7 +393,7 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
 
 ;; Produce the new tokens for the given claimant, who won the tokens at the given Stacks block height.
 (define-private (mint-coinbase (recipient principal) (stacks-block-ht uint))
-    (ft-mint? citycoins (get-coinbase-amount stacks-block-ht) recipient)
+    (contract-call? .token mint (get-coinbase-amount stacks-block-ht) recipient)
 )
 
 ;; Getter to obtain the list of miners and uSTX commitments at a given Stacks block height,
@@ -607,7 +590,7 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
         (asserts! (> amount-tokens u0)
             (err ERR-CANNOT-STACK))
 
-        (asserts! (<= amount-tokens (ft-get-balance citycoins stacker))
+        (asserts! (<= amount-tokens (unwrap-panic (contract-call? .token get-balance stacker)))
             (err ERR-INSUFFICIENT-BALANCE))
 
         (ok true)
@@ -837,7 +820,7 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
     (begin
         (try! (can-stack-tokens tx-sender amount-tokens block-height start-stacks-ht lock-period))
 
-        (unwrap! (ft-transfer? citycoins amount-tokens tx-sender (as-contract tx-sender))
+        (unwrap! (contract-call? .token transfer amount-tokens tx-sender (as-contract tx-sender) none)
             (err ERR-INSUFFICIENT-BALANCE))
 
         (fold stack-tokens-closure REWARD-CYCLE-INDEXES
@@ -959,7 +942,7 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
     (begin
         (try! (can-claim-tokens tx-sender mined-stacks-block-ht random-sample block block-height))
         (try! (set-tokens-claimed mined-stacks-block-ht))
-        (unwrap-panic (mint-coinbase tx-sender mined-stacks-block-ht))
+        (try! (mint-coinbase tx-sender mined-stacks-block-ht))
 
         (ok true)
     ))
@@ -984,7 +967,7 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
             { amount-token: u0 })
 
         (try! (as-contract (stx-transfer? entitled-ustx tx-sender stacker)))
-        (try! (as-contract (ft-transfer? citycoins stacked-in-cycle tx-sender stacker)))
+        (try! (as-contract (contract-call? .token transfer stacked-in-cycle tx-sender stacker none)))
 
         (ok true)
     ))
@@ -1008,39 +991,3 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
     (ok (var-set city-wallet wallet-address))
   )
 )
-
-;;;;;;;;;;;;;;;;;;;;; SIP 010 ;;;;;;;;;;;;;;;;;;;;;;
-;; testnet: (impl-trait 'STR8P3RD1EHA8AA37ERSSSZSWKS9T2GYQFGXNA4C.sip-010-trait-ft-standard.sip-010-trait)
-(impl-trait 'SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.sip-010-trait-ft-standard.sip-010-trait)
-
-(define-public (transfer (amount uint) (from principal) (to principal) (memo (optional (buff 34))))
-    (begin
-        (asserts! (is-eq from tx-sender)
-            (err ERR-UNAUTHORIZED))
-
-        (if (is-some memo)
-            (print memo)
-            none
-        )
-
-        (ft-transfer? citycoins amount from to)
-    )
-)
-
-(define-read-only (get-name)
-    (ok "citycoins"))
-
-(define-read-only (get-symbol)
-    (ok "CYCN"))
-
-(define-read-only (get-decimals)
-    (ok u0))
-
-(define-read-only (get-balance (user principal))
-    (ok (ft-get-balance citycoins user)))
-
-(define-read-only (get-total-supply)
-    (ok (ft-get-supply citycoins)))
-
-(define-read-only (get-token-uri)
-    (ok (var-get token-uri)))

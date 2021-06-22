@@ -1,11 +1,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; functions used only during testing
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(define-public (ft-mint (amount uint) (recipient principal))
-  (ft-mint? citycoins amount recipient)
-)
-
-
 (define-public (generate-miner-id (miner principal))
   (ok (get-or-create-miner-id miner))
 )
