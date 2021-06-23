@@ -3,7 +3,7 @@ import {
   ReadOnlyFn,
   Tx,
   types,
-} from "https://deno.land/x/clarinet@v0.12.0/index.ts";
+} from "../deps.ts";
 import { Client } from "./client.ts";
 
 enum ErrCode {

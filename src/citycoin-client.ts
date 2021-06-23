@@ -1,4 +1,9 @@
-import { Tx, Chain, Account, types, ReadOnlyFn } from 'https://deno.land/x/clarinet@v0.12.0/index.ts';
+import { 
+  Tx, 
+  Account, 
+  types, 
+  ReadOnlyFn 
+} from '../deps.ts';
 import { Client } from "./client.ts";
 
 export enum ErrCode {

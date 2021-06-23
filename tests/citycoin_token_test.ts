@@ -3,13 +3,11 @@ import {
   Account,
   Tx,
   types,
-} from "https://deno.land/x/clarinet@v0.12.0/index.ts";
-import { assertEquals } from "https://deno.land/std@0.93.0/testing/asserts.ts";
-import {
+  assertEquals,
   beforeEach,
   describe,
-  it,
-} from "https://deno.land/x/test_suite@v0.7.0/mod.ts";
+  it
+} from "../deps.ts";
 
 import { TokenClient } from "../src/token-client.ts";
 

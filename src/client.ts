@@ -2,7 +2,7 @@ import {
   Account,
   Chain,
   ReadOnlyFn,
-} from "https://deno.land/x/clarinet@v0.12.0/index.ts";
+} from "../deps.ts";
 
 export class Client {
   contractName: string;

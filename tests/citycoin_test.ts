@@ -1,13 +1,13 @@
-import { Tx, Chain, Account, types } from 'https://deno.land/x/clarinet@v0.12.0/index.ts';
-import { assertEquals, assert } from "https://deno.land/std@0.93.0/testing/asserts.ts";
-
-import {
-  afterEach,
-  beforeEach,
-  beforeAll,
-  describe,
-  it,
-} from "https://deno.land/x/test_suite@v0.7.0/mod.ts";
+import { 
+  Tx, 
+  Chain, 
+  Account, 
+  types, 
+  assertEquals,
+  beforeEach, 
+  describe, 
+  it
+} from '../deps.ts';
 
 import {
   CityCoinClient,
