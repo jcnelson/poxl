@@ -1765,7 +1765,6 @@ describe('[CityCoin]', () => {
         ]);
 
         const receipt = block.receipts[0];
-        console.info(block)
         receipt.result.expectOk().expectBool(true);
       })
     });
