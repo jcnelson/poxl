@@ -790,7 +790,7 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
         (first-reward-cycle (get first commitment))
         (last-reward-cycle (get last commitment))
         (target-reward-cycle (+ first-reward-cycle reward-cycle-idx))
-        (stacked-rec (default-to {amount-token: u0, to-return: u0} (map-get? stacked-per-cycle { stacker: stacker, reward-cycle: target-reward-cycle })))
+        (stacked-rec (default-to {amount-token: u0, to-return: u0} (get-stacked-per-cycle stacker target-reward-cycle )))
         (stacked-already (get amount-token stacked-rec))
         (to-return-already (get to-return stacked-rec))
         (tokens-this-cycle (match (map-get? tokens-per-cycle { reward-cycle: target-reward-cycle })
