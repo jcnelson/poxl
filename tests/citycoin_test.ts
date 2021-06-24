@@ -1769,7 +1769,7 @@ describe('[CityCoin]', () => {
       })
     });
 
-    describe("claim-token-reward", () => {
+    describe("claim-mining-reward", () => {
       beforeEach(() => {
         setupCleanEnv();
         chain.mineBlock([
@@ -1789,7 +1789,7 @@ describe('[CityCoin]', () => {
         chain.mineEmptyBlock(1);
 
         let block = chain.mineBlock([
-          client.claimTokenReward(setupBlock.height, miner)
+          client.claimMiningReward(setupBlock.height, miner)
         ]);
 
         let receipt = block.receipts[0];
@@ -1801,7 +1801,7 @@ describe('[CityCoin]', () => {
         chain.mineEmptyBlock(20000);
 
         let block = chain.mineBlock([
-          client.claimTokenReward(5000, wallet_1)
+          client.claimMiningReward(5000, wallet_1)
         ]);
 
         let receipt = block.receipts[0];
@@ -1829,7 +1829,7 @@ describe('[CityCoin]', () => {
         chain.mineEmptyBlock(TOKEN_REWARD_MATURITY);
 
         let block = chain.mineBlock([
-          client.claimTokenReward(setupBlock.height-1, miner),
+          client.claimMiningReward(setupBlock.height-1, miner),
         ]);
 
         let receipt = block.receipts[0];
@@ -1847,7 +1847,7 @@ describe('[CityCoin]', () => {
         chain.mineEmptyBlock(TOKEN_REWARD_MATURITY);
 
         let block = chain.mineBlock([
-          client.claimTokenReward(setupBlock.height-1, miner)
+          client.claimMiningReward(setupBlock.height-1, miner)
         ]);
 
         let receipt = block.receipts[0];

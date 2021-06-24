@@ -292,10 +292,10 @@ export class CityCoinClient extends Client {
     );
   }
 
-  claimTokenReward(minedStacksBlockHeight: number, sender: Account): Tx {
+  claimMiningReward(minedStacksBlockHeight: number, sender: Account): Tx {
     return Tx.contractCall(
       this.contractName,
-      "claim-token-reward",
+      "claim-mining-reward",
       [
         types.uint(minedStacksBlockHeight)
       ],
