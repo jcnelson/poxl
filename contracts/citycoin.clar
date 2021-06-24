@@ -831,7 +831,7 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
 )
 
 ;; Mine tokens.  The miner commits uSTX into this contract (which Stackers can claim later with claim-stacking-reward),
-;; and in doing so, enters their candidacy to be able to claim the block reward (via claim-token-reward).  The miner must 
+;; and in doing so, enters their candidacy to be able to claim the block reward (via claim-mining-reward).  The miner must 
 ;; wait for a token maturity window in order to obtain the tokens.  Once that window passes, they can get the tokens.
 ;; This ensures that no one knows the VRF seed that will be used to pick the winner.
 (define-public (mine-tokens (amount-ustx uint) (memo (optional (buff 34))))
@@ -932,7 +932,7 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
 ;; and was later selected by the VRF as the winner, they will receive that block's token batch.
 ;; Note that this method actually mints the contract's tokens -- they do not exist until the miner calls
 ;; this method.
-(define-public (claim-token-reward (mined-stacks-block-ht uint))
+(define-public (claim-mining-reward (mined-stacks-block-ht uint))
     (let (
         (random-sample (unwrap! (get-random-uint-at-block (+ mined-stacks-block-ht (var-get token-reward-maturity)))
                         (err ERR-IMMATURE-TOKEN-REWARD)))

@@ -1770,7 +1770,7 @@ describe('[CityCoin]', () => {
       })
     });
 
-    describe("claim-token-reward", () => {
+    describe("claim-mining-reward", () => {
       beforeEach(() => {
         setupCleanEnv();
         chain.mineBlock([
