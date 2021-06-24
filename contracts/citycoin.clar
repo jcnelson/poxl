@@ -237,8 +237,13 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
 ;; Who has locked up how many tokens for a given reward cycle.
 (define-map stacked-per-cycle
     { stacker: principal, reward-cycle: uint }
-    { amount-token: uint }
+    { amount-token: uint, to-return: uint }
 )
+
+(define-read-only (get-stacked-per-cycle (stacker principal) (reward-cycle uint))
+    (map-get? stacked-per-cycle { stacker: stacker, reward-cycle: reward-cycle })
+)
+
 
 (define-public (register-miner (memo (optional (buff 34))))
     (let
@@ -785,9 +790,9 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
         (first-reward-cycle (get first commitment))
         (last-reward-cycle (get last commitment))
         (target-reward-cycle (+ first-reward-cycle reward-cycle-idx))
-        (stacked-already (match (map-get? stacked-per-cycle { stacker: stacker, reward-cycle: target-reward-cycle })
-                                rec (get amount-token rec)
-                                u0))
+        (stacked-rec (default-to {amount-token: u0, to-return: u0} (map-get? stacked-per-cycle { stacker: stacker, reward-cycle: target-reward-cycle })))
+        (stacked-already (get amount-token stacked-rec))
+        (to-return-already (get to-return stacked-rec))
         (tokens-this-cycle (match (map-get? tokens-per-cycle { reward-cycle: target-reward-cycle })
                                 rec rec
                                 { total-ustx: u0, total-tokens: u0 }))
@@ -797,7 +802,11 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
             (begin
                 (map-set stacked-per-cycle
                     { stacker: stacker, reward-cycle: target-reward-cycle }
-                    { amount-token: (+ amount-token stacked-already) })
+                    { 
+                        amount-token: (+ amount-token stacked-already),
+                        to-return: (if (is-eq target-reward-cycle (- last-reward-cycle u1)) (+ to-return-already amount-token) to-return-already)
+                    }
+                )
 
                 (map-set tokens-per-cycle
                     { reward-cycle: target-reward-cycle }
@@ -955,19 +964,23 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
     (let (
         (stacker tx-sender)    
         (entitled-ustx (get-entitled-stacking-reward tx-sender target-reward-cycle block-height))
-        (stacked-in-cycle (get-stacked-in-cycle tx-sender target-reward-cycle))
+        (to-return (get to-return (default-to { amount-token: u0, to-return: u0 } (get-stacked-per-cycle stacker target-reward-cycle))))
     )
     (begin
         (asserts! (> entitled-ustx u0)
             (err ERR-NOTHING-TO-REDEEM))
 
+        (if (> to-return u0)
+            (try! (as-contract (contract-call? .token transfer to-return tx-sender stacker none)))
+            true
+        )
         ;; can't claim again
         (map-set stacked-per-cycle
             { stacker: tx-sender, reward-cycle: target-reward-cycle }
-            { amount-token: u0 })
+            { amount-token: u0, to-return: u0 }
+        )
 
         (try! (as-contract (stx-transfer? entitled-ustx tx-sender stacker)))
-        (try! (as-contract (contract-call? .token transfer stacked-in-cycle tx-sender stacker none)))
 
         (ok true)
     ))

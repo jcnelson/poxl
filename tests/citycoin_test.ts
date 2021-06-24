@@ -1340,6 +1340,87 @@ describe('[CityCoin]', () => {
 
         // check total amount of tokens stacked in cycle
         result.expectUint(200);
+      });
+
+      it("remembers that tokens should be returned at the end of cycle when stacked for only one cycle", () => {
+        const amount = 100;
+        const startStacksHeight = MINING_ACTIVATION_DELAY + 5;
+
+        chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
+
+        chain.mineBlock([
+          tokenClient.ftMint(amount, wallet_1),
+          client.stackTokens(amount, startStacksHeight, 1, wallet_1)
+        ]);
+
+        const result = client.getStackedPerCycle(wallet_1, 1).result;
+        
+        const expectedTuple = {
+          "amount-token": types.uint(amount),
+          "to-return": types.uint(amount)
+        }
+
+        assertEquals(result.expectSome().expectTuple(), expectedTuple);
+      });
+
+      it("remembers tokens should be returned at the end of locking period when stacked for more than one cycle", () => {
+        const amount = 100;
+        const lockPeriod = 17;
+        const startStacksHeight = MINING_ACTIVATION_DELAY + 5;
+
+        chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
+
+        chain.mineBlock([
+          tokenClient.ftMint(amount, wallet_1),
+          client.stackTokens(amount, startStacksHeight, lockPeriod, wallet_1)
+        ]);
+        
+        for(let cycle = 1; cycle <= lockPeriod; cycle++) {
+          let result = client.getStackedPerCycle(wallet_1, cycle).result;
+          
+          let expectedTuple = {
+            "amount-token": types.uint(amount),
+            "to-return": types.uint(cycle==lockPeriod ? amount : 0)
+          }
+
+          let actualTuple = result.expectSome().expectTuple();
+        }
+      });
+
+      it("remembers tokens should be returned at the end of locking period when stacked multiple times for more than one cycle", () => {
+        // in this test we stack 2x
+        // 1) for 17 cycles
+        // 2) for 11 cycles
+        // both locking periods ends at the same time
+        
+        const amount_1 = 100;
+        const amount_2 = 200;
+        const totalAmount = amount_1 + amount_2;
+        const lockPeriod_1 = 17;
+        const lockPeriod_2 = 11;
+        const startStacksHeight_1 = MINING_ACTIVATION_DELAY + 5;
+        const startStacksHeight_2 = MINING_ACTIVATION_DELAY + 5 + (REWARD_CYCLE_LENGTH * 6);
+
+        chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
+
+        chain.mineBlock([
+          tokenClient.ftMint(totalAmount, wallet_1),
+          client.stackTokens(amount_1, startStacksHeight_1, lockPeriod_1, wallet_1),
+          client.stackTokens(amount_2, startStacksHeight_2, lockPeriod_2, wallet_1)
+        ]);
+        
+        
+        for(let cycle = 1; cycle <= lockPeriod_1; cycle++) {
+          let result = client.getStackedPerCycle(wallet_1, cycle).result;
+          
+          let expectedTuple = {
+            "amount-token": types.uint(cycle <=6 ? amount_1 : totalAmount),
+            "to-return": types.uint(cycle==lockPeriod_1 ? totalAmount : 0)
+          }
+
+          let actualTuple = result.expectSome().expectTuple();
+          assertEquals(actualTuple, expectedTuple);
+        }
       })
     });
 
@@ -1540,7 +1621,7 @@ describe('[CityCoin]', () => {
       });
 
 
-      it("succeeds and causes one stx_transfer_event event and one ft_transfer event", () => {
+      it("succeeds and causes one stx_transfer_event event and one ft_transfer event when user stacked for only one cycle", () => {
         const miner_1 = wallet_1;
         const miner_2 = wallet_2
         const stacker = wallet_3;
@@ -1591,7 +1672,61 @@ describe('[CityCoin]', () => {
           stacker.address,
           'citycoins'
         );
-      })
+      });
+
+      it("it release stacked tokens only for last cycle in locked period.", () => {
+        const miner = wallet_1;
+        const stacker = wallet_2;
+        const stackedAmount = 5000;
+        const minerCommitment = 100;
+        const lockedPeriod = 28;
+
+        // add tokens and stack them at the next cycle
+        chain.mineBlock([
+          tokenClient.ftMint(stackedAmount, stacker),
+          client.stackTokens(stackedAmount, MINING_ACTIVATION_DELAY + 5, lockedPeriod, stacker),
+        ]);
+      
+        // advance chain forward to jump into 1st stacking cycle
+        chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
+
+        for(let cycle = 1; cycle <= lockedPeriod; cycle++) {
+          // mine some tokens
+          chain.mineBlock([
+            client.mineTokens(minerCommitment, miner)
+          ]);
+
+          // advance chain forward to jump into 2nd stacking cycle
+          chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
+        
+          let block = chain.mineBlock([
+            client.claimStackingReward(cycle, stacker)
+          ]);
+
+          let receipt = block.receipts[0];
+          let expectedEventsCount = cycle == lockedPeriod ? 2 : 1;
+
+          // check events count
+          assertEquals(receipt.events.length, expectedEventsCount);
+
+          // check stx_transfer_event details
+          receipt.events.expectSTXTransferEvent(
+            minerCommitment * SPLIT_STACKER_PERCENTAGE,
+            client.getContractAddress(),
+            stacker.address
+          );
+          
+          // check ft_transfer_event details 
+          if(cycle == lockedPeriod) {
+            receipt.events.expectFungibleTokenTransferEvent(
+              stackedAmount,
+              client.getContractAddress(),
+              stacker.address,
+              'citycoins'
+            );
+          }
+        }
+      });
     });
 
     describe("register-miner()", () => {

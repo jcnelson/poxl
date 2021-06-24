@@ -314,6 +314,16 @@ export class CityCoinClient extends Client {
     );
   }
 
+  getStackedPerCycle(stacker: Account, cycle: number): ReadOnlyFn {
+    return this.callReadOnlyFn(
+      "get-stacked-per-cycle", 
+      [
+        types.principal(stacker.address),
+        types.uint(cycle)
+      ]
+    );
+  }
+
   registerMiner(sender: Account, memo: ArrayBuffer|undefined = undefined): Tx {
     let memoVal: string;
     
