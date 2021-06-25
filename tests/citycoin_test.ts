@@ -1869,7 +1869,44 @@ describe("[CityCoin]", () => {
         chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
       });
 
+      it("throws ERR_CYCLE_NOT_COMPLETED error when called in cycle 0", () => {
+        const block = chain.mineBlock([
+          client.claimStackingReward(0, wallet_1),
+        ]);
+
+        const receipt = block.receipts[0];
+
+        receipt.result.expectErr().expectUint(ErrCode.ERR_CYCLE_NOT_COMPLETED);
+        assertEquals(receipt.events.length, 0);
+      });
+
+      it("throws ERR_CYCLE_NOT_COMPLETED error when called in cycle 1 during cycle 1", () => {
+        // add tokens and stack them at the next cycle
+        chain.mineBlock([
+          tokenClient.ftMint(5000, wallet_1),
+          client.stackTokens(5000, 5, 1, wallet_1),
+        ]);
+
+        // advance chain forward to jump into 1st stacking cycle
+        chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
+
+        // mine some tokens
+        chain.mineBlock([client.mineTokens(50000, wallet_1)]);
+
+        // try to claim
+        const block = chain.mineBlock([
+          client.claimStackingReward(1, wallet_1),
+        ]);
+
+        const receipt = block.receipts[0];
+
+        receipt.result.expectErr().expectUint(ErrCode.ERR_CYCLE_NOT_COMPLETED);
+        assertEquals(receipt.events.length, 0);
+      });
+
       it("throws ERR_NOTHING_TO_REDEEM error when stacker didn't stack at all", () => {
+        chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
+
         const block = chain.mineBlock([
           client.claimStackingReward(0, wallet_1),
         ]);
@@ -1967,7 +2004,7 @@ describe("[CityCoin]", () => {
         );
       });
 
-      it("it release stacked tokens only for last cycle in locked period.", () => {
+      it("it releases stacked tokens only for last cycle in locked period", () => {
         const miner = wallet_1;
         const stacker = wallet_2;
         const stackedAmount = 5000;
@@ -2000,31 +2037,34 @@ describe("[CityCoin]", () => {
           ]);
 
           let receipt = block.receipts[0];
-          let expectedEventsCount = cycle == lockedPeriod ? 2 : 1;
+          let expectedEventsCount = cycle == lockedPeriod ? 2 : 0;
 
           // check events count
           assertEquals(receipt.events.length, expectedEventsCount);
 
-          // check stx_transfer_event details
-          receipt.events.expectSTXTransferEvent(
-            minerCommitment * SPLIT_STACKER_PERCENTAGE,
-            client.getContractAddress(),
-            stacker.address
-          );
-
-          // check ft_transfer_event details
           if (cycle == lockedPeriod) {
+            // check stx_transfer_event details
+            receipt.events.expectSTXTransferEvent(
+              minerCommitment * SPLIT_STACKER_PERCENTAGE,
+              client.getContractAddress(),
+              stacker.address
+            );
+            // check ft_transfer_event details
             receipt.events.expectFungibleTokenTransferEvent(
               stackedAmount,
               client.getContractAddress(),
               stacker.address,
               "citycoins"
             );
+          } else {
+            receipt.result
+              .expectErr()
+              .expectUint(ErrCode.ERR_NOTHING_TO_REDEEM);
           }
         }
       });
 
-      it("it release stacked tokens only for last cycle in locked period if stacked multiple times", () => {
+      it("it releases stacked tokens only for last cycle in locked period if stacked multiple times", () => {
         const miner = wallet_1;
         const stacker = wallet_2;
         const stackedAmount = 5000;
@@ -2061,26 +2101,29 @@ describe("[CityCoin]", () => {
           ]);
 
           let receipt = block.receipts[0];
-          let expectedEventsCount = cycle == 1 || cycle == lockedPeriod ? 2 : 1;
+          let expectedEventsCount = cycle == 1 || cycle == lockedPeriod ? 2 : 0;
 
           // check events count
           assertEquals(receipt.events.length, expectedEventsCount);
 
-          // check stx_transfer_event details
-          receipt.events.expectSTXTransferEvent(
-            minerCommitment * SPLIT_STACKER_PERCENTAGE,
-            client.getContractAddress(),
-            stacker.address
-          );
-
-          // check ft_transfer_event details
           if (cycle == 1 || cycle == lockedPeriod) {
+            // check ft_transfer_event details
             receipt.events.expectFungibleTokenTransferEvent(
               stackedAmount,
               client.getContractAddress(),
               stacker.address,
               "citycoins"
             );
+            // check stx_transfer_event details
+            receipt.events.expectSTXTransferEvent(
+              minerCommitment * SPLIT_STACKER_PERCENTAGE,
+              client.getContractAddress(),
+              stacker.address
+            );
+          } else {
+            receipt.result
+              .expectErr()
+              .expectUint(ErrCode.ERR_NOTHING_TO_REDEEM);
           }
         }
       });
