@@ -1098,41 +1098,41 @@ describe('[CityCoin]', () => {
       });
     });
 
-    // describe("get-stacked-per-cycle()", () => {
-    //   beforeEach(() => {
-    //     setupCleanEnv();
-    //   });
+    describe("get-stacked-per-cycle()", () => {
+      beforeEach(() => {
+        setupCleanEnv();
+      });
 
-    //   it("returns none when miner didn't stack in a cycle", () => {
-    //     const result = client.getStackedPerCycle(wallet_1, 100).result;
+      it("returns none when miner didn't stack in a cycle", () => {
+        const result = client.getStackedPerCycle(wallet_1, 100).result;
 
-    //     result.expectNone;
-    //   });
+        result.expectNone;
+      });
 
-    //   it("returns 200 stacked and 200 to return when miner stacked 200 tokens in 1 cycle", () => {
-    //     const amount = 200;
+      it("returns 200 stacked and 200 to return when miner stacked 200 tokens in 1 cycle", () => {
+        const amount = 200;
 
-    //     chain.mineBlock([
-    //       client.setMiningActivationThreshold(1),
-    //       client.registerMiner(wallet_1),
-    //       tokenClient.ftMint(amount, wallet_1)
-    //     ]);
+        chain.mineBlock([
+          client.setMiningActivationThreshold(1),
+          client.registerMiner(wallet_1),
+          tokenClient.ftMint(amount, wallet_1)
+        ]);
 
-    //     chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
+        chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
 
-    //     chain.mineBlock([
-    //       client.stackTokens(amount, MINING_ACTIVATION_DELAY + 5, 1, wallet_1)
-    //     ]);
+        chain.mineBlock([
+          client.stackTokens(amount, MINING_ACTIVATION_DELAY + 5, 1, wallet_1)
+        ]);
 
-    //     const result = client.getStackedPerCycle(wallet_1, 1).result;
-    //     const expectedTuple = {
-    //       "amount-token": types.uint(amount),
-    //       "to-return": types.uint(amount)
-    //     }
+        const result = client.getStackedPerCycle(wallet_1, 1).result;
+        const expectedTuple = {
+          "amount-token": types.uint(amount),
+          "to-return": types.uint(amount)
+        }
 
-    //     assertEquals(result.expectSome().expectTuple(), expectedTuple);
-    //   });
-    // });
+        assertEquals(result.expectSome().expectTuple(), expectedTuple);
+      });
+    });
 
     describe("get-tokens-per-cycle()", () => {
       beforeEach(() => {
@@ -2009,12 +2009,11 @@ describe('[CityCoin]', () => {
         ]);
 
         const receipt = block.receipts[0];
-        console.info(block)
         receipt.result.expectOk().expectBool(true);
       })
     });
 
-    describe("claim-token-reward", () => {
+    describe("claim-mining-reward", () => {
       beforeEach(() => {
         setupCleanEnv();
         chain.mineBlock([
@@ -2034,7 +2033,7 @@ describe('[CityCoin]', () => {
         chain.mineEmptyBlock(1);
 
         let block = chain.mineBlock([
-          client.claimTokenReward(setupBlock.height, miner)
+          client.claimMiningReward(setupBlock.height, miner)
         ]);
 
         let receipt = block.receipts[0];
@@ -2046,7 +2045,7 @@ describe('[CityCoin]', () => {
         chain.mineEmptyBlock(20000);
 
         let block = chain.mineBlock([
-          client.claimTokenReward(5000, wallet_1)
+          client.claimMiningReward(5000, wallet_1)
         ]);
 
         let receipt = block.receipts[0];
@@ -2074,7 +2073,7 @@ describe('[CityCoin]', () => {
         chain.mineEmptyBlock(TOKEN_REWARD_MATURITY);
 
         let block = chain.mineBlock([
-          client.claimTokenReward(setupBlock.height-1, miner),
+          client.claimMiningReward(setupBlock.height-1, miner),
         ]);
 
         let receipt = block.receipts[0];
@@ -2092,7 +2091,7 @@ describe('[CityCoin]', () => {
         chain.mineEmptyBlock(TOKEN_REWARD_MATURITY);
 
         let block = chain.mineBlock([
-          client.claimTokenReward(setupBlock.height-1, miner)
+          client.claimMiningReward(setupBlock.height-1, miner)
         ]);
 
         let receipt = block.receipts[0];

@@ -441,7 +441,7 @@
         (asserts! (is-eq (unwrap-panic (as-max-len? (list { miner: tx-sender, amount-ustx: u1 }) u32)) (get-miners-at-block block-height))
             (err u14))
 
-        (asserts! (is-eq (err ERR-IMMATURE-TOKEN-REWARD) (claim-token-reward u4))
+        (asserts! (is-eq (err ERR-IMMATURE-TOKEN-REWARD) (claim-mining-reward u4))
             (err u15))
         (asserts! (is-eq (err ERR-NOTHING-TO-REDEEM) (claim-stacking-reward u1))
             (err u16))
@@ -461,7 +461,7 @@
         (asserts! (is-eq u0 rc)
             (err u1))
 
-        (asserts! (is-eq (err ERR-IMMATURE-TOKEN-REWARD) (claim-token-reward u4))
+        (asserts! (is-eq (err ERR-IMMATURE-TOKEN-REWARD) (claim-mining-reward u4))
             (err u2))
 
         (asserts! (is-eq (err ERR-NOTHING-TO-REDEEM) (claim-stacking-reward u1))
@@ -486,7 +486,7 @@
         (asserts! (is-eq u1 rc)
             (err u1))
 
-        (asserts! (is-eq (err ERR-IMMATURE-TOKEN-REWARD) (claim-token-reward u4))
+        (asserts! (is-eq (err ERR-IMMATURE-TOKEN-REWARD) (claim-mining-reward u4))
             (err u2))
 
         (asserts! (is-eq (err ERR-NOTHING-TO-REDEEM) (claim-stacking-reward u1))
@@ -511,7 +511,7 @@
         (asserts! (is-eq u1 rc)
             (err u1))
         
-        (asserts! (is-eq (err ERR-IMMATURE-TOKEN-REWARD) (claim-token-reward u5))
+        (asserts! (is-eq (err ERR-IMMATURE-TOKEN-REWARD) (claim-mining-reward u5))
             (err u2))
 
         (asserts! (is-eq (err ERR-NOTHING-TO-REDEEM) (claim-stacking-reward u1))
@@ -537,7 +537,7 @@
         (asserts! (is-eq u1 rc)
             (err u1))
 
-        (asserts! (is-eq (ok true) (claim-token-reward u5))
+        (asserts! (is-eq (ok true) (claim-mining-reward u5))
             (err u2))
 
         (asserts! (is-eq (+ initial-balance (get-coinbase-amount u4)) (ft-get-balance citycoins tx-sender))

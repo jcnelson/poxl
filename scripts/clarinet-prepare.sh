@@ -29,8 +29,3 @@ for f in "${contracts_dir}"/*.clar; do
   fi;
 done;
 shopt -u nullglob
-
-if ! command -v clarinet &> /dev/null; then
-    echo "ERROR: clarinet could not be found"
-    exit 1
-fi

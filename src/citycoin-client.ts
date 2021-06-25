@@ -61,13 +61,6 @@ export class CityCoinClient extends Client {
     ]);
   }
 
-  getStackedInCycle(miner: Account, rewardCycle: number): ReadOnlyFn {
-    return this.callReadOnlyFn("get-stacked-in-cycle", [
-      types.principal(miner.address),
-      types.uint(rewardCycle)
-    ]);
-  }
-
   getTokensPerCycle(rewardCycle: number): ReadOnlyFn {
     return this.callReadOnlyFn("get-tokens-per-cycle", [
       types.uint(rewardCycle)
@@ -292,10 +285,10 @@ export class CityCoinClient extends Client {
     );
   }
 
-  claimTokenReward(minedStacksBlockHeight: number, sender: Account): Tx {
+  claimMiningReward(minedStacksBlockHeight: number, sender: Account): Tx {
     return Tx.contractCall(
       this.contractName,
-      "claim-token-reward",
+      "claim-mining-reward",
       [
         types.uint(minedStacksBlockHeight)
       ],
