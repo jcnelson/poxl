@@ -17,6 +17,7 @@
 (define-constant ERR-MINING-ACTIVATION-THRESHOLD-REACHED u13)
 (define-constant ERR-MINER-ID-NOT-FOUND u14)
 (define-constant ERR-TOO-SMALL-COMMITMENT u15)
+(define-constant ERR-CYCLE-NOT-COMPLETED u16)
 
 ;; Tailor to your needs.
 (define-constant TOKEN-REWARD-MATURITY u100)        ;; how long a miner must wait before claiming their minted tokens
@@ -959,25 +960,34 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
 ;; they locked up).
 (define-public (claim-stacking-reward (target-reward-cycle uint))
     (let (
-        (stacker tx-sender)    
+        (stacker tx-sender)
+        (cur-reward-cycle (unwrap! (get-reward-cycle block-height) (err ERR-STACKING-NOT-AVAILABLE)))
         (entitled-ustx (get-stacking-reward tx-sender target-reward-cycle))
         (to-return (get to-return (default-to { amount-token: u0, to-return: u0 } (get-stacked-per-cycle stacker target-reward-cycle))))
     )
     (begin
-        (asserts! (> entitled-ustx u0)
+        ;; check that target reward cycle is complete
+        (asserts! (> cur-reward-cycle target-reward-cycle)
+            (err ERR-CYCLE-NOT-COMPLETED))
+
+        ;; check that there are stacked tokens to redeem
+        (asserts! (> to-return u0)
             (err ERR-NOTHING-TO-REDEEM))
 
-        (if (> to-return u0)
-            (try! (as-contract (contract-call? .token transfer to-return tx-sender stacker none)))
-            true
-        )
-        ;; can't claim again
+        ;; disable ability to claim again
         (map-set stacked-per-cycle
             { stacker: tx-sender, reward-cycle: target-reward-cycle }
             { amount-token: u0, to-return: u0 }
         )
 
-        (try! (as-contract (stx-transfer? entitled-ustx tx-sender stacker)))
+        ;; send back stacked tokens
+        (try! (as-contract (contract-call? .token transfer to-return tx-sender stacker none)))
+        
+        ;; send back rewards if user was eligible
+        (if (> entitled-ustx u0)
+            (try! (as-contract (stx-transfer? entitled-ustx tx-sender stacker)))
+            true
+        )
 
         (ok true)
     ))
