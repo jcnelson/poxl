@@ -1098,37 +1098,41 @@ describe('[CityCoin]', () => {
       });
     });
 
-    describe("get-stacked-in-cycle()", () => {
-      beforeEach(() => {
-        setupCleanEnv();
-      });
+    // describe("get-stacked-per-cycle()", () => {
+    //   beforeEach(() => {
+    //     setupCleanEnv();
+    //   });
 
-      it("returns 0 when miner didn't stack in a cycle", () => {
-        const result = client.getStackedInCycle(wallet_1, 100).result;
+    //   it("returns none when miner didn't stack in a cycle", () => {
+    //     const result = client.getStackedPerCycle(wallet_1, 100).result;
 
-        result.expectUint(0);
-      });
+    //     result.expectNone;
+    //   });
 
-      it("returns 200 when miner stacked 200 tokens in cycle", () => {
-        const amount = 200;
+    //   it("returns 200 stacked and 200 to return when miner stacked 200 tokens in 1 cycle", () => {
+    //     const amount = 200;
 
-        chain.mineBlock([
-          client.setMiningActivationThreshold(1),
-          client.registerMiner(wallet_1),
-          tokenClient.ftMint(amount, wallet_1)
-        ]);
+    //     chain.mineBlock([
+    //       client.setMiningActivationThreshold(1),
+    //       client.registerMiner(wallet_1),
+    //       tokenClient.ftMint(amount, wallet_1)
+    //     ]);
 
-        chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
+    //     chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
 
-        chain.mineBlock([
-          client.stackTokens(amount, MINING_ACTIVATION_DELAY + 5, 1, wallet_1)
-        ]);
+    //     chain.mineBlock([
+    //       client.stackTokens(amount, MINING_ACTIVATION_DELAY + 5, 1, wallet_1)
+    //     ]);
 
-        const result = client.getStackedInCycle(wallet_1, 1).result;
+    //     const result = client.getStackedPerCycle(wallet_1, 1).result;
+    //     const expectedTuple = {
+    //       "amount-token": types.uint(amount),
+    //       "to-return": types.uint(amount)
+    //     }
 
-        result.expectUint(amount);
-      });
-    });
+    //     assertEquals(result.expectSome().expectTuple(), expectedTuple);
+    //   });
+    // });
 
     describe("get-tokens-per-cycle()", () => {
       beforeEach(() => {
@@ -1325,7 +1329,7 @@ describe('[CityCoin]', () => {
         const block = chain.mineBlock([
           client.stackTokens(100, startStacksHeight, 1, wallet_1)
         ]);
-        const result = client.getStackedInCycle(wallet_1, 1).result;
+        const result = client.getStackedPerCycle(wallet_1, 1).result;
 
         // check number of events 
         assertEquals(block.receipts[0].events.length, 1);
@@ -1339,7 +1343,12 @@ describe('[CityCoin]', () => {
         );
 
         // check total amount of tokens stacked in cycle
-        result.expectUint(200);
+        const expectedTuple = {
+          "amount-token": types.uint(200),
+          "to-return": types.uint(200)
+        }
+
+        assertEquals(result.expectSome().expectTuple(), expectedTuple);
       });
 
       it("remembers that tokens should be returned at the end of cycle when stacked for only one cycle", () => {

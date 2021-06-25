@@ -354,14 +354,6 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
     )
 )
 
-;; Getter for getting how many tokens are Stacked by the given principal in the given reward cycle.
-(define-read-only (get-stacked-in-cycle (stacker principal) (reward-cycle uint))
-    (match (map-get? stacked-per-cycle { stacker: stacker, reward-cycle: reward-cycle })
-        stacked-rec (get amount-token stacked-rec)
-        u0
-    )
-)
-
 ;; Getter for getting how many uSTX are committed and tokens are Stacked per reward cycle.
 (define-read-only (get-tokens-per-cycle (rc uint))
     (match (map-get? tokens-per-cycle { reward-cycle: rc })
