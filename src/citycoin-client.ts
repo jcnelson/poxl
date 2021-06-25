@@ -1,9 +1,4 @@
-import { 
-  Tx, 
-  Account, 
-  types, 
-  ReadOnlyFn 
-} from '../deps.ts';
+import { Tx, Account, types, ReadOnlyFn } from "../deps.ts";
 import { Client } from "./client.ts";
 
 export enum ErrCode {
@@ -22,7 +17,7 @@ export enum ErrCode {
   ERR_MINER_ALREADY_REGISTERED,
   ERR_MINING_ACTIVATION_THRESHOLD_REACHED,
   ERR_MINER_ID_NOT_FOUND,
-  ERR_TOO_SMALL_COMMITMENT
+  ERR_TOO_SMALL_COMMITMENT,
 }
 
 export const MINING_HALVING_BLOCKS = 210000;
@@ -35,35 +30,32 @@ export const SPLIT_CITY_PERCENTAGE = 0.3;
 export const TOKEN_REWARD_MATURITY = 100;
 
 export class CityCoinClient extends Client {
-  
   setMiningActivationThreshold(newThreshold: number): Tx {
     return Tx.contractCall(
       this.contractName,
       "set-mining-activation-threshold",
-      [
-        types.uint(newThreshold)
-      ],
+      [types.uint(newThreshold)],
       this.deployer.address
-    )
+    );
   }
 
   // read only functions
 
   getCoinbaseAmount(stacksBlockHeight: number): ReadOnlyFn {
     return this.callReadOnlyFn("get-coinbase-amount", [
-      types.uint(stacksBlockHeight)
+      types.uint(stacksBlockHeight),
     ]);
   }
 
   getMinersAtBlock(stacksBlockHeight: number): ReadOnlyFn {
     return this.callReadOnlyFn("get-miners-at-block", [
-      types.uint(stacksBlockHeight)
+      types.uint(stacksBlockHeight),
     ]);
   }
 
   getTokensPerCycle(rewardCycle: number): ReadOnlyFn {
     return this.callReadOnlyFn("get-tokens-per-cycle", [
-      types.uint(rewardCycle)
+      types.uint(rewardCycle),
     ]);
   }
 
@@ -72,85 +64,65 @@ export class CityCoinClient extends Client {
   }
 
   getBlockCommitTotal(stacksBlockHeight: number): ReadOnlyFn {
-    return this.callReadOnlyFn(
-      "get-block-commit-total",
-      [
-        types.uint(stacksBlockHeight)
-      ]
-    );
+    return this.callReadOnlyFn("get-block-commit-total", [
+      types.uint(stacksBlockHeight),
+    ]);
   }
 
   getBlockCommitToStackers(stacksBlockHeight: number): ReadOnlyFn {
-    return this.callReadOnlyFn(
-      "get-block-commit-to-stackers",
-      [
-        types.uint(stacksBlockHeight)
-      ]
-    );
+    return this.callReadOnlyFn("get-block-commit-to-stackers", [
+      types.uint(stacksBlockHeight),
+    ]);
   }
 
   getBlockCommitToCity(stacksBlockHeight: number): ReadOnlyFn {
-    return this.callReadOnlyFn(
-      "get-block-commit-to-city",
-      [
-        types.uint(stacksBlockHeight)
-      ]
-    );
+    return this.callReadOnlyFn("get-block-commit-to-city", [
+      types.uint(stacksBlockHeight),
+    ]);
   }
 
-  getBlockWinner(stacksBlockHeight: number, randomSampleUint: number): ReadOnlyFn {
-    return this.callReadOnlyFn(
-      "get-block-winner",
-      [
-        types.uint(stacksBlockHeight),
-        types.uint(randomSampleUint),
-      ]
-    )
+  getBlockWinner(
+    stacksBlockHeight: number,
+    randomSampleUint: number
+  ): ReadOnlyFn {
+    return this.callReadOnlyFn("get-block-winner", [
+      types.uint(stacksBlockHeight),
+      types.uint(randomSampleUint),
+    ]);
   }
 
   generateMinerId(miner: Account): Tx {
     return Tx.contractCall(
       this.contractName,
       "generate-miner-id",
-      [
-        types.principal(miner.address)
-      ],
+      [types.principal(miner.address)],
       this.deployer.address
-    )
-  }
-
-  getMinerId(miner: Account): ReadOnlyFn {
-    return this.callReadOnlyFn(
-      "get-miner-id",
-      [
-        types.principal(miner.address)
-      ]
     );
   }
 
+  getMinerId(miner: Account): ReadOnlyFn {
+    return this.callReadOnlyFn("get-miner-id", [
+      types.principal(miner.address),
+    ]);
+  }
+
   getMinerIdNum(miner: Account): number {
-    const result = this.callReadOnlyFn(
-      "get-miner-id",
-      [
-        types.principal(miner.address)
-      ]
-    ).result;
+    const result = this.callReadOnlyFn("get-miner-id", [
+      types.principal(miner.address),
+    ]).result;
 
     const regex = /\(some u(\d+)\)/g;
     const match = regex.exec(result);
-    const minerId = (!match) ? 1 : match[1];
+    const minerId = !match ? 1 : match[1];
 
     return Number(minerId);
   }
 
   hasMined(miner: Account, blockHeight: number): ReadOnlyFn {
-  return this.callReadOnlyFn(
-      "has-mined",
-      [
-        types.uint(this.getMinerIdNum(miner)),
-        types.uint(blockHeight)
-      ]
-    );
+    return this.callReadOnlyFn("has-mined", [
+      types.uint(this.getMinerIdNum(miner)),
+      types.uint(blockHeight),
+    ]);
   }
 
   canClaimTokens(
@@ -160,33 +132,27 @@ export class CityCoinClient extends Client {
     minedBlock: MinedBlock,
     currentStacksBlock: number
   ): ReadOnlyFn {
-    return this.callReadOnlyFn(
-      'can-claim-tokens',
-      [
-        types.principal(claimer.address),
-        types.uint(claimerStacksBlockHeight),
-        types.uint(randomSample),
-        minedBlock.convert(),
-        types.uint(currentStacksBlock)
-      ]
-    );
+    return this.callReadOnlyFn("can-claim-tokens", [
+      types.principal(claimer.address),
+      types.uint(claimerStacksBlockHeight),
+      types.uint(randomSample),
+      minedBlock.convert(),
+      types.uint(currentStacksBlock),
+    ]);
   }
 
   canMineTokens(
     miner: Account,
     minerId: number,
     stacksBlockHeight: number,
-    amountUstx: number,
+    amountUstx: number
   ): ReadOnlyFn {
-    return this.callReadOnlyFn(
-      "can-mine-tokens",
-      [
-        types.principal(miner.address),
-        types.uint(minerId),
-        types.uint(stacksBlockHeight),
-        types.uint(amountUstx)
-      ]
-    );
+    return this.callReadOnlyFn("can-mine-tokens", [
+      types.principal(miner.address),
+      types.uint(minerId),
+      types.uint(stacksBlockHeight),
+      types.uint(amountUstx),
+    ]);
   }
 
   canStackTokens(
@@ -196,16 +162,13 @@ export class CityCoinClient extends Client {
     startStacksHeight: number,
     lockPeriod: number
   ): ReadOnlyFn {
-    return this.callReadOnlyFn(
-      "can-stack-tokens",
-      [
-        types.principal(stacker.address),
-        types.uint(amountTokens),
-        types.uint(nowStacksHeight),
-        types.uint(startStacksHeight),
-        types.uint(lockPeriod)
-      ]
-    );
+    return this.callReadOnlyFn("can-stack-tokens", [
+      types.principal(stacker.address),
+      types.uint(amountTokens),
+      types.uint(nowStacksHeight),
+      types.uint(startStacksHeight),
+      types.uint(lockPeriod),
+    ]);
   }
 
   getEntitledStackingReward(
@@ -213,62 +176,59 @@ export class CityCoinClient extends Client {
     targetRewardCycle: number,
     currentBlockHeight: number
   ): ReadOnlyFn {
-    return this.callReadOnlyFn(
-      "get-entitled-stacking-reward",
-      [
-        types.principal(stacker.address),
-        types.uint(targetRewardCycle),
-        types.uint(currentBlockHeight)
-      ],
-    )
+    return this.callReadOnlyFn("get-entitled-stacking-reward", [
+      types.principal(stacker.address),
+      types.uint(targetRewardCycle),
+      types.uint(currentBlockHeight),
+    ]);
   }
 
   getRewardCycle(stacksBlockHeight: number): ReadOnlyFn {
-    return this.callReadOnlyFn(
-      "get-reward-cycle",
-      [
-        types.uint(stacksBlockHeight)
-      ]
-    )
+    return this.callReadOnlyFn("get-reward-cycle", [
+      types.uint(stacksBlockHeight),
+    ]);
   }
 
   getFirstBlockHeightInRewardCycle(rewardCycle: number): ReadOnlyFn {
-    return this.callReadOnlyFn(
-      "get-first-block-height-in-reward-cycle",
-      [
-        types.uint(rewardCycle)
-      ]
-    );
+    return this.callReadOnlyFn("get-first-block-height-in-reward-cycle", [
+      types.uint(rewardCycle),
+    ]);
   }
 
   getRandomUintAtBlock(stacksBlock: number): ReadOnlyFn {
-    return this.callReadOnlyFn(
-      "get-random-uint-at-block",
-      [
-        types.uint(stacksBlock)
-      ]
-    );
+    return this.callReadOnlyFn("get-random-uint-at-block", [
+      types.uint(stacksBlock),
+    ]);
   }
 
   // public functions
 
-  stackTokens(amountTokens: number, startStacksHeight: number, lockPeriod: number, sender: Account): Tx {
+  stackTokens(
+    amountTokens: number,
+    startStacksHeight: number,
+    lockPeriod: number,
+    sender: Account
+  ): Tx {
     return Tx.contractCall(
       this.contractName,
       "stack-tokens",
       [
         types.uint(amountTokens),
         types.uint(startStacksHeight),
-        types.uint(lockPeriod)
+        types.uint(lockPeriod),
       ],
       sender.address
     );
   }
 
-  mineTokens(amountUstx: number, sender: Account, memo: ArrayBuffer|undefined = undefined): Tx {
+  mineTokens(
+    amountUstx: number,
+    sender: Account,
+    memo: ArrayBuffer | undefined = undefined
+  ): Tx {
     let memoVal: string;
 
-    if ( typeof memo == "undefined" ) {
+    if (typeof memo == "undefined") {
       memoVal = types.none();
     } else {
       memoVal = types.some(types.buff(memo));
@@ -277,10 +237,7 @@ export class CityCoinClient extends Client {
     return Tx.contractCall(
       this.contractName,
       "mine-tokens",
-      [
-        types.uint(amountUstx),
-        memoVal
-      ],
+      [types.uint(amountUstx), memoVal],
       sender.address
     );
   }
@@ -289,9 +246,7 @@ export class CityCoinClient extends Client {
     return Tx.contractCall(
       this.contractName,
       "claim-mining-reward",
-      [
-        types.uint(minedStacksBlockHeight)
-      ],
+      [types.uint(minedStacksBlockHeight)],
       sender.address
     );
   }
@@ -300,62 +255,54 @@ export class CityCoinClient extends Client {
     return Tx.contractCall(
       this.contractName,
       "claim-stacking-reward",
-      [
-        types.uint(targetRewardCycle)
-      ],
+      [types.uint(targetRewardCycle)],
       sender.address
     );
   }
 
   getStackedPerCycle(stacker: Account, cycle: number): ReadOnlyFn {
-    return this.callReadOnlyFn(
-      "get-stacked-per-cycle", 
-      [
-        types.principal(stacker.address),
-        types.uint(cycle)
-      ]
-    );
+    return this.callReadOnlyFn("get-stacked-per-cycle", [
+      types.principal(stacker.address),
+      types.uint(cycle),
+    ]);
   }
 
-  registerMiner(sender: Account, memo: ArrayBuffer|undefined = undefined): Tx {
+  registerMiner(
+    sender: Account,
+    memo: ArrayBuffer | undefined = undefined
+  ): Tx {
     let memoVal: string;
-    
-    if ( typeof memo == "undefined" ) {
+
+    if (typeof memo == "undefined") {
       memoVal = types.none();
     } else {
       memoVal = types.some(types.buff(memo));
     }
-    
+
     return Tx.contractCall(
       this.contractName,
       "register-miner",
-      [
-        memoVal
-      ],
+      [memoVal],
       sender.address
-    )
+    );
   }
 
   setCityWalletUnsafe(cityWallet: Account): Tx {
     return Tx.contractCall(
       this.contractName,
       "set-city-wallet-unsafe",
-      [
-        types.principal(cityWallet.address)
-      ],
+      [types.principal(cityWallet.address)],
       this.deployer.address
-    )
+    );
   }
 
-  setCityWallet(cityWallet:Account, sender: Account): Tx {
+  setCityWallet(cityWallet: Account, sender: Account): Tx {
     return Tx.contractCall(
       this.contractName,
       "set-city-wallet",
-      [
-        types.principal(cityWallet.address)
-      ],
+      [types.principal(cityWallet.address)],
       sender.address
-    )
+    );
   }
 
   getCityWallet(): ReadOnlyFn {
@@ -380,19 +327,23 @@ export class CityCoinClient extends Client {
 
   findLeastCommitment(stacksBlockHeight: number): ReadOnlyFn {
     return this.callReadOnlyFn("find-least-commitment", [
-      types.uint(stacksBlockHeight)
+      types.uint(stacksBlockHeight),
     ]);
   }
 }
 
 export class MinedBlock {
-
   minersCount: number;
   leastCommitmentIdx: number;
   leastCommitmentUstx: number;
   claimed: boolean;
 
-  constructor(minersCount: number, leastCommitmentIdx: number, leastCommitmentUstx: number, claimed: boolean) {
+  constructor(
+    minersCount: number,
+    leastCommitmentIdx: number,
+    leastCommitmentUstx: number,
+    claimed: boolean
+  ) {
     this.minersCount = minersCount;
     this.leastCommitmentIdx = leastCommitmentIdx;
     this.leastCommitmentUstx = leastCommitmentUstx;
@@ -404,40 +355,39 @@ export class MinedBlock {
       "miners-count": types.uint(this.minersCount),
       "least-commitment-idx": types.uint(this.leastCommitmentIdx),
       "least-commitment-ustx": types.uint(this.leastCommitmentUstx),
-      "claimed": types.bool(this.claimed)
-    })
+      claimed: types.bool(this.claimed),
+    });
   }
-
 }
 
 export interface MinerCommit {
-  miner: Account,
-  minerId: number,
-  amountUstx: number
+  miner: Account;
+  minerId: number;
+  amountUstx: number;
 }
 
 export class MinersList extends Array<MinerCommit> {
   convert(): string {
     if (this.length > 128) {
-      throw new Error("Miners list can't have more than 128 elements.")
+      throw new Error("Miners list can't have more than 128 elements.");
     }
 
-    let miners = this.map(minerCommit => {
+    let miners = this.map((minerCommit) => {
       return types.tuple({
         "miner-id": types.uint(minerCommit.minerId),
-        "amount-ustx": types.uint(minerCommit.amountUstx)
+        "amount-ustx": types.uint(minerCommit.amountUstx),
       });
     });
 
-    return types.list(miners)
+    return types.list(miners);
   }
 
   getFormatted(index: number) {
     let item = this[index];
     return {
       "miner-id": types.uint(item.minerId),
-      "ustx": types.uint(item.amountUstx)
-    }
+      ustx: types.uint(item.amountUstx),
+    };
   }
 }
 
@@ -446,23 +396,28 @@ export class MinersRec {
   claimed: boolean;
   leastCommitment?: MinerCommit;
 
-  constructor(miners: MinersList, claimed: boolean, leastCommitment?: MinerCommit) {
+  constructor(
+    miners: MinersList,
+    claimed: boolean,
+    leastCommitment?: MinerCommit
+  ) {
     this.claimed = claimed;
     this.miners = miners;
 
-    if( typeof leastCommitment !== "undefined")
-    {
+    if (typeof leastCommitment !== "undefined") {
       this.leastCommitment = leastCommitment;
     }
   }
 
   convert(): string {
     let leastCommitment;
-    if(this.leastCommitment !== undefined) {
-      leastCommitment = types.some(types.tuple({
-        "miner-id": types.uint(this.leastCommitment.minerId),
-        "amount-ustx": types.uint(this.leastCommitment.amountUstx)
-      }))
+    if (this.leastCommitment !== undefined) {
+      leastCommitment = types.some(
+        types.tuple({
+          "miner-id": types.uint(this.leastCommitment.minerId),
+          "amount-ustx": types.uint(this.leastCommitment.amountUstx),
+        })
+      );
     } else {
       leastCommitment = types.none();
     }
@@ -470,7 +425,7 @@ export class MinersRec {
     return types.tuple({
       miners: this.miners.convert(),
       claimed: types.bool(this.claimed),
-      "least-commitment": leastCommitment
-    })
+      "least-commitment": leastCommitment,
+    });
   }
 }

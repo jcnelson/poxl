@@ -1,13 +1,13 @@
-import { 
-  Tx, 
-  Chain, 
-  Account, 
-  types, 
+import {
+  Tx,
+  Chain,
+  Account,
+  types,
   assertEquals,
-  beforeEach, 
-  describe, 
-  it
-} from '../deps.ts';
+  beforeEach,
+  describe,
+  it,
+} from "../deps.ts";
 
 import {
   CityCoinClient,
@@ -20,11 +20,11 @@ import {
   MINING_HALVING_BLOCKS,
   SPLIT_STACKER_PERCENTAGE,
   SPLIT_CITY_PERCENTAGE,
-  TOKEN_REWARD_MATURITY
-} from "../src/citycoin-client.ts"
+  TOKEN_REWARD_MATURITY,
+} from "../src/citycoin-client.ts";
 import { TokenClient } from "../src/token-client.ts";
 
-describe('[CityCoin]', () => {
+describe("[CityCoin]", () => {
   let chain: Chain;
   let accounts: Map<string, Account>;
   let client: CityCoinClient;
@@ -40,31 +40,31 @@ describe('[CityCoin]', () => {
   function setupCleanEnv() {
     (Deno as any).core.ops();
     let transactions: Array<Tx> = [];
-    let result = JSON.parse((Deno as any).core.opSync("setup_chain", {
-      name: 'citycoin',
-      transactions: transactions,
-    }));
+    let result = JSON.parse(
+      (Deno as any).core.opSync("setup_chain", {
+        name: "citycoin",
+        transactions: transactions,
+      })
+    );
 
-    chain = new Chain(result['session_id']);
+    chain = new Chain(result["session_id"]);
     accounts = new Map();
 
-    for (let account of result['accounts']) {
+    for (let account of result["accounts"]) {
       accounts.set(account.name, account);
     }
 
-    deployer = accounts.get('deployer')!;
-    wallet_1 = accounts.get('wallet_1')!;
-    wallet_2 = accounts.get('wallet_2')!;
-    wallet_3 = accounts.get('wallet_3')!;
-    wallet_4 = accounts.get('wallet_4')!;
-    wallet_5 = accounts.get('wallet_5')!;
-    wallet_6 = accounts.get('wallet_6')!;
+    deployer = accounts.get("deployer")!;
+    wallet_1 = accounts.get("wallet_1")!;
+    wallet_2 = accounts.get("wallet_2")!;
+    wallet_3 = accounts.get("wallet_3")!;
+    wallet_4 = accounts.get("wallet_4")!;
+    wallet_5 = accounts.get("wallet_5")!;
+    wallet_6 = accounts.get("wallet_6")!;
 
     client = new CityCoinClient("citycoin", chain, deployer);
     tokenClient = new TokenClient("token", chain, deployer);
   }
-
-  
 
   describe("Read Only:", () => {
     setupCleanEnv();
@@ -72,7 +72,7 @@ describe('[CityCoin]', () => {
     describe("get-total-supply-ustx()", () => {
       beforeEach(() => {
         setupCleanEnv();
-      })
+      });
 
       it("returns 0 if nobody mined", () => {
         const result = client.getTotalSupplyUstx().result;
@@ -83,15 +83,13 @@ describe('[CityCoin]', () => {
       it("returns 0 if someone mined but stackers are not stacking", () => {
         chain.mineBlock([
           client.setMiningActivationThreshold(1),
-          client.registerMiner(wallet_1)
+          client.registerMiner(wallet_1),
         ]);
 
         // skip mining activation delay period
-        chain.mineEmptyBlock(MINING_ACTIVATION_DELAY)
+        chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
 
-        chain.mineBlock([
-          client.mineTokens(100, wallet_1)
-        ]);
+        chain.mineBlock([client.mineTokens(100, wallet_1)]);
 
         const result = client.getTotalSupplyUstx().result;
 
@@ -102,21 +100,19 @@ describe('[CityCoin]', () => {
       it("returns 100 * SPLIT_STACKER_PERCENTAGE if someone mined and stackers are stacking", () => {
         chain.mineBlock([
           client.setMiningActivationThreshold(1),
-          client.registerMiner(wallet_1)
+          client.registerMiner(wallet_1),
         ]);
         chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
         const startStacksHeight = MINING_ACTIVATION_DELAY + 5;
 
         chain.mineBlock([
           tokenClient.ftMint(100, wallet_1),
-          client.stackTokens(100, startStacksHeight, 1, wallet_1)
+          client.stackTokens(100, startStacksHeight, 1, wallet_1),
         ]);
 
-        chain.mineEmptyBlock(REWARD_CYCLE_LENGTH + 1)
+        chain.mineEmptyBlock(REWARD_CYCLE_LENGTH + 1);
 
-        chain.mineBlock([
-          client.mineTokens(100, wallet_1)
-        ]);
+        chain.mineBlock([client.mineTokens(100, wallet_1)]);
 
         const result = client.getTotalSupplyUstx().result;
 
@@ -133,7 +129,7 @@ describe('[CityCoin]', () => {
         // pass a non-existent block height
         // simulates transaction if mining not active
         const result = client.getCoinbaseAmount(1).result;
-        
+
         result.expectUint(0);
       });
 
@@ -141,7 +137,7 @@ describe('[CityCoin]', () => {
         // activate mining
         chain.mineBlock([
           client.setMiningActivationThreshold(1),
-          client.registerMiner(wallet_3)
+          client.registerMiner(wallet_3),
         ]);
 
         // advance chain to block where mining is active
@@ -149,37 +145,70 @@ describe('[CityCoin]', () => {
         const startHeight = block.block_height - 1;
 
         const testData = [
-          {blockHeight: startHeight - 1, reward: 0},          // prior to mining activation (no reward)
-          {blockHeight: startHeight, reward: 250000},         // at mining activation (bonus reward)
-          {blockHeight: startHeight + 1, reward: 250000},     // first block after mining activation block (bonus reward)
-          {blockHeight: startHeight + 10000, reward: 250000}, // 1000th block after mining activation block (last bonus reward)
-          {blockHeight: startHeight + 10001, reward: 100000}, // 1001st block after mining activation block (first standard reward)
-          {blockHeight: startHeight + MINING_HALVING_BLOCKS, reward: 100000},              // 1st halving
-          {blockHeight: startHeight + MINING_HALVING_BLOCKS + 1, reward: 50000},           // after 1st halving
-          {blockHeight: startHeight + (MINING_HALVING_BLOCKS * 2), reward: 50000},         // 2nd halving
-          {blockHeight: startHeight + (MINING_HALVING_BLOCKS * 2) + 1, reward: 25000},     // after 2nd halving
-          {blockHeight: startHeight + (MINING_HALVING_BLOCKS * 3), reward: 25000},         // 3rd halving
-          {blockHeight: startHeight + (MINING_HALVING_BLOCKS * 3) + 1, reward: 12500},     // after 3rd halving
-          {blockHeight: startHeight + (MINING_HALVING_BLOCKS * 4), reward: 12500},         // 4th halving
-          {blockHeight: startHeight + (MINING_HALVING_BLOCKS * 4) + 1, reward: 6250},      // after 4th halving
-          {blockHeight: startHeight + (MINING_HALVING_BLOCKS * 5), reward: 6250},          // 5th halving
-          {blockHeight: startHeight + (MINING_HALVING_BLOCKS * 5) + 1, reward: 3125},      // after 5th halving
-          {blockHeight: startHeight + (MINING_HALVING_BLOCKS * 5) + 1234, reward: 3125},   // after 5th halving
-        ]
+          { blockHeight: startHeight - 1, reward: 0 }, // prior to mining activation (no reward)
+          { blockHeight: startHeight, reward: 250000 }, // at mining activation (bonus reward)
+          { blockHeight: startHeight + 1, reward: 250000 }, // first block after mining activation block (bonus reward)
+          { blockHeight: startHeight + 10000, reward: 250000 }, // 1000th block after mining activation block (last bonus reward)
+          { blockHeight: startHeight + 10001, reward: 100000 }, // 1001st block after mining activation block (first standard reward)
+          { blockHeight: startHeight + MINING_HALVING_BLOCKS, reward: 100000 }, // 1st halving
+          {
+            blockHeight: startHeight + MINING_HALVING_BLOCKS + 1,
+            reward: 50000,
+          }, // after 1st halving
+          {
+            blockHeight: startHeight + MINING_HALVING_BLOCKS * 2,
+            reward: 50000,
+          }, // 2nd halving
+          {
+            blockHeight: startHeight + MINING_HALVING_BLOCKS * 2 + 1,
+            reward: 25000,
+          }, // after 2nd halving
+          {
+            blockHeight: startHeight + MINING_HALVING_BLOCKS * 3,
+            reward: 25000,
+          }, // 3rd halving
+          {
+            blockHeight: startHeight + MINING_HALVING_BLOCKS * 3 + 1,
+            reward: 12500,
+          }, // after 3rd halving
+          {
+            blockHeight: startHeight + MINING_HALVING_BLOCKS * 4,
+            reward: 12500,
+          }, // 4th halving
+          {
+            blockHeight: startHeight + MINING_HALVING_BLOCKS * 4 + 1,
+            reward: 6250,
+          }, // after 4th halving
+          {
+            blockHeight: startHeight + MINING_HALVING_BLOCKS * 5,
+            reward: 6250,
+          }, // 5th halving
+          {
+            blockHeight: startHeight + MINING_HALVING_BLOCKS * 5 + 1,
+            reward: 3125,
+          }, // after 5th halving
+          {
+            blockHeight: startHeight + MINING_HALVING_BLOCKS * 5 + 1234,
+            reward: 3125,
+          }, // after 5th halving
+        ];
 
-        console.log(`\n  mining activated at block ${startHeight}`)
+        console.log(`\n  mining activated at block ${startHeight}`);
 
-        testData.forEach(t => {
+        testData.forEach((t) => {
           let result = client.getCoinbaseAmount(t.blockHeight).result;
-          
+
           try {
             result.expectUint(t.reward);
-            console.log(`  success at block ${t.blockHeight} with reward ${t.reward}`)
+            console.log(
+              `  success at block ${t.blockHeight} with reward ${t.reward}`
+            );
           } catch (error) {
-            throw new Error(`Failed to return correct coinbase amount at block ${t.blockHeight}\n${error}`);
+            throw new Error(
+              `Failed to return correct coinbase amount at block ${t.blockHeight}\n${error}`
+            );
           }
         });
-
       });
     });
 
@@ -189,19 +218,19 @@ describe('[CityCoin]', () => {
       it("returns 0 when miners list is empty", () => {
         const result = client.getBlockCommitTotal(1).result;
         result.expectUint(0);
-      })
+      });
 
       it("returns 100 when two miners commit 30 and 70", () => {
         chain.mineBlock([
           client.setMiningActivationThreshold(1),
-          client.registerMiner(wallet_1)
+          client.registerMiner(wallet_1),
         ]);
-        
+
         const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
-        
+
         chain.mineBlock([
           client.mineTokens(30, wallet_1),
-          client.mineTokens(70, wallet_2)
+          client.mineTokens(70, wallet_2),
         ]);
 
         const result = client.getBlockCommitTotal(block.block_height).result;
@@ -218,31 +247,32 @@ describe('[CityCoin]', () => {
       it("returns 0 when miners list is empty", () => {
         const result = client.getBlockCommitToStackers(1).result;
         result.expectUint(0);
-      })
+      });
 
       it("returns 0 when no stackers are stacking", () => {
         chain.mineBlock([
           client.setMiningActivationThreshold(1),
-          client.registerMiner(wallet_1)
-        ]);
-        
-        const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
-        
-        chain.mineBlock([
-          client.mineTokens(30, wallet_1),
-          client.mineTokens(70, wallet_2)
+          client.registerMiner(wallet_1),
         ]);
 
-        const result = client.getBlockCommitToStackers(block.block_height).result;
+        const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
+
+        chain.mineBlock([
+          client.mineTokens(30, wallet_1),
+          client.mineTokens(70, wallet_2),
+        ]);
+
+        const result = client.getBlockCommitToStackers(
+          block.block_height
+        ).result;
 
         result.expectUint(0);
       });
 
       it("returns 100 * SPLIT_STACKER_PERCENTAGE when stackers are stacking", () => {
-
         chain.mineBlock([
           client.setMiningActivationThreshold(1),
-          client.registerMiner(wallet_1)
+          client.registerMiner(wallet_1),
         ]);
 
         chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
@@ -250,7 +280,7 @@ describe('[CityCoin]', () => {
         // stack in cycle 1 while cycle 0 is active
         chain.mineBlock([
           tokenClient.ftMint(100, wallet_2),
-          client.stackTokens(100, MINING_ACTIVATION_DELAY + 5, 1, wallet_2)
+          client.stackTokens(100, MINING_ACTIVATION_DELAY + 5, 1, wallet_2),
         ]);
 
         // progress into reward cycle 1
@@ -259,7 +289,7 @@ describe('[CityCoin]', () => {
         // mine during cycle 1, which will be split
         const block = chain.mineBlock([
           client.mineTokens(30, wallet_1),
-          client.mineTokens(70, wallet_2)
+          client.mineTokens(70, wallet_2),
         ]);
 
         // check that split stacker commit was stored correctly in map
@@ -267,7 +297,6 @@ describe('[CityCoin]', () => {
 
         result.expectUint(100 * SPLIT_STACKER_PERCENTAGE);
       });
-
     });
 
     describe("get-block-commit-to-city()", () => {
@@ -278,19 +307,19 @@ describe('[CityCoin]', () => {
       it("returns 0 when miners list is empty", () => {
         const result = client.getBlockCommitToCity(1).result;
         result.expectUint(0);
-      })
+      });
 
       it("returns 100 when no stackers are stacking", () => {
         chain.mineBlock([
           client.setMiningActivationThreshold(1),
-          client.registerMiner(wallet_1)
+          client.registerMiner(wallet_1),
         ]);
-        
+
         const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
-        
+
         chain.mineBlock([
           client.mineTokens(30, wallet_1),
-          client.mineTokens(70, wallet_2)
+          client.mineTokens(70, wallet_2),
         ]);
 
         const result = client.getBlockCommitToCity(block.block_height).result;
@@ -299,10 +328,9 @@ describe('[CityCoin]', () => {
       });
 
       it("returns 100 * SPLIT_CITY_PERCENTAGE when stackers are stacking", () => {
-
         chain.mineBlock([
           client.setMiningActivationThreshold(1),
-          client.registerMiner(wallet_1)
+          client.registerMiner(wallet_1),
         ]);
 
         chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
@@ -310,7 +338,7 @@ describe('[CityCoin]', () => {
         // stack in cycle 1 while cycle 0 is active
         chain.mineBlock([
           tokenClient.ftMint(100, wallet_2),
-          client.stackTokens(100, MINING_ACTIVATION_DELAY + 5, 1, wallet_2)
+          client.stackTokens(100, MINING_ACTIVATION_DELAY + 5, 1, wallet_2),
         ]);
 
         // progress into reward cycle 1
@@ -319,7 +347,7 @@ describe('[CityCoin]', () => {
         // mine during cycle 1, which will be split
         const block = chain.mineBlock([
           client.mineTokens(30, wallet_1),
-          client.mineTokens(70, wallet_2)
+          client.mineTokens(70, wallet_2),
         ]);
 
         // check that split stacker commit was stored correctly in map
@@ -327,7 +355,6 @@ describe('[CityCoin]', () => {
 
         result.expectUint(100 * SPLIT_CITY_PERCENTAGE);
       });
-
     });
 
     describe("get-block-winner()", () => {
@@ -336,7 +363,7 @@ describe('[CityCoin]', () => {
         setupCleanEnv();
         chain.mineBlock([
           client.setMiningActivationThreshold(1),
-          client.registerMiner(wallet_1)
+          client.registerMiner(wallet_1),
         ]);
         const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
 
@@ -344,23 +371,23 @@ describe('[CityCoin]', () => {
         miners.push(
           { miner: wallet_1, minerId: 1, amountUstx: 1 },
           { miner: wallet_2, minerId: 2, amountUstx: 2 },
-          { miner: wallet_3, minerId: 3, amountUstx: 3 },
+          { miner: wallet_3, minerId: 3, amountUstx: 3 }
         );
-        
+
         chain.mineBlock([
           client.mineTokens(miners[0].amountUstx, miners[0].miner),
           client.mineTokens(miners[1].amountUstx, miners[1].miner),
           client.mineTokens(miners[2].amountUstx, miners[2].miner),
         ]);
 
-        chain.mineEmptyBlock(500)
+        chain.mineEmptyBlock(500);
 
-        const known_rnd_winners = [0, 1, 1, 2, 2, 2, 0, 1, 1, 2, 2, 2, 0]
+        const known_rnd_winners = [0, 1, 1, 2, 2, 2, 0, 1, 1, 2, 2, 2, 0];
 
         known_rnd_winners.forEach((e, i) => {
           let result = client.getBlockWinner(block.block_height, i).result;
           let winner = result.expectSome().expectTuple();
-          let expectedWinner = miners.getFormatted(e)
+          let expectedWinner = miners.getFormatted(e);
 
           assertEquals(winner, expectedWinner);
         });
@@ -376,27 +403,25 @@ describe('[CityCoin]', () => {
     describe("has-mined()", () => {
       beforeEach(() => {
         setupCleanEnv();
-      })
-  
+      });
+
       it("returns true if miner mined in selected block", () => {
         // activate mining
         chain.mineBlock([
           client.setMiningActivationThreshold(1),
-          client.registerMiner(wallet_3)
+          client.registerMiner(wallet_3),
         ]);
 
         // advance chain to block where mining is active
         const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
         const blockHeight = block.block_height;
-        
-        chain.mineBlock([
-          client.mineTokens(200, wallet_1)
-        ]);
-        
+
+        chain.mineBlock([client.mineTokens(200, wallet_1)]);
+
         const result = client.hasMined(wallet_1, blockHeight).result;
 
         result.expectBool(true);
-      })
+      });
 
       it("returns false if miner didn't mine in selected block", () => {
         const result = client.hasMined(wallet_2, 800).result;
@@ -410,22 +435,22 @@ describe('[CityCoin]', () => {
         setupCleanEnv();
         chain.mineBlock([
           client.setMiningActivationThreshold(1),
-          client.registerMiner(wallet_1)
+          client.registerMiner(wallet_1),
         ]);
-      })
+      });
 
       const miners = new MinersList();
       miners.push(
         { miner: wallet_1, minerId: 1, amountUstx: 1 },
         { miner: wallet_2, minerId: 2, amountUstx: 2 },
-        { miner: wallet_3, minerId: 3, amountUstx: 3 },
+        { miner: wallet_3, minerId: 3, amountUstx: 3 }
       );
 
-      let txs = new Array(); 
+      let txs = new Array();
       miners.forEach((r) => {
         txs.push(client.mineTokens(r.amountUstx, r.miner));
       });
-      
+
       const claimedBlock = new MinedBlock(3, 1, 1, true);
       const unclaimedBlock = new MinedBlock(3, 1, 1, false);
       const tokenRewardMaturity = 100;
@@ -439,13 +464,55 @@ describe('[CityCoin]', () => {
         const currentStacksBlock = block.block_height + tokenRewardMaturity + 1;
 
         const results = [
-          client.canClaimTokens(wallet_1, claimerStacksBlockHeight, 0, unclaimedBlock, currentStacksBlock).result,
-          client.canClaimTokens(wallet_2, claimerStacksBlockHeight, 1, unclaimedBlock, currentStacksBlock).result,
-          client.canClaimTokens(wallet_2, claimerStacksBlockHeight, 2, unclaimedBlock, currentStacksBlock).result,
-          client.canClaimTokens(wallet_3, claimerStacksBlockHeight, 3, unclaimedBlock, currentStacksBlock).result,
-          client.canClaimTokens(wallet_3, claimerStacksBlockHeight, 4, unclaimedBlock, currentStacksBlock).result,
-          client.canClaimTokens(wallet_3, claimerStacksBlockHeight, 5, unclaimedBlock, currentStacksBlock).result,
-          client.canClaimTokens(wallet_1, claimerStacksBlockHeight, 6, unclaimedBlock, currentStacksBlock).result,
+          client.canClaimTokens(
+            wallet_1,
+            claimerStacksBlockHeight,
+            0,
+            unclaimedBlock,
+            currentStacksBlock
+          ).result,
+          client.canClaimTokens(
+            wallet_2,
+            claimerStacksBlockHeight,
+            1,
+            unclaimedBlock,
+            currentStacksBlock
+          ).result,
+          client.canClaimTokens(
+            wallet_2,
+            claimerStacksBlockHeight,
+            2,
+            unclaimedBlock,
+            currentStacksBlock
+          ).result,
+          client.canClaimTokens(
+            wallet_3,
+            claimerStacksBlockHeight,
+            3,
+            unclaimedBlock,
+            currentStacksBlock
+          ).result,
+          client.canClaimTokens(
+            wallet_3,
+            claimerStacksBlockHeight,
+            4,
+            unclaimedBlock,
+            currentStacksBlock
+          ).result,
+          client.canClaimTokens(
+            wallet_3,
+            claimerStacksBlockHeight,
+            5,
+            unclaimedBlock,
+            currentStacksBlock
+          ).result,
+          client.canClaimTokens(
+            wallet_1,
+            claimerStacksBlockHeight,
+            6,
+            unclaimedBlock,
+            currentStacksBlock
+          ).result,
         ];
 
         results.forEach((result) => {
@@ -461,10 +528,28 @@ describe('[CityCoin]', () => {
         const currentStacksBlock = block.block_height + tokenRewardMaturity + 1;
 
         const results = [
-          client.canClaimTokens(wallet_4, claimerStacksBlockHeight, 0, unclaimedBlock, currentStacksBlock).result,
-          client.canClaimTokens(wallet_5, claimerStacksBlockHeight, 1, unclaimedBlock, currentStacksBlock).result,
-          client.canClaimTokens(wallet_6, claimerStacksBlockHeight, 2, unclaimedBlock, currentStacksBlock).result,
-        ]
+          client.canClaimTokens(
+            wallet_4,
+            claimerStacksBlockHeight,
+            0,
+            unclaimedBlock,
+            currentStacksBlock
+          ).result,
+          client.canClaimTokens(
+            wallet_5,
+            claimerStacksBlockHeight,
+            1,
+            unclaimedBlock,
+            currentStacksBlock
+          ).result,
+          client.canClaimTokens(
+            wallet_6,
+            claimerStacksBlockHeight,
+            2,
+            unclaimedBlock,
+            currentStacksBlock
+          ).result,
+        ];
 
         results.forEach((result) => {
           result.expectErr().expectUint(ErrCode.ERR_MINER_ID_NOT_FOUND);
@@ -472,14 +557,26 @@ describe('[CityCoin]', () => {
       });
 
       it("throws ERR_IMMATURE_TOKEN_REWARD if maturity window has not passed", () => {
-        const result = client.canClaimTokens(wallet_1, 0, 0, unclaimedBlock, tokenRewardMaturity).result;
+        const result = client.canClaimTokens(
+          wallet_1,
+          0,
+          0,
+          unclaimedBlock,
+          tokenRewardMaturity
+        ).result;
 
         result.expectErr().expectUint(ErrCode.ERR_IMMATURE_TOKEN_REWARD);
       });
 
       it("throws ERR_ALREADY_CLAIMED if miner already claimed", () => {
         const currentStacksBlock = tokenRewardMaturity + 1;
-        const result = client.canClaimTokens(wallet_1, 0, 0, claimedBlock, currentStacksBlock).result;
+        const result = client.canClaimTokens(
+          wallet_1,
+          0,
+          0,
+          claimedBlock,
+          currentStacksBlock
+        ).result;
 
         result.expectErr().expectUint(ErrCode.ERR_ALREADY_CLAIMED);
       });
@@ -491,20 +588,23 @@ describe('[CityCoin]', () => {
         chain.mineBlock([
           client.setMiningActivationThreshold(1),
           client.registerMiner(wallet_3),
-          client.generateMinerId(wallet_3)
+          client.generateMinerId(wallet_3),
         ]);
         const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
         const minerId = client.getMinerIdNum(wallet_3);
-        const result = client.canMineTokens(wallet_3, minerId, block.block_height, 10).result;
+        const result = client.canMineTokens(
+          wallet_3,
+          minerId,
+          block.block_height,
+          10
+        ).result;
 
         result.expectOk().expectBool(true);
       });
 
       it("throws ERR_STACKING_NOT_AVAILABLE error if there is no active reward cycle", () => {
         setupCleanEnv();
-        chain.mineBlock([
-          client.generateMinerId(wallet_3)
-        ]);
+        chain.mineBlock([client.generateMinerId(wallet_3)]);
         const minerId = client.getMinerIdNum(wallet_3);
 
         const result = client.canMineTokens(wallet_3, minerId, 0, 10).result;
@@ -517,14 +617,19 @@ describe('[CityCoin]', () => {
         chain.mineBlock([
           client.setMiningActivationThreshold(1),
           client.registerMiner(wallet_3),
-          client.generateMinerId(wallet_1)
+          client.generateMinerId(wallet_1),
         ]);
         chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
 
         const block = chain.mineBlock([client.mineTokens(200, wallet_1)]);
         const minerId = client.getMinerIdNum(wallet_1);
 
-        const result = client.canMineTokens(wallet_1, minerId, block.height-1, 10).result;
+        const result = client.canMineTokens(
+          wallet_1,
+          minerId,
+          block.height - 1,
+          10
+        ).result;
 
         result.expectErr().expectUint(ErrCode.ERR_ALREADY_MINED);
       });
@@ -534,11 +639,16 @@ describe('[CityCoin]', () => {
         chain.mineBlock([
           client.setMiningActivationThreshold(1),
           client.registerMiner(wallet_3),
-          client.generateMinerId(wallet_3)
+          client.generateMinerId(wallet_3),
         ]);
         const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
 
-        const result = client.canMineTokens(wallet_3, 1, block.block_height, 0).result;
+        const result = client.canMineTokens(
+          wallet_3,
+          1,
+          block.block_height,
+          0
+        ).result;
 
         result.expectErr().expectUint(ErrCode.ERR_CANNOT_MINE);
       });
@@ -548,12 +658,17 @@ describe('[CityCoin]', () => {
         chain.mineBlock([
           client.setMiningActivationThreshold(1),
           client.registerMiner(wallet_3),
-          client.generateMinerId(wallet_3)
+          client.generateMinerId(wallet_3),
         ]);
         const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
         const minerId = client.getMinerId(wallet_3).result;
-      
-        const result = client.canMineTokens(wallet_3, 1, block.block_height, wallet_3.balance + 1).result;
+
+        const result = client.canMineTokens(
+          wallet_3,
+          1,
+          block.block_height,
+          wallet_3.balance + 1
+        ).result;
 
         result.expectErr().expectUint(ErrCode.ERR_INSUFFICIENT_BALANCE);
       });
@@ -563,23 +678,48 @@ describe('[CityCoin]', () => {
         chain.mineBlock([
           client.setMiningActivationThreshold(1),
           client.registerMiner(wallet_1),
-          client.generateMinerId(wallet_1)
+          client.generateMinerId(wallet_1),
         ]);
-        
+
         const minerId = client.getMinerIdNum(wallet_1);
         const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
 
         // fill miners list with 128 fake miners with commitment as low as 2uSTX
         chain.mineBlock([
-          Tx.contractCall("citycoin", "setup-32-miners-1", [], deployer.address),
-          Tx.contractCall("citycoin", "setup-32-miners-2", [], deployer.address),
-          Tx.contractCall("citycoin", "setup-32-miners-3", [], deployer.address),
-          Tx.contractCall("citycoin", "setup-32-miners-4", [], deployer.address),
-        ]); 
-        
-        const result = client.canMineTokens(wallet_1, minerId, block.block_height, 1).result;
-        
-        result.expectErr().expectUint(ErrCode.ERR_TOO_SMALL_COMMITMENT)
+          Tx.contractCall(
+            "citycoin",
+            "setup-32-miners-1",
+            [],
+            deployer.address
+          ),
+          Tx.contractCall(
+            "citycoin",
+            "setup-32-miners-2",
+            [],
+            deployer.address
+          ),
+          Tx.contractCall(
+            "citycoin",
+            "setup-32-miners-3",
+            [],
+            deployer.address
+          ),
+          Tx.contractCall(
+            "citycoin",
+            "setup-32-miners-4",
+            [],
+            deployer.address
+          ),
+        ]);
+
+        const result = client.canMineTokens(
+          wallet_1,
+          minerId,
+          block.block_height,
+          1
+        ).result;
+
+        result.expectErr().expectUint(ErrCode.ERR_TOO_SMALL_COMMITMENT);
       });
     });
 
@@ -590,31 +730,42 @@ describe('[CityCoin]', () => {
         chain.mineBlock([
           tokenClient.ftMint(100, wallet_1),
           client.setMiningActivationThreshold(1),
-          client.registerMiner(wallet_3)
+          client.registerMiner(wallet_3),
         ]);
-        
+
         const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
 
         const nowStacksHeight = block.block_height;
         const startStacksHeight = block.block_height + 5;
 
-        const result = client.canStackTokens(wallet_1, 100, nowStacksHeight, startStacksHeight, 1).result;
+        const result = client.canStackTokens(
+          wallet_1,
+          100,
+          nowStacksHeight,
+          startStacksHeight,
+          1
+        ).result;
 
         result.expectOk().expectBool(true);
-
       });
 
       it("throws ERR_CANNOT_STACK error if nowStacksHeight > startStacksHeight", () => {
         setupCleanEnv();
         chain.mineBlock([
           client.setMiningActivationThreshold(1),
-          client.registerMiner(wallet_3)
+          client.registerMiner(wallet_3),
         ]);
 
         const nowStacksHeight = MINING_ACTIVATION_DELAY + 5;
         const startStacksHeight = MINING_ACTIVATION_DELAY + 3;
 
-        const result = client.canStackTokens(wallet_1, 100, nowStacksHeight, startStacksHeight, 1).result;
+        const result = client.canStackTokens(
+          wallet_1,
+          100,
+          nowStacksHeight,
+          startStacksHeight,
+          1
+        ).result;
 
         result.expectErr().expectUint(ErrCode.ERR_CANNOT_STACK);
       });
@@ -624,13 +775,25 @@ describe('[CityCoin]', () => {
         const startStacksHeight = 510;
 
         const results = [
-          client.canStackTokens(wallet_1, 100, nowStacksHeight, startStacksHeight, 0).result,
-          client.canStackTokens(wallet_1, 100, nowStacksHeight, startStacksHeight, 33).result,
-        ]
+          client.canStackTokens(
+            wallet_1,
+            100,
+            nowStacksHeight,
+            startStacksHeight,
+            0
+          ).result,
+          client.canStackTokens(
+            wallet_1,
+            100,
+            nowStacksHeight,
+            startStacksHeight,
+            33
+          ).result,
+        ];
 
         results.forEach((result) => {
           result.expectErr().expectUint(ErrCode.ERR_CANNOT_STACK);
-        })
+        });
       });
 
       it("throws ERR_CANNOT_STACK error if amountToken = 0", () => {
@@ -638,7 +801,13 @@ describe('[CityCoin]', () => {
         const startStacksHeight = 510;
         const amountToken = 0;
 
-        const result = client.canStackTokens(wallet_1, amountToken, nowStacksHeight, startStacksHeight, 1).result;
+        const result = client.canStackTokens(
+          wallet_1,
+          amountToken,
+          nowStacksHeight,
+          startStacksHeight,
+          1
+        ).result;
 
         result.expectErr().expectUint(ErrCode.ERR_CANNOT_STACK);
       });
@@ -647,28 +816,37 @@ describe('[CityCoin]', () => {
         setupCleanEnv();
         chain.mineBlock([
           client.setMiningActivationThreshold(1),
-          client.registerMiner(wallet_3)
+          client.registerMiner(wallet_3),
         ]);
 
         const nowStacksHeight = MINING_ACTIVATION_DELAY + 5;
         const startStacksHeight = MINING_ACTIVATION_DELAY + 6;
         const amountToken = 100000;
 
-        const result = client.canStackTokens(wallet_1, amountToken, nowStacksHeight, startStacksHeight, 1).result;
+        const result = client.canStackTokens(
+          wallet_1,
+          amountToken,
+          nowStacksHeight,
+          startStacksHeight,
+          1
+        ).result;
 
         result.expectErr().expectUint(ErrCode.ERR_INSUFFICIENT_BALANCE);
       });
     });
 
     describe("get-entitled-stacking-reward()", () => {
-
       it("returns u0 if before first reward cycle", () => {
         setupCleanEnv();
         const stacker = wallet_1;
         const targetRewardCycle = 0;
         const currentBlockHeight = 0;
 
-        const result = client.getEntitledStackingReward(stacker, targetRewardCycle, currentBlockHeight).result;
+        const result = client.getEntitledStackingReward(
+          stacker,
+          targetRewardCycle,
+          currentBlockHeight
+        ).result;
 
         result.expectUint(0);
       });
@@ -677,7 +855,7 @@ describe('[CityCoin]', () => {
         setupCleanEnv();
         chain.mineBlock([
           client.setMiningActivationThreshold(1),
-          client.registerMiner(wallet_3)
+          client.registerMiner(wallet_3),
         ]);
         chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
 
@@ -696,11 +874,13 @@ describe('[CityCoin]', () => {
         const block = chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
 
         // mine some tokens
-        chain.mineBlock([
-          client.mineTokens(minerCommitment, miner)
-        ]);
+        chain.mineBlock([client.mineTokens(minerCommitment, miner)]);
 
-        const result = client.getEntitledStackingReward(stacker, targetRewardCycle, block.block_height).result;
+        const result = client.getEntitledStackingReward(
+          stacker,
+          targetRewardCycle,
+          block.block_height
+        ).result;
 
         result.expectUint(0);
       });
@@ -709,7 +889,7 @@ describe('[CityCoin]', () => {
         setupCleanEnv();
         chain.mineBlock([
           client.setMiningActivationThreshold(1),
-          client.registerMiner(wallet_3)
+          client.registerMiner(wallet_3),
         ]);
         chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
 
@@ -729,14 +909,16 @@ describe('[CityCoin]', () => {
         chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
 
         // mine some tokens
-        chain.mineBlock([
-          client.mineTokens(minerCommitment, miner)
-        ]);
+        chain.mineBlock([client.mineTokens(minerCommitment, miner)]);
 
         // move chain forward to jump into 2nd stacking cycle
         const block = chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
 
-        const result = client.getEntitledStackingReward(nonStacker, targetRewardCycle, block.block_height).result;
+        const result = client.getEntitledStackingReward(
+          nonStacker,
+          targetRewardCycle,
+          block.block_height
+        ).result;
 
         result.expectUint(0);
       });
@@ -745,7 +927,7 @@ describe('[CityCoin]', () => {
         setupCleanEnv();
         chain.mineBlock([
           client.setMiningActivationThreshold(1),
-          client.registerMiner(wallet_3)
+          client.registerMiner(wallet_3),
         ]);
         chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
 
@@ -757,21 +939,28 @@ describe('[CityCoin]', () => {
         // add tokens and stack them at the next cycle
         chain.mineBlock([
           tokenClient.ftMint(5000, stacker),
-          client.stackTokens(5000, MINING_ACTIVATION_DELAY + 5, targetRewardCycle, stacker),
+          client.stackTokens(
+            5000,
+            MINING_ACTIVATION_DELAY + 5,
+            targetRewardCycle,
+            stacker
+          ),
         ]);
 
         // move chain forward to jump into 1st stacking cycle (skip mining activation delay period)
         chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
 
         // mine some tokens
-        chain.mineBlock([
-          client.mineTokens(minerCommitment, miner)
-        ]);
+        chain.mineBlock([client.mineTokens(minerCommitment, miner)]);
 
         // move chain forward to jump into 2nd stacking cycle
         const block = chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
 
-        const result = client.getEntitledStackingReward(stacker, targetRewardCycle, block.block_height).result;
+        const result = client.getEntitledStackingReward(
+          stacker,
+          targetRewardCycle,
+          block.block_height
+        ).result;
 
         result.expectUint(minerCommitment * SPLIT_STACKER_PERCENTAGE);
       });
@@ -780,7 +969,7 @@ describe('[CityCoin]', () => {
         setupCleanEnv();
         chain.mineBlock([
           client.setMiningActivationThreshold(1),
-          client.registerMiner(wallet_3)
+          client.registerMiner(wallet_3),
         ]);
         chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
 
@@ -796,27 +985,47 @@ describe('[CityCoin]', () => {
         chain.mineBlock([
           tokenClient.ftMint(stackerOneStacked, stackerOne),
           tokenClient.ftMint(stackerTwoStacked, stackerTwo),
-          client.stackTokens(stackerOneStacked, MINING_ACTIVATION_DELAY + 5, targetRewardCycle, stackerOne),
-          client.stackTokens(stackerTwoStacked, MINING_ACTIVATION_DELAY + 5, targetRewardCycle, stackerTwo)
+          client.stackTokens(
+            stackerOneStacked,
+            MINING_ACTIVATION_DELAY + 5,
+            targetRewardCycle,
+            stackerOne
+          ),
+          client.stackTokens(
+            stackerTwoStacked,
+            MINING_ACTIVATION_DELAY + 5,
+            targetRewardCycle,
+            stackerTwo
+          ),
         ]);
 
         // move chain forward to jump into 1st stacking cycle (skip mining activation delay period)
         chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
 
         // mine some tokens
-        chain.mineBlock([
-          client.mineTokens(minerCommitment, miner)
-        ]);
+        chain.mineBlock([client.mineTokens(minerCommitment, miner)]);
 
         // move chain forward to jump into 2nd stacking cycle
         const block = chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
 
-        const resultOne = client.getEntitledStackingReward(stackerOne, targetRewardCycle, block.block_height).result;
-        const resultTwo = client.getEntitledStackingReward(stackerTwo, targetRewardCycle, block.block_height).result;
+        const resultOne = client.getEntitledStackingReward(
+          stackerOne,
+          targetRewardCycle,
+          block.block_height
+        ).result;
+        const resultTwo = client.getEntitledStackingReward(
+          stackerTwo,
+          targetRewardCycle,
+          block.block_height
+        ).result;
 
         // (total-ustx * this-stackers-tokens) / total-tokens-stacked
-        const resultOneAmt = ((minerCommitment * SPLIT_STACKER_PERCENTAGE * stackerOneStacked) / (stackerOneStacked + stackerTwoStacked));
-        const resultTwoAmt = ((minerCommitment * SPLIT_STACKER_PERCENTAGE * stackerTwoStacked) / (stackerOneStacked + stackerTwoStacked));
+        const resultOneAmt =
+          (minerCommitment * SPLIT_STACKER_PERCENTAGE * stackerOneStacked) /
+          (stackerOneStacked + stackerTwoStacked);
+        const resultTwoAmt =
+          (minerCommitment * SPLIT_STACKER_PERCENTAGE * stackerTwoStacked) /
+          (stackerOneStacked + stackerTwoStacked);
 
         resultOne.expectUint(resultOneAmt);
         resultTwo.expectUint(resultTwoAmt);
@@ -826,7 +1035,7 @@ describe('[CityCoin]', () => {
         setupCleanEnv();
         chain.mineBlock([
           client.setMiningActivationThreshold(1),
-          client.registerMiner(wallet_3)
+          client.registerMiner(wallet_3),
         ]);
         chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
 
@@ -842,27 +1051,47 @@ describe('[CityCoin]', () => {
         chain.mineBlock([
           tokenClient.ftMint(stackerOneStacked, stackerOne),
           tokenClient.ftMint(stackerTwoStacked, stackerTwo),
-          client.stackTokens(stackerOneStacked, MINING_ACTIVATION_DELAY + 5, targetRewardCycle, stackerOne),
-          client.stackTokens(stackerTwoStacked, MINING_ACTIVATION_DELAY + 5, targetRewardCycle, stackerTwo)
+          client.stackTokens(
+            stackerOneStacked,
+            MINING_ACTIVATION_DELAY + 5,
+            targetRewardCycle,
+            stackerOne
+          ),
+          client.stackTokens(
+            stackerTwoStacked,
+            MINING_ACTIVATION_DELAY + 5,
+            targetRewardCycle,
+            stackerTwo
+          ),
         ]);
 
         // move chain forward to jump into 1st stacking cycle (skip mining activation delay period)
         chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
 
         // mine some tokens
-        chain.mineBlock([
-          client.mineTokens(minerCommitment, miner)
-        ]);
+        chain.mineBlock([client.mineTokens(minerCommitment, miner)]);
 
         // move chain forward to jump into 2nd stacking cycle
         const block = chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
 
-        const resultOne = client.getEntitledStackingReward(stackerOne, targetRewardCycle, block.block_height).result;
-        const resultTwo = client.getEntitledStackingReward(stackerTwo, targetRewardCycle, block.block_height).result;
+        const resultOne = client.getEntitledStackingReward(
+          stackerOne,
+          targetRewardCycle,
+          block.block_height
+        ).result;
+        const resultTwo = client.getEntitledStackingReward(
+          stackerTwo,
+          targetRewardCycle,
+          block.block_height
+        ).result;
 
         // (total-ustx * this-stackers-tokens) / total-tokens-stacked
-        const resultOneAmt = ((minerCommitment * SPLIT_STACKER_PERCENTAGE * stackerOneStacked) / (stackerOneStacked + stackerTwoStacked));
-        const resultTwoAmt = ((minerCommitment * SPLIT_STACKER_PERCENTAGE * stackerTwoStacked) / (stackerOneStacked + stackerTwoStacked));
+        const resultOneAmt =
+          (minerCommitment * SPLIT_STACKER_PERCENTAGE * stackerOneStacked) /
+          (stackerOneStacked + stackerTwoStacked);
+        const resultTwoAmt =
+          (minerCommitment * SPLIT_STACKER_PERCENTAGE * stackerTwoStacked) /
+          (stackerOneStacked + stackerTwoStacked);
 
         resultOne.expectUint(resultOneAmt);
         resultTwo.expectUint(resultTwoAmt);
@@ -873,27 +1102,35 @@ describe('[CityCoin]', () => {
       it("returns None if stacksBlockHeight is equal 0", () => {
         const result = client.getRewardCycle(0).result;
 
-        result.expectNone()
+        result.expectNone();
       });
 
       it("returns Some with correct value when stacksBlockHeight > MINING_ACTIVATION_DELAY", () => {
         setupCleanEnv();
         chain.mineBlock([
           client.setMiningActivationThreshold(1),
-          client.registerMiner(wallet_3)
+          client.registerMiner(wallet_3),
         ]);
 
         // starts after MINING_ACTIVATION_DELAY
-        const blockHeights = [151, 155, 499, 500, 501, 1001, 1501, 1999, 2000, 2001];
+        const blockHeights = [
+          151, 155, 499, 500, 501, 1001, 1501, 1999, 2000, 2001,
+        ];
 
-        console.log("\n  formula: (stacksBlockHeight - FIRST_STACKING_BLOCK) / REWARD_CYCLE_LENGTH)")
+        console.log(
+          "\n  formula: (stacksBlockHeight - FIRST_STACKING_BLOCK) / REWARD_CYCLE_LENGTH)"
+        );
 
         blockHeights.forEach((stacksBlockHeight) => {
-          const expectedValue = Math.floor((stacksBlockHeight - FIRST_STACKING_BLOCK) / REWARD_CYCLE_LENGTH);
+          const expectedValue = Math.floor(
+            (stacksBlockHeight - FIRST_STACKING_BLOCK) / REWARD_CYCLE_LENGTH
+          );
 
           const result = client.getRewardCycle(stacksBlockHeight).result;
 
-          console.log(`  success at block ${stacksBlockHeight} with reward cycle ${result}`)
+          console.log(
+            `  success at block ${stacksBlockHeight} with reward cycle ${result}`
+          );
 
           result.expectSome().expectUint(expectedValue);
         });
@@ -904,14 +1141,20 @@ describe('[CityCoin]', () => {
       it("returns correct value", () => {
         const rewardCycles = [0, 1, 2, 3, 5, 15, 24, 44, 890];
 
-        console.log("\n  formula: FIRST_STACKING_BLOCK + (REWARD_CYCLE_LENGTH * rewardCycle)")
+        console.log(
+          "\n  formula: FIRST_STACKING_BLOCK + (REWARD_CYCLE_LENGTH * rewardCycle)"
+        );
 
         rewardCycles.forEach((rewardCycle) => {
-          const expectedValue = FIRST_STACKING_BLOCK + (REWARD_CYCLE_LENGTH * rewardCycle);
+          const expectedValue =
+            FIRST_STACKING_BLOCK + REWARD_CYCLE_LENGTH * rewardCycle;
 
-          const result = client.getFirstBlockHeightInRewardCycle(rewardCycle).result;
+          const result =
+            client.getFirstBlockHeightInRewardCycle(rewardCycle).result;
 
-          console.log(`  success at reward cycle ${rewardCycle} with block height ${result}`)
+          console.log(
+            `  success at reward cycle ${rewardCycle} with block height ${result}`
+          );
 
           result.expectUint(expectedValue);
         });
@@ -932,7 +1175,7 @@ describe('[CityCoin]', () => {
       it("returns statistics if stacking is active", () => {
         chain.mineBlock([
           client.setMiningActivationThreshold(1),
-          client.registerMiner(wallet_1)
+          client.registerMiner(wallet_1),
         ]);
 
         chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
@@ -940,7 +1183,7 @@ describe('[CityCoin]', () => {
         // stack in cycle 1 while cycle 0 is active
         chain.mineBlock([
           tokenClient.ftMint(100, wallet_2),
-          client.stackTokens(100, 105, 1, wallet_2)
+          client.stackTokens(100, 105, 1, wallet_2),
         ]);
 
         // progress into reward cycle 1
@@ -948,11 +1191,10 @@ describe('[CityCoin]', () => {
 
         const result = client.getPoxLiteInfo().result;
 
-        console.log(`\n  success returned: ${result}`)
+        console.log(`\n  success returned: ${result}`);
 
         result.expectOk();
       });
-
     });
 
     describe("get-miner-id()", () => {
@@ -969,7 +1211,7 @@ describe('[CityCoin]', () => {
       it("returns u1 if one miner registered", () => {
         chain.mineBlock([
           client.setMiningActivationThreshold(1),
-          client.registerMiner(wallet_1)
+          client.registerMiner(wallet_1),
         ]);
 
         const result = client.getMinerId(wallet_1).result;
@@ -992,7 +1234,7 @@ describe('[CityCoin]', () => {
       it("returns true when mining activation threshold has been reached.", () => {
         chain.mineBlock([
           client.setMiningActivationThreshold(1),
-          client.registerMiner(wallet_1)
+          client.registerMiner(wallet_1),
         ]);
 
         const result = client.getMiningActivationStatus().result;
@@ -1014,10 +1256,8 @@ describe('[CityCoin]', () => {
 
       it("returns value set by test add-on function", () => {
         const threshold = 5;
-        
-        chain.mineBlock([
-          client.setMiningActivationThreshold(threshold)
-        ]);
+
+        chain.mineBlock([client.setMiningActivationThreshold(threshold)]);
 
         const result = client.getRegisteredMinersThreshold().result;
 
@@ -1040,9 +1280,9 @@ describe('[CityCoin]', () => {
         chain.mineBlock([
           client.registerMiner(wallet_1),
           client.registerMiner(wallet_2),
-          client.registerMiner(wallet_3)
+          client.registerMiner(wallet_3),
         ]);
-        
+
         const result = client.getRegisteredMinersNonce().result;
         result.expectUint(3);
       });
@@ -1050,14 +1290,14 @@ describe('[CityCoin]', () => {
       it("returns 3 when 1 miner registered and 2 other mined block", () => {
         chain.mineBlock([
           client.setMiningActivationThreshold(1),
-          client.registerMiner(wallet_1)
+          client.registerMiner(wallet_1),
         ]);
 
         chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
 
         chain.mineBlock([
           client.mineTokens(200, wallet_2),
-          client.mineTokens(250, wallet_3)
+          client.mineTokens(250, wallet_3),
         ]);
 
         const result = client.getRegisteredMinersNonce().result;
@@ -1069,7 +1309,7 @@ describe('[CityCoin]', () => {
       beforeEach(() => {
         setupCleanEnv();
       });
-      
+
       it("returns empty list when no miners mined specific block", () => {
         const result = client.getMinersAtBlock(10).result;
 
@@ -1079,7 +1319,7 @@ describe('[CityCoin]', () => {
       it("returns list with 3 miners when 3 miners mined block", () => {
         chain.mineBlock([
           client.setMiningActivationThreshold(1),
-          client.registerMiner(wallet_1)
+          client.registerMiner(wallet_1),
         ]);
 
         const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
@@ -1087,7 +1327,7 @@ describe('[CityCoin]', () => {
         chain.mineBlock([
           client.mineTokens(100, wallet_1),
           client.mineTokens(200, wallet_2),
-          client.mineTokens(300, wallet_3)
+          client.mineTokens(300, wallet_3),
         ]);
 
         const result = client.getMinersAtBlock(block.block_height).result;
@@ -1115,20 +1355,20 @@ describe('[CityCoin]', () => {
         chain.mineBlock([
           client.setMiningActivationThreshold(1),
           client.registerMiner(wallet_1),
-          tokenClient.ftMint(amount, wallet_1)
+          tokenClient.ftMint(amount, wallet_1),
         ]);
 
         chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
 
         chain.mineBlock([
-          client.stackTokens(amount, MINING_ACTIVATION_DELAY + 5, 1, wallet_1)
+          client.stackTokens(amount, MINING_ACTIVATION_DELAY + 5, 1, wallet_1),
         ]);
 
         const result = client.getStackedPerCycle(wallet_1, 1).result;
         const expectedTuple = {
           "amount-token": types.uint(amount),
-          "to-return": types.uint(amount)
-        }
+          "to-return": types.uint(amount),
+        };
 
         assertEquals(result.expectSome().expectTuple(), expectedTuple);
       });
@@ -1144,7 +1384,7 @@ describe('[CityCoin]', () => {
 
         const expectedTuple = {
           "total-tokens": types.uint(0),
-          "total-ustx": types.uint(0)
+          "total-ustx": types.uint(0),
         };
 
         const tuple = result.expectTuple();
@@ -1159,23 +1399,26 @@ describe('[CityCoin]', () => {
         chain.mineBlock([
           client.setMiningActivationThreshold(1),
           client.registerMiner(wallet_1),
-          tokenClient.ftMint(tokensAmount, wallet_1)
+          tokenClient.ftMint(tokensAmount, wallet_1),
         ]);
 
         chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
 
         chain.mineBlock([
-          client.stackTokens(tokensAmount, MINING_ACTIVATION_DELAY + 5, 1, wallet_1),
+          client.stackTokens(
+            tokensAmount,
+            MINING_ACTIVATION_DELAY + 5,
+            1,
+            wallet_1
+          ),
         ]);
 
         chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
-        chain.mineBlock([
-          client.mineTokens(ustxAmount, wallet_1)          
-        ]);        
+        chain.mineBlock([client.mineTokens(ustxAmount, wallet_1)]);
 
         const expectedTuple = {
           "total-tokens": types.uint(tokensAmount),
-          "total-ustx": types.uint(ustxAmount * SPLIT_STACKER_PERCENTAGE)
+          "total-ustx": types.uint(ustxAmount * SPLIT_STACKER_PERCENTAGE),
         };
 
         const result = client.getTokensPerCycle(1).result;
@@ -1197,9 +1440,9 @@ describe('[CityCoin]', () => {
         const expectedTuple = {
           "stacks-block-height": types.uint(blockHeight),
           "least-commitment-idx": types.uint(0),
-          "least-commitment-ustx": types.uint(0)
+          "least-commitment-ustx": types.uint(0),
         };
-        
+
         const result = client.findLeastCommitment(blockHeight).result;
         const tuple = result.expectTuple();
 
@@ -1209,22 +1452,20 @@ describe('[CityCoin]', () => {
       it("returns miner if only one mined a block", () => {
         chain.mineBlock([
           client.setMiningActivationThreshold(1),
-          client.registerMiner(wallet_1)
+          client.registerMiner(wallet_1),
         ]);
 
         const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
         const blockHeight = block.block_height;
 
-        chain.mineBlock([
-          client.mineTokens(100, wallet_1),
-        ]);
+        chain.mineBlock([client.mineTokens(100, wallet_1)]);
 
         const expectedTuple = {
           "stacks-block-height": types.uint(blockHeight),
           "least-commitment-idx": types.uint(1),
-          "least-commitment-ustx": types.uint(100)
+          "least-commitment-ustx": types.uint(100),
         };
-        
+
         const result = client.findLeastCommitment(blockHeight).result;
         const tuple = result.expectTuple();
 
@@ -1234,7 +1475,7 @@ describe('[CityCoin]', () => {
       it("returns miner with smallest commitment at specific block", () => {
         chain.mineBlock([
           client.setMiningActivationThreshold(1),
-          client.registerMiner(wallet_1)
+          client.registerMiner(wallet_1),
         ]);
 
         const block = chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
@@ -1249,9 +1490,9 @@ describe('[CityCoin]', () => {
         const expectedTuple = {
           "stacks-block-height": types.uint(blockHeight),
           "least-commitment-idx": types.uint(2),
-          "least-commitment-ustx": types.uint(1)
+          "least-commitment-ustx": types.uint(1),
         };
-        
+
         const result = client.findLeastCommitment(blockHeight).result;
         const tuple = result.expectTuple();
 
@@ -1266,16 +1507,18 @@ describe('[CityCoin]', () => {
         setupCleanEnv();
         chain.mineBlock([
           client.setMiningActivationThreshold(1),
-          client.registerMiner(wallet_3)
+          client.registerMiner(wallet_3),
         ]);
       });
 
       it("throws ERR_STACKING_NOT_AVAILABLE error", () => {
         const block = chain.mineBlock([
-          client.stackTokens(100, 0, 1, wallet_1)
+          client.stackTokens(100, 0, 1, wallet_1),
         ]);
 
-        block.receipts[0].result.expectErr().expectUint(ErrCode.ERR_STACKING_NOT_AVAILABLE);
+        block.receipts[0].result
+          .expectErr()
+          .expectUint(ErrCode.ERR_STACKING_NOT_AVAILABLE);
         assertEquals(block.receipts[0].events.length, 0);
       });
 
@@ -1285,10 +1528,12 @@ describe('[CityCoin]', () => {
         const startStacksHeight = MINING_ACTIVATION_DELAY + 5;
 
         const block = chain.mineBlock([
-          client.stackTokens(100, startStacksHeight, 1, wallet_1)
+          client.stackTokens(100, startStacksHeight, 1, wallet_1),
         ]);
 
-        block.receipts[0].result.expectErr().expectUint(ErrCode.ERR_INSUFFICIENT_BALANCE);
+        block.receipts[0].result
+          .expectErr()
+          .expectUint(ErrCode.ERR_INSUFFICIENT_BALANCE);
         assertEquals(block.receipts[0].events.length, 0);
       });
 
@@ -1298,13 +1543,13 @@ describe('[CityCoin]', () => {
 
         const block = chain.mineBlock([
           tokenClient.ftMint(100, wallet_1),
-          client.stackTokens(100, startStacksHeight, 1, wallet_1)
+          client.stackTokens(100, startStacksHeight, 1, wallet_1),
         ]);
 
         // check return value
         block.receipts[1].result.expectOk().expectBool(true);
 
-        // check number of events 
+        // check number of events
         assertEquals(block.receipts[0].events.length, 1);
 
         // check events
@@ -1314,7 +1559,6 @@ describe('[CityCoin]', () => {
           client.getContractAddress(),
           "citycoins"
         );
-
       });
 
       it("succeeds when called multiple times", () => {
@@ -1323,15 +1567,15 @@ describe('[CityCoin]', () => {
 
         chain.mineBlock([
           tokenClient.ftMint(1000, wallet_1),
-          client.stackTokens(100, startStacksHeight, 1, wallet_1)
+          client.stackTokens(100, startStacksHeight, 1, wallet_1),
         ]);
 
         const block = chain.mineBlock([
-          client.stackTokens(100, startStacksHeight, 1, wallet_1)
+          client.stackTokens(100, startStacksHeight, 1, wallet_1),
         ]);
         const result = client.getStackedPerCycle(wallet_1, 1).result;
 
-        // check number of events 
+        // check number of events
         assertEquals(block.receipts[0].events.length, 1);
 
         // check events
@@ -1345,8 +1589,8 @@ describe('[CityCoin]', () => {
         // check total amount of tokens stacked in cycle
         const expectedTuple = {
           "amount-token": types.uint(200),
-          "to-return": types.uint(200)
-        }
+          "to-return": types.uint(200),
+        };
 
         assertEquals(result.expectSome().expectTuple(), expectedTuple);
       });
@@ -1359,15 +1603,15 @@ describe('[CityCoin]', () => {
 
         chain.mineBlock([
           tokenClient.ftMint(amount, wallet_1),
-          client.stackTokens(amount, startStacksHeight, 1, wallet_1)
+          client.stackTokens(amount, startStacksHeight, 1, wallet_1),
         ]);
 
         const result = client.getStackedPerCycle(wallet_1, 1).result;
-        
+
         const expectedTuple = {
           "amount-token": types.uint(amount),
-          "to-return": types.uint(amount)
-        }
+          "to-return": types.uint(amount),
+        };
 
         assertEquals(result.expectSome().expectTuple(), expectedTuple);
       });
@@ -1381,16 +1625,16 @@ describe('[CityCoin]', () => {
 
         chain.mineBlock([
           tokenClient.ftMint(amount, wallet_1),
-          client.stackTokens(amount, startStacksHeight, lockPeriod, wallet_1)
+          client.stackTokens(amount, startStacksHeight, lockPeriod, wallet_1),
         ]);
-        
-        for(let cycle = 1; cycle <= lockPeriod; cycle++) {
+
+        for (let cycle = 1; cycle <= lockPeriod; cycle++) {
           let result = client.getStackedPerCycle(wallet_1, cycle).result;
-          
+
           let expectedTuple = {
             "amount-token": types.uint(amount),
-            "to-return": types.uint(cycle==lockPeriod ? amount : 0)
-          }
+            "to-return": types.uint(cycle == lockPeriod ? amount : 0),
+          };
 
           let actualTuple = result.expectSome().expectTuple();
         }
@@ -1401,31 +1645,41 @@ describe('[CityCoin]', () => {
         // 1) for 17 cycles
         // 2) for 11 cycles
         // both locking periods ends at the same time
-        
+
         const amount_1 = 100;
         const amount_2 = 200;
         const totalAmount = amount_1 + amount_2;
         const lockPeriod_1 = 17;
         const lockPeriod_2 = 11;
         const startStacksHeight_1 = MINING_ACTIVATION_DELAY + 5;
-        const startStacksHeight_2 = MINING_ACTIVATION_DELAY + 5 + (REWARD_CYCLE_LENGTH * 6);
+        const startStacksHeight_2 =
+          MINING_ACTIVATION_DELAY + 5 + REWARD_CYCLE_LENGTH * 6;
 
         chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
 
         chain.mineBlock([
           tokenClient.ftMint(totalAmount, wallet_1),
-          client.stackTokens(amount_1, startStacksHeight_1, lockPeriod_1, wallet_1),
-          client.stackTokens(amount_2, startStacksHeight_2, lockPeriod_2, wallet_1)
+          client.stackTokens(
+            amount_1,
+            startStacksHeight_1,
+            lockPeriod_1,
+            wallet_1
+          ),
+          client.stackTokens(
+            amount_2,
+            startStacksHeight_2,
+            lockPeriod_2,
+            wallet_1
+          ),
         ]);
-        
-        
-        for(let cycle = 1; cycle <= lockPeriod_1; cycle++) {
+
+        for (let cycle = 1; cycle <= lockPeriod_1; cycle++) {
           let result = client.getStackedPerCycle(wallet_1, cycle).result;
-          
+
           let expectedTuple = {
-            "amount-token": types.uint(cycle <=6 ? amount_1 : totalAmount),
-            "to-return": types.uint(cycle==lockPeriod_1 ? totalAmount : 0)
-          }
+            "amount-token": types.uint(cycle <= 6 ? amount_1 : totalAmount),
+            "to-return": types.uint(cycle == lockPeriod_1 ? totalAmount : 0),
+          };
 
           let actualTuple = result.expectSome().expectTuple();
           assertEquals(actualTuple, expectedTuple);
@@ -1444,23 +1698,33 @@ describe('[CityCoin]', () => {
 
         chain.mineBlock([
           tokenClient.ftMint(totalAmount, wallet_1),
-          client.stackTokens(amount_1, startStacksHeight, lockPeriod_1, wallet_1),
-          client.stackTokens(amount_2, startStacksHeight, lockPeriod_2, wallet_1),
+          client.stackTokens(
+            amount_1,
+            startStacksHeight,
+            lockPeriod_1,
+            wallet_1
+          ),
+          client.stackTokens(
+            amount_2,
+            startStacksHeight,
+            lockPeriod_2,
+            wallet_1
+          ),
         ]);
 
-        for(let cycle = 1; cycle <= lockPeriod_2; cycle++) {
+        for (let cycle = 1; cycle <= lockPeriod_2; cycle++) {
           let result = client.getStackedPerCycle(wallet_1, cycle).result;
 
           let amountToken: number;
           let toReturn: number;
-          switch(cycle) {
+          switch (cycle) {
             case lockPeriod_1:
               amountToken = totalAmount;
               toReturn = amount_1;
               break;
 
             case lockPeriod_2:
-              amountToken = amount_2
+              amountToken = amount_2;
               toReturn = amount_2;
               break;
 
@@ -1468,11 +1732,11 @@ describe('[CityCoin]', () => {
               amountToken = amount_2;
               toReturn = 0;
           }
-          
+
           let expectedTuple = {
             "amount-token": types.uint(amountToken),
-            "to-return": types.uint(toReturn)
-          }
+            "to-return": types.uint(toReturn),
+          };
 
           let actualTuple = result.expectSome().expectTuple();
           assertEquals(actualTuple, expectedTuple);
@@ -1485,34 +1749,32 @@ describe('[CityCoin]', () => {
         setupCleanEnv();
         chain.mineBlock([
           client.setMiningActivationThreshold(1),
-          client.registerMiner(wallet_3)
+          client.registerMiner(wallet_3),
         ]);
         chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
       });
 
       it("throws ERR_CANNOT_MINE error when miner wants to commit 0 ustx", () => {
-        const block = chain.mineBlock([
-          client.mineTokens(0, wallet_1)
-        ]);
+        const block = chain.mineBlock([client.mineTokens(0, wallet_1)]);
 
         const receipt = block.receipts[0];
 
         receipt.result.expectErr().expectUint(ErrCode.ERR_CANNOT_MINE);
 
-        assertEquals(receipt.events.length, 0)
+        assertEquals(receipt.events.length, 0);
       });
 
       it("throws ERR_INSUFFICIENT_BALANCE error when miner wants to commit more than they have", () => {
         const block = chain.mineBlock([
-          client.mineTokens(wallet_1.balance + 1, wallet_1)
+          client.mineTokens(wallet_1.balance + 1, wallet_1),
         ]);
 
         const receipt = block.receipts[0];
 
         receipt.result.expectErr().expectUint(ErrCode.ERR_INSUFFICIENT_BALANCE);
 
-        assertEquals(receipt.events.length, 0)
-      })
+        assertEquals(receipt.events.length, 0);
+      });
 
       it("throws ERR_ALREADY_MINED error when miner wants mine twice at the same block", () => {
         const block = chain.mineBlock([
@@ -1523,25 +1785,21 @@ describe('[CityCoin]', () => {
         const receipt_err = block.receipts[1];
 
         receipt_err.result.expectErr().expectUint(ErrCode.ERR_ALREADY_MINED);
-        assertEquals(receipt_err.events.length, 0)
-      })
+        assertEquals(receipt_err.events.length, 0);
+      });
 
       it("succeeds and causes one stx_transfer_event to city-wallet if no stackers stacking", () => {
         const amount = 20000;
 
-        chain.mineBlock([
-          client.setCityWalletUnsafe(wallet_6)
-        ])
+        chain.mineBlock([client.setCityWalletUnsafe(wallet_6)]);
 
-        const block = chain.mineBlock([
-          client.mineTokens(amount, wallet_1)
-        ]);
+        const block = chain.mineBlock([client.mineTokens(amount, wallet_1)]);
 
         // check return value
         block.receipts[0].result.expectOk().expectBool(true);
 
         // check number of events
-        assertEquals(block.receipts[0].events.length, 1)
+        assertEquals(block.receipts[0].events.length, 1);
 
         // check event details
         block.receipts[0].events.expectSTXTransferEvent(
@@ -1552,31 +1810,26 @@ describe('[CityCoin]', () => {
       });
 
       // modified to two events since 70% to stackers, 30% to city
-      it("succeeds and causes two stx_transfer_events if stackers are stacking, one to stackers, one to city", () => {      
-
+      it("succeeds and causes two stx_transfer_events if stackers are stacking, one to stackers, one to city", () => {
         const amount = 20000;
         const startStacksHeight = MINING_ACTIVATION_DELAY + 5;
 
-        chain.mineBlock([
-          client.setCityWalletUnsafe(wallet_6)
-        ])
+        chain.mineBlock([client.setCityWalletUnsafe(wallet_6)]);
 
         chain.mineBlock([
           tokenClient.ftMint(100, wallet_1),
-          client.stackTokens(100, startStacksHeight, 1, wallet_1)
+          client.stackTokens(100, startStacksHeight, 1, wallet_1),
         ]);
 
-        chain.mineEmptyBlock(REWARD_CYCLE_LENGTH + 1)
+        chain.mineEmptyBlock(REWARD_CYCLE_LENGTH + 1);
 
-        const block = chain.mineBlock([
-          client.mineTokens(amount, wallet_1)
-        ]);
+        const block = chain.mineBlock([client.mineTokens(amount, wallet_1)]);
 
         // check return value
         block.receipts[0].result.expectOk().expectBool(true);
 
         // check number of events
-        assertEquals(block.receipts[0].events.length, 2)
+        assertEquals(block.receipts[0].events.length, 2);
 
         // check event details
         const events = block.receipts[0].events;
@@ -1593,24 +1846,20 @@ describe('[CityCoin]', () => {
       });
 
       it("emits print event with memo if supplied", () => {
-        chain.mineBlock([
-          client.setCityWalletUnsafe(wallet_6)
-        ]);
+        chain.mineBlock([client.setCityWalletUnsafe(wallet_6)]);
 
         const memo = new TextEncoder().encode("hello world");
 
-        const block = chain.mineBlock([
-          client.mineTokens(200, wallet_1, memo)
-        ]);
+        const block = chain.mineBlock([client.mineTokens(200, wallet_1, memo)]);
 
         const expectedEvent = {
-          type: "contract_event", 
+          type: "contract_event",
           contract_event: {
             contract_identifier: client.getContractAddress(),
             topic: "print",
-            value: types.some(types.buff(memo))
-          }
-        }
+            value: types.some(types.buff(memo)),
+          },
+        };
 
         const receipt = block.receipts[0];
         assertEquals(receipt.events.length, 2);
@@ -1623,14 +1872,14 @@ describe('[CityCoin]', () => {
         setupCleanEnv();
         chain.mineBlock([
           client.setMiningActivationThreshold(1),
-          client.registerMiner(wallet_3)
+          client.registerMiner(wallet_3),
         ]);
         chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
       });
 
       it("throws ERR_NOTHING_TO_REDEEM error when stacker didn't stack at all", () => {
         const block = chain.mineBlock([
-          client.claimStackingReward(0, wallet_1)
+          client.claimStackingReward(0, wallet_1),
         ]);
 
         const receipt = block.receipts[0];
@@ -1653,22 +1902,16 @@ describe('[CityCoin]', () => {
         chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
 
         // mine some tokens
-        chain.mineBlock([
-          client.mineTokens(50000, miner),
-        ]);
+        chain.mineBlock([client.mineTokens(50000, miner)]);
 
         // advance chain forward to jump into 2nd stacking cycle
         chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
 
         // claim first time
-        chain.mineBlock([
-          client.claimStackingReward(1, stacker),
-        ]);
+        chain.mineBlock([client.claimStackingReward(1, stacker)]);
 
         // try to claim second time
-        const block = chain.mineBlock([
-          client.claimStackingReward(1, stacker),
-        ]);
+        const block = chain.mineBlock([client.claimStackingReward(1, stacker)]);
 
         const receipt = block.receipts[0];
 
@@ -1676,10 +1919,9 @@ describe('[CityCoin]', () => {
         assertEquals(receipt.events.length, 0);
       });
 
-
       it("succeeds and causes one stx_transfer_event event and one ft_transfer event when user stacked for only one cycle", () => {
         const miner_1 = wallet_1;
-        const miner_2 = wallet_2
+        const miner_2 = wallet_2;
         const stacker = wallet_3;
         const minerCommitment = 2000;
         const stackedAmount = 5000;
@@ -1687,7 +1929,12 @@ describe('[CityCoin]', () => {
         // add tokens and stack them at the next cycle
         chain.mineBlock([
           tokenClient.ftMint(stackedAmount, stacker),
-          client.stackTokens(stackedAmount, MINING_ACTIVATION_DELAY + 5, 1, stacker),
+          client.stackTokens(
+            stackedAmount,
+            MINING_ACTIVATION_DELAY + 5,
+            1,
+            stacker
+          ),
         ]);
 
         // advance chain forward to jump into 1st stacking cycle
@@ -1696,15 +1943,13 @@ describe('[CityCoin]', () => {
         // mine some tokens
         chain.mineBlock([
           client.mineTokens(minerCommitment, miner_1),
-          client.mineTokens(minerCommitment, miner_2)
+          client.mineTokens(minerCommitment, miner_2),
         ]);
 
         // advance chain forward to jump into 2nd stacking cycle
         chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
 
-        const block = chain.mineBlock([
-          client.claimStackingReward(1, stacker)
-        ]);
+        const block = chain.mineBlock([client.claimStackingReward(1, stacker)]);
 
         const receipt = block.receipts[0];
 
@@ -1726,7 +1971,7 @@ describe('[CityCoin]', () => {
           stackedAmount,
           client.getContractAddress(),
           stacker.address,
-          'citycoins'
+          "citycoins"
         );
       });
 
@@ -1740,23 +1985,26 @@ describe('[CityCoin]', () => {
         // add tokens and stack them at the next cycle
         chain.mineBlock([
           tokenClient.ftMint(stackedAmount, stacker),
-          client.stackTokens(stackedAmount, MINING_ACTIVATION_DELAY + 5, lockedPeriod, stacker),
+          client.stackTokens(
+            stackedAmount,
+            MINING_ACTIVATION_DELAY + 5,
+            lockedPeriod,
+            stacker
+          ),
         ]);
-      
+
         // advance chain forward to jump into 1st stacking cycle
         chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
 
-        for(let cycle = 1; cycle <= lockedPeriod; cycle++) {
+        for (let cycle = 1; cycle <= lockedPeriod; cycle++) {
           // mine some tokens
-          chain.mineBlock([
-            client.mineTokens(minerCommitment, miner)
-          ]);
+          chain.mineBlock([client.mineTokens(minerCommitment, miner)]);
 
           // advance chain forward to jump into 2nd stacking cycle
           chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
-        
+
           let block = chain.mineBlock([
-            client.claimStackingReward(cycle, stacker)
+            client.claimStackingReward(cycle, stacker),
           ]);
 
           let receipt = block.receipts[0];
@@ -1771,14 +2019,14 @@ describe('[CityCoin]', () => {
             client.getContractAddress(),
             stacker.address
           );
-          
-          // check ft_transfer_event details 
-          if(cycle == lockedPeriod) {
+
+          // check ft_transfer_event details
+          if (cycle == lockedPeriod) {
             receipt.events.expectFungibleTokenTransferEvent(
               stackedAmount,
               client.getContractAddress(),
               stacker.address,
-              'citycoins'
+              "citycoins"
             );
           }
         }
@@ -1794,26 +2042,34 @@ describe('[CityCoin]', () => {
         // add tokens and stack them at the next cycle
         chain.mineBlock([
           tokenClient.ftMint(stackedAmount * 2, stacker),
-          client.stackTokens(stackedAmount, MINING_ACTIVATION_DELAY + 5, 1, stacker),
-          client.stackTokens(stackedAmount, MINING_ACTIVATION_DELAY + 5, lockedPeriod, stacker),
+          client.stackTokens(
+            stackedAmount,
+            MINING_ACTIVATION_DELAY + 5,
+            1,
+            stacker
+          ),
+          client.stackTokens(
+            stackedAmount,
+            MINING_ACTIVATION_DELAY + 5,
+            lockedPeriod,
+            stacker
+          ),
         ]);
 
         // advance chain forward to jump into 1st stacking cycle
         chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
 
-        for(let cycle = 1; cycle <= lockedPeriod; cycle++) {
-          chain.mineBlock([
-            client.mineTokens(minerCommitment, miner)
-          ]);
+        for (let cycle = 1; cycle <= lockedPeriod; cycle++) {
+          chain.mineBlock([client.mineTokens(minerCommitment, miner)]);
 
           chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
-        
+
           let block = chain.mineBlock([
-            client.claimStackingReward(cycle, stacker)
+            client.claimStackingReward(cycle, stacker),
           ]);
 
           let receipt = block.receipts[0];
-          let expectedEventsCount = (cycle == 1 || cycle == lockedPeriod) ? 2 : 1;
+          let expectedEventsCount = cycle == 1 || cycle == lockedPeriod ? 2 : 1;
 
           // check events count
           assertEquals(receipt.events.length, expectedEventsCount);
@@ -1824,14 +2080,14 @@ describe('[CityCoin]', () => {
             client.getContractAddress(),
             stacker.address
           );
-          
-          // check ft_transfer_event details 
-          if(cycle == 1 || cycle == lockedPeriod) {
+
+          // check ft_transfer_event details
+          if (cycle == 1 || cycle == lockedPeriod) {
             receipt.events.expectFungibleTokenTransferEvent(
               stackedAmount,
               client.getContractAddress(),
               stacker.address,
-              'citycoins'
+              "citycoins"
             );
           }
         }
@@ -1844,7 +2100,7 @@ describe('[CityCoin]', () => {
 
         const block = chain.mineBlock([
           client.setMiningActivationThreshold(1),
-          client.registerMiner(wallet_1)
+          client.registerMiner(wallet_1),
         ]);
 
         const receipt = block.receipts[0];
@@ -1856,20 +2112,18 @@ describe('[CityCoin]', () => {
       it("emits print event with memo if supplied", () => {
         setupCleanEnv();
 
-        const memo = new TextEncoder().encode("hello world")
+        const memo = new TextEncoder().encode("hello world");
 
-        const block = chain.mineBlock([
-          client.registerMiner(wallet_1, memo)
-        ]);
+        const block = chain.mineBlock([client.registerMiner(wallet_1, memo)]);
 
         const expectedEvent = {
-          type: "contract_event", 
+          type: "contract_event",
           contract_event: {
             contract_identifier: client.getContractAddress(),
             topic: "print",
-            value: types.some(types.buff(memo))
-          }
-        }
+            value: types.some(types.buff(memo)),
+          },
+        };
 
         const receipt = block.receipts[0];
         assertEquals(receipt.events[0], expectedEvent);
@@ -1877,10 +2131,8 @@ describe('[CityCoin]', () => {
 
       it("doesn't emit any events if memo is not supplied", () => {
         setupCleanEnv();
-        
-        const block = chain.mineBlock([
-          client.registerMiner(wallet_1)
-        ]);
+
+        const block = chain.mineBlock([client.registerMiner(wallet_1)]);
 
         const events = block.receipts[0].events;
 
@@ -1893,12 +2145,14 @@ describe('[CityCoin]', () => {
         const block = chain.mineBlock([
           client.setMiningActivationThreshold(1),
           client.registerMiner(wallet_1),
-          client.registerMiner(wallet_1)
+          client.registerMiner(wallet_1),
         ]);
 
         const receipt = block.receipts[2];
 
-        receipt.result.expectErr().expectUint(ErrCode.ERR_MINER_ALREADY_REGISTERED);
+        receipt.result
+          .expectErr()
+          .expectUint(ErrCode.ERR_MINER_ALREADY_REGISTERED);
         assertEquals(receipt.events.length, 0);
       });
 
@@ -1908,17 +2162,19 @@ describe('[CityCoin]', () => {
         const block = chain.mineBlock([
           client.setMiningActivationThreshold(1),
           client.registerMiner(wallet_1),
-          client.registerMiner(wallet_2)
+          client.registerMiner(wallet_2),
         ]);
 
         const receipt = block.receipts[2];
 
-        receipt.result.expectErr().expectUint(ErrCode.ERR_MINING_ACTIVATION_THRESHOLD_REACHED);
+        receipt.result
+          .expectErr()
+          .expectUint(ErrCode.ERR_MINING_ACTIVATION_THRESHOLD_REACHED);
         assertEquals(receipt.events.length, 0);
       });
     });
 
-      describe("set-city-wallet", () => {
+    describe("set-city-wallet", () => {
       beforeEach(() => {
         setupCleanEnv();
       });
@@ -1926,13 +2182,11 @@ describe('[CityCoin]', () => {
       it("throws ERR_UNAUTHORIZED error when called by non city wallet", () => {
         const cityWallet = wallet_1;
         const newCityWallet = wallet_3;
-        
-        chain.mineBlock([
-          client.setCityWalletUnsafe(cityWallet)
-        ]);
+
+        chain.mineBlock([client.setCityWalletUnsafe(cityWallet)]);
 
         const block = chain.mineBlock([
-          client.setCityWallet(newCityWallet, newCityWallet)
+          client.setCityWallet(newCityWallet, newCityWallet),
         ]);
 
         const result = block.receipts[0].result;
@@ -1942,35 +2196,26 @@ describe('[CityCoin]', () => {
 
       it("throws ERR_UNAUTHORIZED error when called via contract-call", () => {
         const cityWallet = wallet_1;
-        
-        chain.mineBlock([
-          client.setCityWalletUnsafe(cityWallet)
-        ]);
-      
+
+        chain.mineBlock([client.setCityWalletUnsafe(cityWallet)]);
+
         const block = chain.mineBlock([
-          Tx.contractCall(
-            'malicious',
-            'attack',
-            [],
-            wallet_1.address
-          )
+          Tx.contractCall("malicious", "attack", [], wallet_1.address),
         ]);
-      
+
         const result = block.receipts[0].result;
-      
+
         result.expectErr().expectUint(ErrCode.ERR_UNAUTHORIZED);
-      })
+      });
 
       it("succeeds and sets new city wallet, when called by previous city wallet", () => {
         const cityWallet = wallet_1;
         const newCityWallet = wallet_3;
 
-        chain.mineBlock([
-          client.setCityWalletUnsafe(cityWallet)
-        ]);
+        chain.mineBlock([client.setCityWalletUnsafe(cityWallet)]);
 
         const block = chain.mineBlock([
-          client.setCityWallet(newCityWallet, cityWallet)
+          client.setCityWallet(newCityWallet, cityWallet),
         ]);
 
         const blockResult = block.receipts[0].result;
@@ -1982,35 +2227,34 @@ describe('[CityCoin]', () => {
 
       it("succeeds and sets new city wallet, when called by contract that was a previous city wallet", () => {
         const cityWallet: Account = {
-          name: 'city_wallet',
-          address: 'ST1HTBVD3JG9C05J7HBJTHGR0GGW7KXW28M5JS8QE.city_wallet',
+          name: "city_wallet",
+          address: "ST1HTBVD3JG9C05J7HBJTHGR0GGW7KXW28M5JS8QE.city_wallet",
           balance: 0,
-          mnemonic: 'unknown',
-          derivation: 'unknown'
+          mnemonic: "unknown",
+          derivation: "unknown",
         };
         const newCityWallet = wallet_3;
 
-        
-        chain.mineBlock([
-          client.setCityWalletUnsafe(cityWallet)
-        ]);
+        chain.mineBlock([client.setCityWalletUnsafe(cityWallet)]);
 
-        client.getCityWallet().result.expectPrincipal('ST1HTBVD3JG9C05J7HBJTHGR0GGW7KXW28M5JS8QE.city_wallet');
+        client
+          .getCityWallet()
+          .result.expectPrincipal(
+            "ST1HTBVD3JG9C05J7HBJTHGR0GGW7KXW28M5JS8QE.city_wallet"
+          );
 
         const block = chain.mineBlock([
           Tx.contractCall(
-            'city_wallet', 
-            'set-city-wallet',
-            [
-              types.principal(newCityWallet.address)
-            ],
+            "city_wallet",
+            "set-city-wallet",
+            [types.principal(newCityWallet.address)],
             deployer.address
-            )
+          ),
         ]);
 
         const receipt = block.receipts[0];
         receipt.result.expectOk().expectBool(true);
-      })
+      });
     });
 
     describe("claim-mining-reward", () => {
@@ -2018,7 +2262,7 @@ describe('[CityCoin]', () => {
         setupCleanEnv();
         chain.mineBlock([
           client.setMiningActivationThreshold(1),
-          client.registerMiner(wallet_3)
+          client.registerMiner(wallet_3),
         ]);
         chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
       });
@@ -2026,27 +2270,25 @@ describe('[CityCoin]', () => {
       it("throws ERR_IMMATURE_TOKEN_REWARD if maturity window has not passed", () => {
         const miner = wallet_1;
 
-        let setupBlock = chain.mineBlock([
-          client.mineTokens(100, miner)
-        ]);
+        let setupBlock = chain.mineBlock([client.mineTokens(100, miner)]);
 
         chain.mineEmptyBlock(1);
 
         let block = chain.mineBlock([
-          client.claimMiningReward(setupBlock.height, miner)
+          client.claimMiningReward(setupBlock.height, miner),
         ]);
 
         let receipt = block.receipts[0];
 
-        receipt.result.expectErr().expectUint(ErrCode.ERR_IMMATURE_TOKEN_REWARD)
+        receipt.result
+          .expectErr()
+          .expectUint(ErrCode.ERR_IMMATURE_TOKEN_REWARD);
       });
 
       it("throws ERR_NO_WINNER if nobody mined at specific block", () => {
         chain.mineEmptyBlock(20000);
 
-        let block = chain.mineBlock([
-          client.claimMiningReward(5000, wallet_1)
-        ]);
+        let block = chain.mineBlock([client.claimMiningReward(5000, wallet_1)]);
 
         let receipt = block.receipts[0];
 
@@ -2062,36 +2304,36 @@ describe('[CityCoin]', () => {
           balance: 0,
           name: "contract",
           mnemonic: "",
-          derivation: ""
-        }
+          derivation: "",
+        };
 
         let setupBlock = chain.mineBlock([
           client.mineTokens(100, miner),
-          tokenClient.removeTrustedCaller(contract, deployer)
+          tokenClient.removeTrustedCaller(contract, deployer),
         ]);
 
         chain.mineEmptyBlock(TOKEN_REWARD_MATURITY);
 
         let block = chain.mineBlock([
-          client.claimMiningReward(setupBlock.height-1, miner),
+          client.claimMiningReward(setupBlock.height - 1, miner),
         ]);
 
         let receipt = block.receipts[0];
 
-        receipt.result.expectErr().expectUint(TokenClient.ErrCode.ERR_UNAUTHORIZED);
+        receipt.result
+          .expectErr()
+          .expectUint(TokenClient.ErrCode.ERR_UNAUTHORIZED);
       });
 
       it("succeeds and mint proper amount of citycoin tokens", () => {
         const miner = wallet_1;
 
-        let setupBlock = chain.mineBlock([
-          client.mineTokens(100, miner)
-        ]);
+        let setupBlock = chain.mineBlock([client.mineTokens(100, miner)]);
 
         chain.mineEmptyBlock(TOKEN_REWARD_MATURITY);
 
         let block = chain.mineBlock([
-          client.claimMiningReward(setupBlock.height-1, miner)
+          client.claimMiningReward(setupBlock.height - 1, miner),
         ]);
 
         let receipt = block.receipts[0];
