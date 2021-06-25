@@ -1421,7 +1421,54 @@ describe('[CityCoin]', () => {
           let actualTuple = result.expectSome().expectTuple();
           assertEquals(actualTuple, expectedTuple);
         }
-      })
+      });
+
+      it("remembers tokens should be returned at the end of each locking period when stacked multiple times", () => {
+        const amount_1 = 10000;
+        const amount_2 = 2500;
+        const totalAmount = amount_1 + amount_2;
+        const lockPeriod_1 = 1;
+        const lockPeriod_2 = 15;
+        const startStacksHeight = MINING_ACTIVATION_DELAY + 5;
+
+        chain.mineEmptyBlock(MINING_ACTIVATION_DELAY);
+
+        chain.mineBlock([
+          tokenClient.ftMint(totalAmount, wallet_1),
+          client.stackTokens(amount_1, startStacksHeight, lockPeriod_1, wallet_1),
+          client.stackTokens(amount_2, startStacksHeight, lockPeriod_2, wallet_1),
+        ]);
+
+        for(let cycle = 1; cycle <= lockPeriod_2; cycle++) {
+          let result = client.getStackedPerCycle(wallet_1, cycle).result;
+
+          let amountToken: number;
+          let toReturn: number;
+          switch(cycle) {
+            case lockPeriod_1:
+              amountToken = totalAmount;
+              toReturn = amount_1;
+              break;
+
+            case lockPeriod_2:
+              amountToken = amount_2
+              toReturn = amount_2;
+              break;
+
+            default:
+              amountToken = amount_2;
+              toReturn = 0;
+          }
+          
+          let expectedTuple = {
+            "amount-token": types.uint(amountToken),
+            "to-return": types.uint(toReturn)
+          }
+
+          let actualTuple = result.expectSome().expectTuple();
+          assertEquals(actualTuple, expectedTuple);
+        }
+      });
     });
 
     describe("mine-tokens()", () => {
