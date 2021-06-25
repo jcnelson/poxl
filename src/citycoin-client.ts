@@ -171,15 +171,10 @@ export class CityCoinClient extends Client {
     ]);
   }
 
-  getEntitledStackingReward(
-    stacker: Account,
-    targetRewardCycle: number,
-    currentBlockHeight: number
-  ): ReadOnlyFn {
-    return this.callReadOnlyFn("get-entitled-stacking-reward", [
+  getStackingReward(stacker: Account, targetRewardCycle: number): ReadOnlyFn {
+    return this.callReadOnlyFn("get-stacking-reward", [
       types.principal(stacker.address),
       types.uint(targetRewardCycle),
-      types.uint(currentBlockHeight),
     ]);
   }
 

@@ -835,17 +835,16 @@ describe("[CityCoin]", () => {
       });
     });
 
-    describe("get-entitled-stacking-reward()", () => {
+    describe("get-stacking-reward()", () => {
       it("returns u0 if before first reward cycle", () => {
         setupCleanEnv();
         const stacker = wallet_1;
         const targetRewardCycle = 0;
         const currentBlockHeight = 0;
 
-        const result = client.getEntitledStackingReward(
+        const result = client.getStackingReward(
           stacker,
-          targetRewardCycle,
-          currentBlockHeight
+          targetRewardCycle
         ).result;
 
         result.expectUint(0);
@@ -876,10 +875,9 @@ describe("[CityCoin]", () => {
         // mine some tokens
         chain.mineBlock([client.mineTokens(minerCommitment, miner)]);
 
-        const result = client.getEntitledStackingReward(
+        const result = client.getStackingReward(
           stacker,
-          targetRewardCycle,
-          block.block_height
+          targetRewardCycle
         ).result;
 
         result.expectUint(0);
@@ -914,10 +912,9 @@ describe("[CityCoin]", () => {
         // move chain forward to jump into 2nd stacking cycle
         const block = chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
 
-        const result = client.getEntitledStackingReward(
+        const result = client.getStackingReward(
           nonStacker,
-          targetRewardCycle,
-          block.block_height
+          targetRewardCycle
         ).result;
 
         result.expectUint(0);
@@ -956,10 +953,9 @@ describe("[CityCoin]", () => {
         // move chain forward to jump into 2nd stacking cycle
         const block = chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
 
-        const result = client.getEntitledStackingReward(
+        const result = client.getStackingReward(
           stacker,
-          targetRewardCycle,
-          block.block_height
+          targetRewardCycle
         ).result;
 
         result.expectUint(minerCommitment * SPLIT_STACKER_PERCENTAGE);
@@ -1008,15 +1004,13 @@ describe("[CityCoin]", () => {
         // move chain forward to jump into 2nd stacking cycle
         const block = chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
 
-        const resultOne = client.getEntitledStackingReward(
+        const resultOne = client.getStackingReward(
           stackerOne,
-          targetRewardCycle,
-          block.block_height
+          targetRewardCycle
         ).result;
-        const resultTwo = client.getEntitledStackingReward(
+        const resultTwo = client.getStackingReward(
           stackerTwo,
-          targetRewardCycle,
-          block.block_height
+          targetRewardCycle
         ).result;
 
         // (total-ustx * this-stackers-tokens) / total-tokens-stacked
@@ -1074,15 +1068,13 @@ describe("[CityCoin]", () => {
         // move chain forward to jump into 2nd stacking cycle
         const block = chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
 
-        const resultOne = client.getEntitledStackingReward(
+        const resultOne = client.getStackingReward(
           stackerOne,
-          targetRewardCycle,
-          block.block_height
+          targetRewardCycle
         ).result;
-        const resultTwo = client.getEntitledStackingReward(
+        const resultTwo = client.getStackingReward(
           stackerTwo,
-          targetRewardCycle,
-          block.block_height
+          targetRewardCycle
         ).result;
 
         // (total-ustx * this-stackers-tokens) / total-tokens-stacked
