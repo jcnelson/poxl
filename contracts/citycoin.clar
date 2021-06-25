@@ -594,6 +594,11 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
     ))
 )
 
+;; Getter for get-entitled-stacking-reward that ensures correct block height is specified
+(define-read-only (get-stacking-reward (stacker principal) (target-reward-cycle uint))
+    (get-entitled-stacking-reward stacker target-reward-cycle block-height)
+)
+
 ;; Determine how many uSTX a Stacker is allowed to claim, given the reward cycle they Stacked in and the current block height.
 ;; This method only returns a positive value if:
 ;; * The current block height is in a subsequent reward cycle
@@ -601,7 +606,7 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
 ;; * The Stacker locked up _enough_ tokens to get at least one uSTX.
 ;; It's possible to Stack tokens but not receive uSTX.  For example, no miners may have mined in this reward cycle.
 ;; As another example, you may have Stacked so few that you'd be entitled to less than 1 uSTX.
-(define-read-only (get-entitled-stacking-reward (stacker principal) (target-reward-cycle uint) (cur-block-height uint))
+(define-private (get-entitled-stacking-reward (stacker principal) (target-reward-cycle uint) (cur-block-height uint))
     (let (
         (stacked-this-cycle
             (get amount-token
@@ -955,7 +960,7 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
 (define-public (claim-stacking-reward (target-reward-cycle uint))
     (let (
         (stacker tx-sender)    
-        (entitled-ustx (get-entitled-stacking-reward tx-sender target-reward-cycle block-height))
+        (entitled-ustx (get-stacking-reward tx-sender target-reward-cycle))
         (to-return (get to-return (default-to { amount-token: u0, to-return: u0 } (get-stacked-per-cycle stacker target-reward-cycle))))
     )
     (begin
