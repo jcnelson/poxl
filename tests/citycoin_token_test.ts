@@ -6,7 +6,7 @@ import {
   assertEquals,
   beforeEach,
   describe,
-  it
+  it,
 } from "../deps.ts";
 
 import { TokenClient } from "../src/token-client.ts";
@@ -23,10 +23,12 @@ describe("[CityCoin token]", () => {
   function setupCleanEnv() {
     (Deno as any).core.ops();
     let transactions: Array<Tx> = [];
-    let result = JSON.parse((Deno as any).core.opSync("setup_chain", {
-      name: "citycoin",
-      transactions: transactions,
-    }));
+    let result = JSON.parse(
+      (Deno as any).core.opSync("setup_chain", {
+        name: "citycoin",
+        transactions: transactions,
+      })
+    );
 
     chain = new Chain(result["session_id"]);
     accounts = new Map();
