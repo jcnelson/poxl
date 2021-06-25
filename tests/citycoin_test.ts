@@ -1774,6 +1774,59 @@ describe('[CityCoin]', () => {
           }
         }
       });
+
+      it("it release stacked tokens only for last cycle in locked period if stacked multiple times", () => {
+        const miner = wallet_1;
+        const stacker = wallet_2;
+        const stackedAmount = 5000;
+        const minerCommitment = 100;
+        const lockedPeriod = 28;
+
+        // add tokens and stack them at the next cycle
+        chain.mineBlock([
+          tokenClient.ftMint(stackedAmount * 2, stacker),
+          client.stackTokens(stackedAmount, MINING_ACTIVATION_DELAY + 5, 1, stacker),
+          client.stackTokens(stackedAmount, MINING_ACTIVATION_DELAY + 5, lockedPeriod, stacker),
+        ]);
+
+        // advance chain forward to jump into 1st stacking cycle
+        chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
+
+        for(let cycle = 1; cycle <= lockedPeriod; cycle++) {
+          chain.mineBlock([
+            client.mineTokens(minerCommitment, miner)
+          ]);
+
+          chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
+        
+          let block = chain.mineBlock([
+            client.claimStackingReward(cycle, stacker)
+          ]);
+
+          let receipt = block.receipts[0];
+          let expectedEventsCount = (cycle == 1 || cycle == lockedPeriod) ? 2 : 1;
+
+          // check events count
+          assertEquals(receipt.events.length, expectedEventsCount);
+
+          // check stx_transfer_event details
+          receipt.events.expectSTXTransferEvent(
+            minerCommitment * SPLIT_STACKER_PERCENTAGE,
+            client.getContractAddress(),
+            stacker.address
+          );
+          
+          // check ft_transfer_event details 
+          if(cycle == 1 || cycle == lockedPeriod) {
+            receipt.events.expectFungibleTokenTransferEvent(
+              stackedAmount,
+              client.getContractAddress(),
+              stacker.address,
+              'citycoins'
+            );
+          }
+        }
+      });
     });
 
     describe("register-miner()", () => {
