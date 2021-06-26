@@ -14,9 +14,7 @@ interface Clients {
 
 function _it(
   name: string,
-  fn:
-    | ((chain: Chain, accounts: Accounts, clients: Clients) => void)
-    | ((chain: Chain, accounts: Accounts, clients: Clients) => Promise<void>)
+  fn: (chain: Chain, accounts: Accounts, clients: Clients) => void
 ) {
   it(name, async () => {
     let chain: Chain;

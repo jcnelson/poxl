@@ -4,6 +4,7 @@ import { Client } from "./client.ts";
 enum ErrCode {
   ERR_UNAUTHORIZED = 1000,
   ERR_CANDIDATE_ALREADY_EXISTS = 1001,
+  ERR_CANDIDATE_DO_NOT_EXISTS = 1002,
 }
 
 export class CoreClient extends Client {
@@ -44,5 +45,14 @@ export class CoreClient extends Client {
     return this.callReadOnlyFn("get-mining-candidate", [
       types.principal(contractAddress),
     ]);
+  }
+
+  voteOnMiningCandidate(contractAddress: string, sender: Account): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "vote-on-mining-candidate",
+      [types.principal(contractAddress)],
+      sender.address
+    );
   }
 }
