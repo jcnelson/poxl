@@ -3,6 +3,7 @@ import { Client } from "./client.ts";
 
 enum ErrCode {
   ERR_UNAUTHORIZED = 1000,
+  ERR_CANDIDATE_ALREADY_EXISTS = 1001,
 }
 
 export class CoreClient extends Client {
@@ -28,5 +29,20 @@ export class CoreClient extends Client {
 
   getCityWallet(): ReadOnlyFn {
     return this.callReadOnlyFn("get-city-wallet");
+  }
+
+  addMiningCandidate(contractAddress: string, sender: Account): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "add-mining-candidate",
+      [types.principal(contractAddress)],
+      sender.address
+    );
+  }
+
+  getMiningCandidate(contractAddress: string): ReadOnlyFn {
+    return this.callReadOnlyFn("get-mining-candidate", [
+      types.principal(contractAddress),
+    ]);
   }
 }
