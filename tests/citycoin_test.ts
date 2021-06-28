@@ -2236,7 +2236,7 @@ describe("[CityCoin]", () => {
 
         // add tokens and stack them in multiple cycles
         chain.mineBlock([
-          tokenClient.ftMint(stackedAmount * 2, stacker),
+          tokenClient.ftMint(stackedAmount * 3, stacker),
           client.stackTokens(
             stackedAmount,
             MINING_ACTIVATION_DELAY + 5,
@@ -2275,7 +2275,7 @@ describe("[CityCoin]", () => {
 
           if (cycle == firstLockedPeriod) {
             console.log(
-              `Cycle ${cycle} of ${firstLockedPeriod}: one FT_TRANSFER event`
+              `  Cycle ${cycle} of ${firstLockedPeriod}: one FT_TRANSFER event`
             );
             assertEquals(receipt.events.length, 1);
             // check ft_transfer_event details
@@ -2287,7 +2287,7 @@ describe("[CityCoin]", () => {
             );
           } else {
             console.log(
-              `Cycle ${cycle} of ${firstLockedPeriod}: ERR_NOTHING_TO_REDEEM u${ErrCode.ERR_NOTHING_TO_REDEEM}`
+              `  Cycle ${cycle} of ${firstLockedPeriod}: ERR_NOTHING_TO_REDEEM`
             );
             receipt.result
               .expectErr()
@@ -2328,7 +2328,7 @@ describe("[CityCoin]", () => {
 
           if (cycle == secondLockedPeriod) {
             console.log(
-              `Cycle ${cycle} of ${secondLockedPeriod}: one STX_TRANSFER event and one FT_TRANSFER event`
+              `  Cycle ${cycle} of ${secondLockedPeriod}: one STX_TRANSFER event and one FT_TRANSFER event`
             );
             receipt.events.expectFungibleTokenTransferEvent(
               stackedAmount,
@@ -2338,7 +2338,7 @@ describe("[CityCoin]", () => {
             );
           } else {
             console.log(
-              `Cycle ${cycle} of ${secondLockedPeriod}: one STX_TRANSFER event`
+              `  Cycle ${cycle} of ${secondLockedPeriod}: one STX_TRANSFER event`
             );
           }
         }
@@ -2357,13 +2357,12 @@ describe("[CityCoin]", () => {
           cycle++
         ) {
           if (
-            cycle != thirdLockedPeriod - firstLockedPeriod ||
-            cycle != thirdLockedPeriod - secondLockedPeriod
+            cycle == thirdLockedPeriod - firstLockedPeriod ||
+            cycle == thirdLockedPeriod - secondLockedPeriod
           ) {
             // skip mining at cycle 18 and 23
-            console.info(
-              chain.mineBlock([client.mineTokens(minerCommitment, miner)])
-            );
+          } else {
+            chain.mineBlock([client.mineTokens(minerCommitment, miner)]);
           }
 
           chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
@@ -2379,14 +2378,14 @@ describe("[CityCoin]", () => {
             cycle == thirdLockedPeriod - secondLockedPeriod
           ) {
             console.log(
-              `Cycle ${cycle} of ${thirdLockedPeriod}: ERR_NOTHING_TO_REDEEM u${ErrCode.ERR_NOTHING_TO_REDEEM}`
+              `  Cycle ${cycle} of ${thirdLockedPeriod}: ERR_NOTHING_TO_REDEEM`
             );
             receipt.result
               .expectErr()
               .expectUint(ErrCode.ERR_NOTHING_TO_REDEEM);
           } else if (cycle == thirdLockedPeriod) {
             console.log(
-              `Cycle ${cycle} of ${thirdLockedPeriod}: one STX_TRANSFER event and one FT_TRANSFER event`
+              `  Cycle ${cycle} of ${thirdLockedPeriod}: one STX_TRANSFER event and one FT_TRANSFER event`
             );
             // check events count
             assertEquals(receipt.events.length, 2);
@@ -2405,12 +2404,9 @@ describe("[CityCoin]", () => {
             );
           } else {
             console.log(
-              `Cycle ${cycle} of ${thirdLockedPeriod}: one STX_TRANSFER event`
+              `  Cycle ${cycle} of ${thirdLockedPeriod}: one STX_TRANSFER event`
             );
             // check events count
-            console.log(receipt.events.length);
-            console.log(receipt.result);
-
             assertEquals(receipt.events.length, 1);
 
             // check stx_transfer_event details
