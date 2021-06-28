@@ -2357,11 +2357,10 @@ describe("[CityCoin]", () => {
           cycle++
         ) {
           if (
-            cycle == thirdLockedPeriod - firstLockedPeriod ||
-            cycle == thirdLockedPeriod - secondLockedPeriod
+            cycle != thirdLockedPeriod - firstLockedPeriod &&
+            cycle != thirdLockedPeriod - secondLockedPeriod
           ) {
             // skip mining at cycle 18 and 23
-          } else {
             chain.mineBlock([client.mineTokens(minerCommitment, miner)]);
           }
 
