@@ -970,8 +970,7 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
         (asserts! (> cur-reward-cycle target-reward-cycle)
             (err ERR-CYCLE-NOT-COMPLETED))
 
-        ;; check that there are stacked tokens to redeem
-        (asserts! (> to-return u0)
+        (asserts! (or (> to-return u0) (> entitled-ustx u0))
             (err ERR-NOTHING-TO-REDEEM))
 
         ;; disable ability to claim again
@@ -980,9 +979,12 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
             { amount-token: u0, to-return: u0 }
         )
 
-        ;; send back stacked tokens
-        (try! (as-contract (contract-call? .token transfer to-return tx-sender stacker none)))
-        
+        ;; send back stacked tokens if user was eligible
+        (if (> to-return u0)
+            (try! (as-contract (contract-call? .token transfer to-return tx-sender stacker none)))
+            true
+        )
+
         ;; send back rewards if user was eligible
         (if (> entitled-ustx u0)
             (try! (as-contract (stx-transfer? entitled-ustx tx-sender stacker)))
