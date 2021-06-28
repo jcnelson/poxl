@@ -1917,7 +1917,7 @@ describe("[CityCoin]", () => {
         assertEquals(receipt.events.length, 0);
       });
 
-      it("throws ERR_NOTHING_TO_REDEEM error, when stacker want to redeem same reward second time", () => {
+      it("throws ERR_NOTHING_TO_REDEEM error when stacker want to redeem same reward second time", () => {
         const miner = wallet_1;
         const stacker = wallet_2;
 
@@ -1948,7 +1948,37 @@ describe("[CityCoin]", () => {
         assertEquals(receipt.events.length, 0);
       });
 
-      it("succeeds and causes one stx_transfer_event event and one ft_transfer event when user stacked for only one cycle", () => {
+      it("throws ERR_NOTHING_TO_REDEEM error when stacker stacked in a cycle but miners did not mine", () => {
+        const stacker = wallet_3;
+        const stackedAmount = 5000;
+
+        // add tokens and stack them for multiple cycles
+        chain.mineBlock([
+          tokenClient.ftMint(stackedAmount, stacker),
+          client.stackTokens(
+            stackedAmount,
+            MINING_ACTIVATION_DELAY + 5,
+            10,
+            stacker
+          ),
+        ]);
+
+        // advance chain forward to jump into 1st stacking cycle
+        chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
+
+        // skip mining tokens
+
+        // advance chain forward to jump into 2nd stacking cycle
+        chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
+
+        const block = chain.mineBlock([client.claimStackingReward(1, stacker)]);
+        const receipt = block.receipts[0];
+
+        // check return value
+        receipt.result.expectErr().expectUint(ErrCode.ERR_NOTHING_TO_REDEEM);
+      });
+
+      it("succeeds with mining active and causes one stx_transfer_event event and one ft_transfer event when user stacked for only one cycle", () => {
         const miner_1 = wallet_1;
         const miner_2 = wallet_2;
         const stacker = wallet_3;
@@ -2004,11 +2034,97 @@ describe("[CityCoin]", () => {
         );
       });
 
-      it("it releases stacked tokens only for last cycle in locked period", () => {
-        const miner = wallet_1;
+      it("succeeds with no miners and causes one ft_transfer event when user stacked for only one cycle", () => {
+        const stacker = wallet_3;
+        const stackedAmount = 5000;
+
+        // add tokens and stack them at the next cycle
+        chain.mineBlock([
+          tokenClient.ftMint(stackedAmount, stacker),
+          client.stackTokens(
+            stackedAmount,
+            MINING_ACTIVATION_DELAY + 5,
+            1,
+            stacker
+          ),
+        ]);
+
+        // advance chain forward to jump into 1st stacking cycle
+        chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
+
+        // advance chain forward to jump into 2nd stacking cycle
+        chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
+
+        const block = chain.mineBlock([client.claimStackingReward(1, stacker)]);
+
+        const receipt = block.receipts[0];
+
+        // check return value
+        receipt.result.expectOk().expectBool(true);
+
+        // check events count
+        assertEquals(receipt.events.length, 1);
+
+        // check ft_transfer_event details
+        receipt.events.expectFungibleTokenTransferEvent(
+          stackedAmount,
+          client.getContractAddress(),
+          stacker.address,
+          "citycoins"
+        );
+      });
+
+      it("succeeds with mining active and causes one stx_transfer_event when user stacked for multiple cycles and claimed before last cycle", () => {
+        const miner_1 = wallet_1;
+        const miner_2 = wallet_2;
+        const stacker = wallet_3;
+        const minerCommitment = 2000;
+        const stackedAmount = 5000;
+
+        // add tokens and stack them for multiple cycles
+        chain.mineBlock([
+          tokenClient.ftMint(stackedAmount, stacker),
+          client.stackTokens(
+            stackedAmount,
+            MINING_ACTIVATION_DELAY + 5,
+            10,
+            stacker
+          ),
+        ]);
+
+        // advance chain forward to jump into 1st stacking cycle
+        chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
+
+        // mine some tokens
+        chain.mineBlock([
+          client.mineTokens(minerCommitment, miner_1),
+          client.mineTokens(minerCommitment, miner_2),
+        ]);
+
+        // advance chain forward to jump into 2nd stacking cycle
+        chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
+
+        const block = chain.mineBlock([client.claimStackingReward(1, stacker)]);
+
+        const receipt = block.receipts[0];
+
+        // check return value
+        receipt.result.expectOk().expectBool(true);
+
+        // check events count
+        assertEquals(receipt.events.length, 1);
+
+        // check stx_transfer_event details
+        receipt.events.expectSTXTransferEvent(
+          minerCommitment * 2 * SPLIT_STACKER_PERCENTAGE,
+          client.getContractAddress(),
+          stacker.address
+        );
+      });
+
+      it("succeeds in releasing stacked tokens only for last cycle in locked period", () => {
         const stacker = wallet_2;
         const stackedAmount = 5000;
-        const minerCommitment = 100;
         const lockedPeriod = 28;
 
         // add tokens and stack them at the next cycle
@@ -2026,9 +2142,6 @@ describe("[CityCoin]", () => {
         chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
 
         for (let cycle = 1; cycle <= lockedPeriod; cycle++) {
-          // mine some tokens
-          chain.mineBlock([client.mineTokens(minerCommitment, miner)]);
-
           // advance chain forward to jump into 2nd stacking cycle
           chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
 
@@ -2037,18 +2150,12 @@ describe("[CityCoin]", () => {
           ]);
 
           let receipt = block.receipts[0];
-          let expectedEventsCount = cycle == lockedPeriod ? 2 : 0;
+          let expectedEventsCount = cycle == lockedPeriod ? 1 : 0;
 
           // check events count
           assertEquals(receipt.events.length, expectedEventsCount);
 
           if (cycle == lockedPeriod) {
-            // check stx_transfer_event details
-            receipt.events.expectSTXTransferEvent(
-              minerCommitment * SPLIT_STACKER_PERCENTAGE,
-              client.getContractAddress(),
-              stacker.address
-            );
             // check ft_transfer_event details
             receipt.events.expectFungibleTokenTransferEvent(
               stackedAmount,
@@ -2064,14 +2171,12 @@ describe("[CityCoin]", () => {
         }
       });
 
-      it("it releases stacked tokens only for last cycle in locked period if stacked multiple times", () => {
-        const miner = wallet_1;
+      it("succeeds in releasing stacked tokens only for last cycle in locked period if stacked multiple times", () => {
         const stacker = wallet_2;
         const stackedAmount = 5000;
-        const minerCommitment = 100;
         const lockedPeriod = 28;
 
-        // add tokens and stack them at the next cycle
+        // add tokens and stack them in multiple cycles
         chain.mineBlock([
           tokenClient.ftMint(stackedAmount * 2, stacker),
           client.stackTokens(
@@ -2092,8 +2197,6 @@ describe("[CityCoin]", () => {
         chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
 
         for (let cycle = 1; cycle <= lockedPeriod; cycle++) {
-          chain.mineBlock([client.mineTokens(minerCommitment, miner)]);
-
           chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
 
           let block = chain.mineBlock([
@@ -2101,7 +2204,7 @@ describe("[CityCoin]", () => {
           ]);
 
           let receipt = block.receipts[0];
-          let expectedEventsCount = cycle == 1 || cycle == lockedPeriod ? 2 : 0;
+          let expectedEventsCount = cycle == 1 || cycle == lockedPeriod ? 1 : 0;
 
           // check events count
           assertEquals(receipt.events.length, expectedEventsCount);
@@ -2113,12 +2216,6 @@ describe("[CityCoin]", () => {
               client.getContractAddress(),
               stacker.address,
               "citycoins"
-            );
-            // check stx_transfer_event details
-            receipt.events.expectSTXTransferEvent(
-              minerCommitment * SPLIT_STACKER_PERCENTAGE,
-              client.getContractAddress(),
-              stacker.address
             );
           } else {
             receipt.result
@@ -2209,7 +2306,7 @@ describe("[CityCoin]", () => {
       });
     });
 
-    describe("set-city-wallet", () => {
+    describe("set-city-wallet()", () => {
       beforeEach(() => {
         setupCleanEnv();
       });
@@ -2292,7 +2389,7 @@ describe("[CityCoin]", () => {
       });
     });
 
-    describe("claim-mining-reward", () => {
+    describe("claim-mining-reward()", () => {
       beforeEach(() => {
         setupCleanEnv();
         chain.mineBlock([
