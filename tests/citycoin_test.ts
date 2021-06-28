@@ -2224,6 +2224,204 @@ describe("[CityCoin]", () => {
           }
         }
       });
+
+      it("succeeds with correct number of events when stacker stacks for multiple cycles with or without miners active", () => {
+        const miner = wallet_1;
+        const stacker = wallet_2;
+        const stackedAmount = 5000;
+        const minerCommitment = 100;
+        const firstLockedPeriod = 5;
+        const secondLockedPeriod = 10;
+        const thirdLockedPeriod = 28;
+
+        // add tokens and stack them in multiple cycles
+        chain.mineBlock([
+          tokenClient.ftMint(stackedAmount * 2, stacker),
+          client.stackTokens(
+            stackedAmount,
+            MINING_ACTIVATION_DELAY + 5,
+            firstLockedPeriod,
+            stacker
+          ),
+          client.stackTokens(
+            stackedAmount,
+            MINING_ACTIVATION_DELAY + 5,
+            secondLockedPeriod,
+            stacker
+          ),
+          client.stackTokens(
+            stackedAmount,
+            MINING_ACTIVATION_DELAY + 5,
+            thirdLockedPeriod,
+            stacker
+          ),
+        ]);
+
+        // advance chain forward to jump into 1st stacking cycle
+        chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
+
+        // during first locking period, no miners are active
+        // cycles 1-4: ERR_NOTHING_TO_REDEEM
+        // cycle 5: returns stacked tokens
+
+        for (let cycle = 1; cycle <= firstLockedPeriod; cycle++) {
+          // advance into next reward cycle
+          chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
+
+          let block = chain.mineBlock([
+            client.claimStackingReward(cycle, stacker),
+          ]);
+          let receipt = block.receipts[0];
+
+          if (cycle == firstLockedPeriod) {
+            console.log(
+              `Cycle ${cycle} of ${firstLockedPeriod}: one FT_TRANSFER event`
+            );
+            assertEquals(receipt.events.length, 1);
+            // check ft_transfer_event details
+            receipt.events.expectFungibleTokenTransferEvent(
+              stackedAmount,
+              client.getContractAddress(),
+              stacker.address,
+              "citycoins"
+            );
+          } else {
+            console.log(
+              `Cycle ${cycle} of ${firstLockedPeriod}: ERR_NOTHING_TO_REDEEM u${ErrCode.ERR_NOTHING_TO_REDEEM}`
+            );
+            receipt.result
+              .expectErr()
+              .expectUint(ErrCode.ERR_NOTHING_TO_REDEEM);
+          }
+        }
+
+        // during second locking period, miners are active
+        // cycles 6-9: returns STX reward
+        // cycle 10: returns STX reward + stacked tokens
+
+        for (
+          let cycle = firstLockedPeriod + 1;
+          cycle <= secondLockedPeriod;
+          cycle++
+        ) {
+          chain.mineBlock([client.mineTokens(minerCommitment, miner)]);
+
+          chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
+
+          let block = chain.mineBlock([
+            client.claimStackingReward(cycle, stacker),
+          ]);
+
+          let receipt = block.receipts[0];
+
+          let expectedEventsCount = cycle == secondLockedPeriod ? 2 : 1;
+
+          // check events count
+          assertEquals(receipt.events.length, expectedEventsCount);
+
+          // check stx_transfer_event details
+          receipt.events.expectSTXTransferEvent(
+            minerCommitment * SPLIT_STACKER_PERCENTAGE,
+            client.getContractAddress(),
+            stacker.address
+          );
+
+          if (cycle == secondLockedPeriod) {
+            console.log(
+              `Cycle ${cycle} of ${secondLockedPeriod}: one STX_TRANSFER event and one FT_TRANSFER event`
+            );
+            receipt.events.expectFungibleTokenTransferEvent(
+              stackedAmount,
+              client.getContractAddress(),
+              stacker.address,
+              "citycoins"
+            );
+          } else {
+            console.log(
+              `Cycle ${cycle} of ${secondLockedPeriod}: one STX_TRANSFER event`
+            );
+          }
+        }
+
+        // during third locking period, miners are active in some blocks
+        // cycles 11-17: returns STX reward
+        // cycle 18: ERR_NOTHING_TO_REDEEM
+        // cycles 19-22: returns STX reward
+        // cycle 23: ERR_NOTHING_TO_REDEEM
+        // cycle 24-27: returns STX reward
+        // cycle 28: returns STX reward  + stacked tokens
+
+        for (
+          let cycle = secondLockedPeriod + 1;
+          cycle <= thirdLockedPeriod;
+          cycle++
+        ) {
+          if (
+            cycle != thirdLockedPeriod - firstLockedPeriod ||
+            cycle != thirdLockedPeriod - secondLockedPeriod
+          ) {
+            // skip mining at cycle 18 and 23
+            console.info(
+              chain.mineBlock([client.mineTokens(minerCommitment, miner)])
+            );
+          }
+
+          chain.mineEmptyBlock(REWARD_CYCLE_LENGTH);
+
+          let block = chain.mineBlock([
+            client.claimStackingReward(cycle, stacker),
+          ]);
+
+          let receipt = block.receipts[0];
+
+          if (
+            cycle == thirdLockedPeriod - firstLockedPeriod ||
+            cycle == thirdLockedPeriod - secondLockedPeriod
+          ) {
+            console.log(
+              `Cycle ${cycle} of ${thirdLockedPeriod}: ERR_NOTHING_TO_REDEEM u${ErrCode.ERR_NOTHING_TO_REDEEM}`
+            );
+            receipt.result
+              .expectErr()
+              .expectUint(ErrCode.ERR_NOTHING_TO_REDEEM);
+          } else if (cycle == thirdLockedPeriod) {
+            console.log(
+              `Cycle ${cycle} of ${thirdLockedPeriod}: one STX_TRANSFER event and one FT_TRANSFER event`
+            );
+            // check events count
+            assertEquals(receipt.events.length, 2);
+            // check stx_transfer_event details
+            receipt.events.expectSTXTransferEvent(
+              minerCommitment * SPLIT_STACKER_PERCENTAGE,
+              client.getContractAddress(),
+              stacker.address
+            );
+            // check ft_transfer_event details
+            receipt.events.expectFungibleTokenTransferEvent(
+              stackedAmount,
+              client.getContractAddress(),
+              stacker.address,
+              "citycoins"
+            );
+          } else {
+            console.log(
+              `Cycle ${cycle} of ${thirdLockedPeriod}: one STX_TRANSFER event`
+            );
+            // check events count
+            console.log(receipt.events.length);
+            console.log(receipt.result);
+
+            assertEquals(receipt.events.length, 1);
+
+            // check stx_transfer_event details
+            receipt.events.expectSTXTransferEvent(
+              minerCommitment * SPLIT_STACKER_PERCENTAGE,
+              client.getContractAddress(),
+              stacker.address
+            );
+          }
+        }
+      });
     });
 
     describe("register-miner()", () => {
