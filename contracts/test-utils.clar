@@ -1,7 +1,3 @@
-;; (define-private (fake-mine-tokens (fake-mine-tokens (who principal) (stacks-block-height uint) (amount-ustx uint)))
-;;   (contract-call? .citycoin fake-mine-tokens who stacks-block-height amount-ustx)
-;; )
-
 ;; used to quickly simulate presence of 31 miners
 (define-public (setup-31-miners (amount uint))
   (begin
