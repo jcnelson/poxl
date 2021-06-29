@@ -18,6 +18,10 @@ path = "contracts/clarinet/citycoin.clar"
 depends_on = ["token", "bitcoin-vrf"]
 
 # contracts listed below are used only in test suite
+[contracts.test-utils]
+path = "contracts/clarinet/test-utils.clar"
+depends_on = ["citycoin"]
+
 [contracts.malicious]
 path = "contracts/clarinet/malicious.clar"
 depends_on = ["citycoin"]
