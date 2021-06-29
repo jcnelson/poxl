@@ -1,9 +1,4 @@
-import {
-  Account,
-  ReadOnlyFn,
-  Tx,
-  types,
-} from "../deps.ts";
+import { Account, ReadOnlyFn, Tx, types } from "../deps.ts";
 import { Client } from "./client.ts";
 
 enum ErrCode {

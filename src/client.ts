@@ -1,8 +1,4 @@
-import {
-  Account,
-  Chain,
-  ReadOnlyFn,
-} from "../deps.ts";
+import { Account, Chain, ReadOnlyFn } from "../deps.ts";
 
 export class Client {
   contractName: string;
