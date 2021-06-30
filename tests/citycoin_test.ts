@@ -687,25 +687,25 @@ describe("[CityCoin]", () => {
         // fill miners list with 128 fake miners with commitment as low as 2uSTX
         chain.mineBlock([
           Tx.contractCall(
-            "citycoin",
+            "test-utils",
             "setup-32-miners-1",
             [],
             deployer.address
           ),
           Tx.contractCall(
-            "citycoin",
+            "test-utils",
             "setup-32-miners-2",
             [],
             deployer.address
           ),
           Tx.contractCall(
-            "citycoin",
+            "test-utils",
             "setup-32-miners-3",
             [],
             deployer.address
           ),
           Tx.contractCall(
-            "citycoin",
+            "test-utils",
             "setup-32-miners-4",
             [],
             deployer.address
