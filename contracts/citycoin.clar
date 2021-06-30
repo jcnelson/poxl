@@ -936,10 +936,3 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
     (ok (var-set city-wallet wallet-address))
   )
 )
-
-(define-public (fancy-new-function (random-num uint))
-    (begin
-        (print (* random-num u10))
-        (ok true)
-    )
-)
