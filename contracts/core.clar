@@ -1,15 +1,36 @@
 (define-constant CONTRACT_OWNER tx-sender)
 
 (define-constant ERR_UNAUTHORIZED u1000)
-(define-constant ERR_CANDIDATE_ALREADY_EXISTS u1001)
-(define-constant ERR_CANDIDATE_DO_NOT_EXISTS u1002)
+(define-constant ERR_CONTRACT_ALREADY_EXISTS u1001)
+(define-constant ERR_CONTRACT_DO_NOT_EXISTS u1002)
+(define-constant ERR_VOTE_HAS_ENDED u1003)
+
+;; TODO: think about replacing with buff
+(define-constant STATE_DEFINED u0)
+(define-constant STATE_STARTED u1)
+(define-constant STATE_LOCKED_IN u2)
+(define-constant STATE_ACTIVE u3)
+(define-constant STATE_FAILED u4)
+
+(define-constant DEFAULT_VOTING_PERIOD u200)
 
 
 (define-data-var cityWallet principal 'ST31270FK25JBGCRWYT7RNK90E946R8VW6SZYSQR6)
 
-(define-map MiningCandidates
-  { contract: principal }
+;; used as MiningContract ID and key in Voting map.
+(define-data-var miningContractNonce uint u0)
+
+(define-map MiningContracts
+  principal  ;; MiningContract address
+  { id: uint, state: uint }
+)
+
+(define-map MiningContractVotes
+  uint ;; MiningContract id
   {
+    startBH: uint,
+    endBH: uint,
+    miners: uint,
     votes: uint
   }
 )
@@ -19,7 +40,7 @@
   bool
 )
 
-(define-private (has-voted-on-candidate (contract principal))
+(define-read-only (has-voted-on-candidate (contract principal))
   (is-some (map-get? MiningCandidateVoters
     { contract: contract, voter: contract-caller }
   ))
@@ -36,31 +57,50 @@
   )
 )
 
-(define-read-only (get-mining-candidate (contract principal))
-  (map-get? MiningCandidates { contract: contract })
+(define-read-only (get-mining-contract (contract principal))
+  (map-get? MiningContracts contract)
 )
 
-(define-public (add-mining-candidate (contract principal))
-  (begin
+(define-public (add-mining-contract (contract principal))
+  (let
+    (
+      (newNonce (+ (var-get miningContractNonce) u1))
+    )
     (asserts! (is-authorized) (err ERR_UNAUTHORIZED))
-    (asserts! (is-none (get-mining-candidate contract)) (err ERR_CANDIDATE_ALREADY_EXISTS))
-    (ok (map-set MiningCandidates
-      { contract: contract }
-      { votes: u0 }
-    ))
+    (asserts! (is-none (get-mining-contract contract)) (err ERR_CONTRACT_ALREADY_EXISTS))
+    
+    (var-set miningContractNonce newNonce)
+    (map-set MiningContractVotes 
+      newNonce
+      {
+        startBH: (+ block-height u1),
+        endBH: (+ block-height u1 DEFAULT_VOTING_PERIOD),
+        miners: u0,
+        votes: u0
+      }
+    )
+    (ok (map-set MiningContracts contract { id: newNonce, state: STATE_DEFINED } ))
   )
 )
 
-(define-public (vote-on-mining-candidate (contract principal))
+(define-read-only (get-mining-contract-vote (contractId uint))
+  (map-get? MiningContractVotes contractId)
+)
+
+
+(define-public (vote-on-mining-contract (contract principal))
   (let
     (
-      (miningCandidate (unwrap! (get-mining-candidate contract) (err ERR_CANDIDATE_DO_NOT_EXISTS)))
+      (contractId (get id (unwrap! (get-mining-contract contract) (err ERR_CONTRACT_DO_NOT_EXISTS))))
+      (contractVote (unwrap-panic (get-mining-contract-vote contractId)))
     )
-    (asserts! (not (has-voted-on-candidate contract)) (ok false))
-    
-    (map-set MiningCandidates
-      { contract: contract }
-      { votes: (+ (get votes miningCandidate) u1) }
+    (asserts! (is-between block-height (get startBH contractVote) (get endBH contractVote)) 
+      (err ERR_VOTE_HAS_ENDED))
+    (asserts! (not (has-voted-on-candidate contract))
+      (ok false))
+    (map-set MiningContractVotes
+      contractId
+      (merge contractVote { votes: (+ (get votes contractVote) u1) } )
     )
     (map-set MiningCandidateVoters
       { contract: contract, voter: contract-caller }
@@ -75,4 +115,12 @@
 ;; --------------------
 (define-private (is-authorized)
   (is-eq contract-caller (var-get cityWallet))
+)
+
+;; helper function
+(define-read-only (is-between (value uint) (low uint) (high uint))
+  (and 
+    (>= value low)
+    (<= value high)
+  )
 )
