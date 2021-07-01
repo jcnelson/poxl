@@ -74,12 +74,14 @@ export class CoreClient extends Client {
   }
 
   createVoteTuple(
+    contractAddress: string,
     startBH: number,
     endBH: number,
     miners: number,
     votes: number
   ): object {
     return {
+      address: contractAddress,
       startBH: types.uint(startBH),
       endBH: types.uint(endBH),
       miners: types.uint(miners),

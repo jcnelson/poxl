@@ -28,6 +28,7 @@
 (define-map MiningContractVotes
   uint ;; MiningContract id
   {
+    address: principal,
     startBH: uint,
     endBH: uint,
     miners: uint,
@@ -57,36 +58,36 @@
   )
 )
 
-(define-read-only (get-mining-contract (contract principal))
-  (map-get? MiningContracts contract)
+(define-read-only (get-mining-contract (address principal))
+  (map-get? MiningContracts address)
 )
 
-(define-public (add-mining-contract (contract principal))
+(define-public (add-mining-contract (address principal))
   (let
     (
       (newNonce (+ (var-get miningContractNonce) u1))
     )
     (asserts! (is-authorized) (err ERR_UNAUTHORIZED))
-    (asserts! (is-none (get-mining-contract contract)) (err ERR_CONTRACT_ALREADY_EXISTS))
+    (asserts! (is-none (get-mining-contract address)) (err ERR_CONTRACT_ALREADY_EXISTS))
     
     (var-set miningContractNonce newNonce)
     (map-set MiningContractVotes 
       newNonce
       {
+        address: address,
         startBH: (+ block-height u1),
         endBH: (+ block-height u1 DEFAULT_VOTING_PERIOD),
         miners: u0,
         votes: u0
       }
     )
-    (ok (map-set MiningContracts contract { id: newNonce, state: STATE_DEFINED } ))
+    (ok (map-set MiningContracts address { id: newNonce, state: STATE_DEFINED } ))
   )
 )
 
 (define-read-only (get-mining-contract-vote (contractId uint))
   (map-get? MiningContractVotes contractId)
 )
-
 
 (define-public (vote-on-mining-contract (contract principal))
   (let
@@ -109,8 +110,6 @@
     (ok true)
   )
 )
-
-
 
 ;; --------------------
 (define-private (is-authorized)

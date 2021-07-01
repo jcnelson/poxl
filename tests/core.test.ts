@@ -186,6 +186,7 @@ describe("[CityCoin Core]", () => {
         .expectTuple();
 
       const expectedVote = clients.core.createVoteTuple(
+        miningContractAddress,
         addContractBlock.height,
         addContractBlock.height + CoreClient.DEFAULT_VOTING_PERIOD,
         0,
@@ -221,6 +222,7 @@ describe("[CityCoin Core]", () => {
         .expectTuple();
 
       const expectedVote = clients.core.createVoteTuple(
+        miningContractAddress,
         addContractBlock.height,
         addContractBlock.height + CoreClient.DEFAULT_VOTING_PERIOD,
         0,
@@ -256,6 +258,7 @@ describe("[CityCoin Core]", () => {
         .expectTuple();
 
       const expectedVote = clients.core.createVoteTuple(
+        miningContractAddress,
         addContractBlock.height,
         addContractBlock.height + CoreClient.DEFAULT_VOTING_PERIOD,
         0,
