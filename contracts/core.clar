@@ -4,6 +4,7 @@
 (define-constant ERR_CONTRACT_ALREADY_EXISTS u1001)
 (define-constant ERR_CONTRACT_DO_NOT_EXISTS u1002)
 (define-constant ERR_VOTE_HAS_ENDED u1003)
+(define-constant ERR_VOTE_STILL_IN_PROGRESS u1004)
 
 ;; TODO: think about replacing with buff
 (define-constant STATE_DEFINED u0)
@@ -101,11 +102,57 @@
       (ok false))
     (map-set MiningContractVotes
       contractId
-      (merge contractVote { votes: (+ (get votes contractVote) u1) } )
+      (merge contractVote 
+        { 
+          votes: (+ (get votes contractVote) u1),
+          miners: (+ (get miners contractVote) u1)
+        } 
+      )
     )
     (map-set MiningCandidateVoters
       { contract: contract, voter: contract-caller }
       true
+    )
+    (ok true)
+  )
+)
+
+(define-public (close-mining-contract-vote (contractId uint))
+  (let
+    (
+      (contractVote (unwrap! (get-mining-contract-vote contractId) (err ERR_CONTRACT_DO_NOT_EXISTS)))
+    )
+    (asserts! (> block-height (get endBH contractVote)) (err ERR_VOTE_STILL_IN_PROGRESS))
+    
+    (if (or (is-eq u0 (get miners contractVote))
+        (< (/ (* (get votes contractVote) u100) (get miners contractVote)) u90))
+      (fail-contract (get address contractVote))
+      (activate-contract (get address contractVote))
+    )
+  )
+)
+
+(define-private (activate-contract (address principal))
+  (let
+    (
+      (contract (unwrap! (get-mining-contract address) (err ERR_CONTRACT_DO_NOT_EXISTS)))
+    )
+    (map-set MiningContracts 
+      address 
+      (merge contract { state: STATE_ACTIVE })
+    )
+    (ok true)
+  )
+)
+
+(define-private (fail-contract (address principal))
+  (let
+    (
+      (contract (unwrap! (get-mining-contract address) (err ERR_CONTRACT_DO_NOT_EXISTS)))
+    )
+    (map-set MiningContracts 
+      address 
+      (merge contract { state: STATE_FAILED })
     )
     (ok true)
   )

@@ -189,7 +189,7 @@ describe("[CityCoin Core]", () => {
         miningContractAddress,
         addContractBlock.height,
         addContractBlock.height + CoreClient.DEFAULT_VOTING_PERIOD,
-        0,
+        1,
         1
       );
 
@@ -225,7 +225,7 @@ describe("[CityCoin Core]", () => {
         miningContractAddress,
         addContractBlock.height,
         addContractBlock.height + CoreClient.DEFAULT_VOTING_PERIOD,
-        0,
+        2,
         2
       );
 
@@ -261,11 +261,117 @@ describe("[CityCoin Core]", () => {
         miningContractAddress,
         addContractBlock.height,
         addContractBlock.height + CoreClient.DEFAULT_VOTING_PERIOD,
-        0,
+        1,
         1
       );
 
       assertEquals(contractVote, expectedVote);
+    });
+  });
+
+  describe("end-mining-contract-vote", () => {
+    it("throws ERR_CONTRACT_DO_NOT_EXISTS if called for unknown contract", (chain, accounts, clients) => {
+      // arrange
+      const sender = accounts.get("wallet_1")!;
+
+      // act
+      const receipt = chain.mineBlock([
+        clients.core.closeMiningContractVote(1, sender),
+      ]).receipts[0];
+
+      // assert
+      receipt.result
+        .expectErr()
+        .expectUint(CoreClient.ErrCode.ERR_CONTRACT_DO_NOT_EXISTS);
+    });
+
+    it("throws ERR_VOTE_STILL_IN_PROGRESS if called before voting period ends", (chain, accounts, clients) => {
+      // arrange
+      const sender = accounts.get("wallet_1")!;
+      const cityWallet = accounts.get("wallet_2")!;
+      const miningContractAddress = clients.citycoin.getContractAddress();
+      chain.mineBlock([
+        clients.core.unsafeSetCityWallet(cityWallet),
+        clients.core.addMiningContract(miningContractAddress, cityWallet),
+      ]);
+
+      // act
+      const receipt = chain.mineBlock([
+        clients.core.closeMiningContractVote(1, sender),
+      ]).receipts[0];
+
+      // assert
+      receipt.result
+        .expectErr()
+        .expectUint(CoreClient.ErrCode.ERR_VOTE_STILL_IN_PROGRESS);
+    });
+
+    it("set STATE_FAIL state if contract didn't get at least 90% votes", (chain, accounts, clients) => {
+      // arrange
+      const sender = accounts.get("wallet_1")!;
+      const cityWallet = accounts.get("wallet_2")!;
+      const miningContractAddress = clients.citycoin.getContractAddress();
+      const addContractBlock = chain.mineBlock([
+        clients.core.unsafeSetCityWallet(cityWallet),
+        clients.core.addMiningContract(miningContractAddress, cityWallet),
+      ]);
+      chain.mineEmptyBlockUntil(
+        addContractBlock.height + CoreClient.DEFAULT_VOTING_PERIOD + 1
+      );
+
+      // act
+      const receipt = chain.mineBlock([
+        clients.core.closeMiningContractVote(1, sender),
+      ]).receipts[0];
+      const contract = clients.core
+        .getMiningContract(miningContractAddress)
+        .result.expectSome()
+        .expectTuple();
+
+      // assert
+      receipt.result.expectOk().expectBool(true);
+
+      const expectedContract = {
+        id: types.uint(1),
+        state: types.uint(CoreClient.ContractState.STATE_FAILED),
+      };
+      assertEquals(contract, expectedContract);
+    });
+
+    it("set STATE_ACTIVE state if contract got at least 90% votes", (chain, accounts, clients) => {
+      // arrange
+      const sender = accounts.get("wallet_1")!;
+      const cityWallet = accounts.get("wallet_2")!;
+      const voter = accounts.get("wallet_3")!;
+      const miningContractAddress = clients.citycoin.getContractAddress();
+      const addContractBlock = chain.mineBlock([
+        clients.core.unsafeSetCityWallet(cityWallet),
+        clients.core.addMiningContract(miningContractAddress, cityWallet),
+      ]);
+      chain.mineBlock([
+        clients.core.voteOnMiningContract(miningContractAddress, voter),
+      ]);
+      chain.mineEmptyBlockUntil(
+        addContractBlock.height + CoreClient.DEFAULT_VOTING_PERIOD + 1
+      );
+
+      // act
+      const receipt = chain.mineBlock([
+        clients.core.closeMiningContractVote(1, sender),
+      ]).receipts[0];
+      const contract = clients.core
+        .getMiningContract(miningContractAddress)
+        .result.expectSome()
+        .expectTuple();
+
+      // assert
+      receipt.result.expectOk().expectBool(true);
+
+      const expectedContract = {
+        id: types.uint(1),
+        state: types.uint(CoreClient.ContractState.STATE_ACTIVE),
+      };
+      assertEquals(contract, expectedContract);
     });
   });
 });

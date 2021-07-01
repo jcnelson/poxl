@@ -6,6 +6,7 @@ enum ErrCode {
   ERR_CONTRACT_ALREADY_EXISTS = 1001,
   ERR_CONTRACT_DO_NOT_EXISTS = 1002,
   ERR_VOTE_HAS_ENDED = 1003,
+  ERR_VOTE_STILL_IN_PROGRESS = 1004,
 }
 
 enum ContractState {
@@ -69,6 +70,15 @@ export class CoreClient extends Client {
       this.contractName,
       "vote-on-mining-contract",
       [types.principal(contractAddress)],
+      sender.address
+    );
+  }
+
+  closeMiningContractVote(contractId: number, sender: Account) {
+    return Tx.contractCall(
+      this.contractName,
+      "close-mining-contract-vote",
+      [types.uint(contractId)],
       sender.address
     );
   }
