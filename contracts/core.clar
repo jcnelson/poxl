@@ -16,8 +16,9 @@
 (define-constant DEFAULT_VOTING_PERIOD u200)
 (define-constant DEFAULT_VOTING_THRESHOLD u90)
 
-
 (define-data-var cityWallet principal 'ST31270FK25JBGCRWYT7RNK90E946R8VW6SZYSQR6)
+
+(define-data-var activeMiningContract principal .citycoin)
 
 ;; used as MiningContract ID and key in Voting map.
 (define-data-var miningContractNonce uint u0)
@@ -70,6 +71,7 @@
       (newNonce (+ (var-get miningContractNonce) u1))
     )
     (asserts! (is-authorized) (err ERR_UNAUTHORIZED))
+    (asserts! (not (is-eq (get-active-mining-contract) address)) (err ERR_CONTRACT_ALREADY_EXISTS))
     (asserts! (is-none (get-mining-contract address)) (err ERR_CONTRACT_ALREADY_EXISTS))
     
     (var-set miningContractNonce newNonce)
@@ -133,11 +135,16 @@
   )
 )
 
+(define-read-only (get-active-mining-contract)
+  (var-get activeMiningContract)
+)
+
 (define-private (activate-contract (address principal))
   (let
     (
       (contract (unwrap! (get-mining-contract address) (err ERR_CONTRACT_DO_NOT_EXISTS)))
     )
+    (var-set activeMiningContract address)
     (map-set MiningContracts 
       address 
       (merge contract { state: STATE_ACTIVE })

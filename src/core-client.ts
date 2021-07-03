@@ -83,6 +83,10 @@ export class CoreClient extends Client {
     );
   }
 
+  getActiveMiningContract(): ReadOnlyFn {
+    return this.callReadOnlyFn("get-active-mining-contract");
+  }
+
   createVoteTuple(
     contractAddress: string,
     startBH: number,

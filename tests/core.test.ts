@@ -1,4 +1,4 @@
-import { assertEquals, describe, types } from "../deps.ts";
+import { assertEquals, describe, Tx, types } from "../deps.ts";
 import { CoreClient } from "../src/core-client.ts";
 import { it } from "../src/testutil.ts";
 
@@ -60,8 +60,11 @@ describe("[CityCoin Core]", () => {
     it("successfully saves contract with state = STATE_DEFINED when called by city wallet", (chain, accounts, clients) => {
       // arrange
       const cityWallet = accounts.get("wallet_1")!;
-      const miningContractAddress = clients.citycoin.getContractAddress();
-      chain.mineBlock([clients.core.unsafeSetCityWallet(cityWallet)]);
+      const miningContractAddress = `${cityWallet.address}.mock`;
+      chain.mineBlock([
+        clients.core.unsafeSetCityWallet(cityWallet),
+        Tx.deployContract("mock", "", cityWallet.address),
+      ]);
 
       // act
       const receipt = chain.mineBlock([
@@ -100,6 +103,23 @@ describe("[CityCoin Core]", () => {
         .expectErr()
         .expectUint(CoreClient.ErrCode.ERR_CONTRACT_ALREADY_EXISTS);
     });
+
+    it("throws ERR_CONTRACT_ALREADY_EXISTS when trying to add contract that's been set as active during deployment", (chain, accounts, clients) => {
+      // arrange
+      const cityWallet = accounts.get("wallet_1")!;
+      const miningContractAddress = clients.citycoin.getContractAddress();
+      chain.mineBlock([clients.core.unsafeSetCityWallet(cityWallet)]);
+
+      // act
+      const receipt = chain.mineBlock([
+        clients.core.addMiningContract(miningContractAddress, cityWallet),
+      ]).receipts[0];
+
+      // assert
+      receipt.result
+        .expectErr()
+        .expectUint(CoreClient.ErrCode.ERR_CONTRACT_ALREADY_EXISTS);
+    });
   });
 
   describe("vote-on-mining-contract()", () => {
@@ -123,8 +143,11 @@ describe("[CityCoin Core]", () => {
       // arrange
       const voter = accounts.get("wallet_1")!;
       const cityWallet = accounts.get("wallet_2")!;
-      const miningContractAddress = clients.citycoin.getContractAddress();
-      chain.mineBlock([clients.core.unsafeSetCityWallet(cityWallet)]);
+      const miningContractAddress = `${cityWallet.address}.mock`;
+      chain.mineBlock([
+        clients.core.unsafeSetCityWallet(cityWallet),
+        Tx.deployContract("mock", "", cityWallet.address),
+      ]);
 
       //act
       const receipt = chain.mineBlock([
@@ -142,9 +165,10 @@ describe("[CityCoin Core]", () => {
       // arrange
       const voter = accounts.get("wallet_1")!;
       const cityWallet = accounts.get("wallet_2")!;
-      const miningContractAddress = clients.citycoin.getContractAddress();
+      const miningContractAddress = `${cityWallet.address}.mock`;
       const addContractBlock = chain.mineBlock([
         clients.core.unsafeSetCityWallet(cityWallet),
+        Tx.deployContract("mock", "", cityWallet.address),
         clients.core.addMiningContract(miningContractAddress, cityWallet),
       ]);
       //move chain tip to the first block after voting period
@@ -167,9 +191,10 @@ describe("[CityCoin Core]", () => {
       // arrange
       const voter = accounts.get("wallet_1")!;
       const cityWallet = accounts.get("wallet_2")!;
-      const miningContractAddress = clients.citycoin.getContractAddress();
+      const miningContractAddress = `${cityWallet.address}.mock`;
       const addContractBlock = chain.mineBlock([
         clients.core.unsafeSetCityWallet(cityWallet),
+        Tx.deployContract("mock", "", cityWallet.address),
         clients.core.addMiningContract(miningContractAddress, cityWallet),
       ]);
 
@@ -201,9 +226,10 @@ describe("[CityCoin Core]", () => {
       const voter1 = accounts.get("wallet_1")!;
       const voter2 = accounts.get("wallet_2")!;
       const cityWallet = accounts.get("wallet_3")!;
-      const miningContractAddress = clients.citycoin.getContractAddress();
+      const miningContractAddress = `${cityWallet.address}.mock`;
       const addContractBlock = chain.mineBlock([
         clients.core.unsafeSetCityWallet(cityWallet),
+        Tx.deployContract("mock", "", cityWallet.address),
         clients.core.addMiningContract(miningContractAddress, cityWallet),
       ]);
 
@@ -236,9 +262,10 @@ describe("[CityCoin Core]", () => {
       // arrange
       const voter = accounts.get("wallet_1")!;
       const cityWallet = accounts.get("wallet_2")!;
-      const miningContractAddress = clients.citycoin.getContractAddress();
+      const miningContractAddress = `${cityWallet.address}.mock`;
       const addContractBlock = chain.mineBlock([
         clients.core.unsafeSetCityWallet(cityWallet),
+        Tx.deployContract("mock", "", cityWallet.address),
         clients.core.addMiningContract(miningContractAddress, cityWallet),
       ]);
       chain.mineBlock([
@@ -289,9 +316,10 @@ describe("[CityCoin Core]", () => {
       // arrange
       const sender = accounts.get("wallet_1")!;
       const cityWallet = accounts.get("wallet_2")!;
-      const miningContractAddress = clients.citycoin.getContractAddress();
+      const miningContractAddress = `${cityWallet.address}.mock`;
       chain.mineBlock([
         clients.core.unsafeSetCityWallet(cityWallet),
+        Tx.deployContract("mock", "", cityWallet.address),
         clients.core.addMiningContract(miningContractAddress, cityWallet),
       ]);
 
@@ -310,9 +338,10 @@ describe("[CityCoin Core]", () => {
       // arrange
       const sender = accounts.get("wallet_1")!;
       const cityWallet = accounts.get("wallet_2")!;
-      const miningContractAddress = clients.citycoin.getContractAddress();
+      const miningContractAddress = `${cityWallet.address}.mock`;
       const addContractBlock = chain.mineBlock([
         clients.core.unsafeSetCityWallet(cityWallet),
+        Tx.deployContract("mock", "", cityWallet.address),
         clients.core.addMiningContract(miningContractAddress, cityWallet),
       ]);
       chain.mineEmptyBlockUntil(
@@ -343,9 +372,10 @@ describe("[CityCoin Core]", () => {
       const sender = accounts.get("wallet_1")!;
       const cityWallet = accounts.get("wallet_2")!;
       const voter = accounts.get("wallet_3")!;
-      const miningContractAddress = clients.citycoin.getContractAddress();
+      const miningContractAddress = `${cityWallet.address}.mock`;
       const addContractBlock = chain.mineBlock([
         clients.core.unsafeSetCityWallet(cityWallet),
+        Tx.deployContract("mock", "", cityWallet.address),
         clients.core.addMiningContract(miningContractAddress, cityWallet),
       ]);
       chain.mineBlock([
@@ -372,6 +402,10 @@ describe("[CityCoin Core]", () => {
         state: types.uint(CoreClient.ContractState.STATE_ACTIVE),
       };
       assertEquals(contract, expectedContract);
+
+      clients.core
+        .getActiveMiningContract()
+        .result.expectPrincipal(miningContractAddress);
     });
   });
 });
