@@ -14,6 +14,7 @@
 (define-constant STATE_FAILED u4)
 
 (define-constant DEFAULT_VOTING_PERIOD u200)
+(define-constant DEFAULT_VOTING_THRESHOLD u90)
 
 
 (define-data-var cityWallet principal 'ST31270FK25JBGCRWYT7RNK90E946R8VW6SZYSQR6)
@@ -125,7 +126,7 @@
     (asserts! (> block-height (get endBH contractVote)) (err ERR_VOTE_STILL_IN_PROGRESS))
     
     (if (or (is-eq u0 (get miners contractVote))
-        (< (/ (* (get votes contractVote) u100) (get miners contractVote)) u90))
+        (< (/ (* (get votes contractVote) u100) (get miners contractVote)) DEFAULT_VOTING_THRESHOLD))
       (fail-contract (get address contractVote))
       (activate-contract (get address contractVote))
     )
