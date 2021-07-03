@@ -36,7 +36,7 @@ Jason Schrader, Devops Engineer at [Freehold](https://joinfreehold.com)
 
 Shawn Mahon, Angel Investor, Marketing and Growth contributor
 
-[@asteriabtc](https://github.com/asteriabtc), founder of [Syvita Guild](https://github.com/syvita), `PGP | A303 BCFE CA30 DDF9`
+[Asteria](https://github.com/SyAsteria), founder of [Syvita Guild](https://github.com/syvita)  `PGP | A303 BCFE CA30 DDF9`
 
 ### Executive Summary
 
