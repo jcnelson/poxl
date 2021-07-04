@@ -6,6 +6,7 @@
     "test": "npm run clarinet:test",
     "test:native": "./tests/run-tests.sh",
     "test:token": "npm run clarinet:prepare && clarinet test ./tests/citycoin_token_test.ts",
+    "test:core": "npm run clarinet:prepare && clarinet test ./tests/core.test.ts",
     "test:all": "npm test; npm run test:native",
     "clarinet:check": "npm run clarinet:prepare && clarinet check",
     "clarinet:test": "npm run clarinet:prepare && clarinet test",
