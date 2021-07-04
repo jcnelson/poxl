@@ -5,6 +5,10 @@ name = "citycoin"
 path = "contracts/clarinet/sip-10-ft-standard.clar"
 depends_on = []
 
+[contracts.citycoin-lifecycle-trait]
+path = "contracts/clarinet/citycoin-lifecycle-trait.clar"
+depends_on = []
+
 [contracts.token]
 path = "contracts/clarinet/token.clar"
 depends_on = ["sip-010-trait"]
@@ -15,7 +19,7 @@ depends_on = []
 
 [contracts.citycoin]
 path = "contracts/clarinet/citycoin.clar"
-depends_on = ["token", "bitcoin-vrf"]
+depends_on = ["citycoin-lifecycle-trait", "token", "bitcoin-vrf"]
 
 # contracts listed below are used only in test suite
 [contracts.test-utils]

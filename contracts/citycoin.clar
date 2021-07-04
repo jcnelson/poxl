@@ -936,3 +936,32 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
     (ok (var-set city-wallet wallet-address))
   )
 )
+
+;;
+;; LIFECYCLE TRAIT FUNCTIONS
+;;
+(impl-trait .citycoin-lifecycle-trait.lifecycle-trait)
+
+(define-constant CONTRACT_VERSION "0.0.1")
+(define-data-var startupBH (optional uint) none)
+(define-data-var shutdownBH (optional uint) none)
+(define-data-var state uint u0)
+
+(define-read-only (get-contract-info)
+    (ok {
+        version: CONTRACT_VERSION,
+        startupBH: (var-get startupBH),
+        shutdownBH: (var-get shutdownBH),
+        state: (var-get state)
+    })
+)
+
+(define-public (startup (height (optional uint)))
+    ;; not implemented
+    (ok (var-set startupBH height))
+)
+
+(define-public (shutdown (height (optional uint)))
+    ;; not implemented
+    (ok (var-set shutdownBH height))
+)
