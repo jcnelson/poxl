@@ -258,7 +258,7 @@ describe("[CityCoin Core]", () => {
       assertEquals(contractVote, expectedVote);
     });
 
-    it("ignores multiple votes from the same voter", (chain, accounts, clients) => {
+    it("throws ERR_ALREADY_VOTED when voter submit multiple votes", (chain, accounts, clients) => {
       // arrange
       const voter = accounts.get("wallet_1")!;
       const cityWallet = accounts.get("wallet_2")!;
@@ -278,7 +278,9 @@ describe("[CityCoin Core]", () => {
       ]).receipts[0];
 
       // assert
-      receipt.result.expectOk().expectBool(false);
+      receipt.result
+        .expectErr()
+        .expectUint(CoreClient.ErrCode.ERR_ALREADY_VOTED);
       const contractVote = clients.core
         .getMiningContractVote(1)
         .result.expectSome()

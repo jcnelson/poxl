@@ -5,6 +5,7 @@
 (define-constant ERR_CONTRACT_DOES_NOT_EXIST u1002)
 (define-constant ERR_VOTE_HAS_ENDED u1003)
 (define-constant ERR_VOTE_STILL_IN_PROGRESS u1004)
+(define-constant ERR_ALREADY_VOTED u1005)
 
 ;; TODO: think about replacing with buff
 (define-constant STATE_DEFINED u0)
@@ -102,7 +103,7 @@
     (asserts! (is-between block-height (get startBH contractVote) (get endBH contractVote)) 
       (err ERR_VOTE_HAS_ENDED))
     (asserts! (not (has-voted-on-candidate contract))
-      (ok false))
+      (err ERR_ALREADY_VOTED))
     (map-set MiningContractVotes
       contractId
       (merge contractVote 
