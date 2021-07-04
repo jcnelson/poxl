@@ -123,7 +123,7 @@ describe("[CityCoin Core]", () => {
   });
 
   describe("vote-on-mining-contract()", () => {
-    it("throws ERR_CONTRACT_DO_NOT_EXISTS when voted on unknown contract", (chain, accounts, clients) => {
+    it("throws ERR_CONTRACT_DOES_NOT_EXIST when voted on unknown contract", (chain, accounts, clients) => {
       // arrange
       const voter = accounts.get("wallet_1")!;
       const miningContractAddress = clients.citycoin.getContractAddress();
@@ -136,7 +136,7 @@ describe("[CityCoin Core]", () => {
       // assert
       receipt.result
         .expectErr()
-        .expectUint(CoreClient.ErrCode.ERR_CONTRACT_DO_NOT_EXISTS);
+        .expectUint(CoreClient.ErrCode.ERR_CONTRACT_DOES_NOT_EXIST);
     });
 
     it("throws ERR_VOTE_HAS_ENDED when voted in the same block as adding contract", (chain, accounts, clients) => {
@@ -297,7 +297,7 @@ describe("[CityCoin Core]", () => {
   });
 
   describe("end-mining-contract-vote", () => {
-    it("throws ERR_CONTRACT_DO_NOT_EXISTS if called for unknown contract", (chain, accounts, clients) => {
+    it("throws ERR_CONTRACT_DOES_NOT_EXIST if called for unknown contract", (chain, accounts, clients) => {
       // arrange
       const sender = accounts.get("wallet_1")!;
 
@@ -309,7 +309,7 @@ describe("[CityCoin Core]", () => {
       // assert
       receipt.result
         .expectErr()
-        .expectUint(CoreClient.ErrCode.ERR_CONTRACT_DO_NOT_EXISTS);
+        .expectUint(CoreClient.ErrCode.ERR_CONTRACT_DOES_NOT_EXIST);
     });
 
     it("throws ERR_VOTE_STILL_IN_PROGRESS if called before voting period ends", (chain, accounts, clients) => {

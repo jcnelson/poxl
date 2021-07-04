@@ -2,7 +2,7 @@
 
 (define-constant ERR_UNAUTHORIZED u1000)
 (define-constant ERR_CONTRACT_ALREADY_EXISTS u1001)
-(define-constant ERR_CONTRACT_DO_NOT_EXISTS u1002)
+(define-constant ERR_CONTRACT_DOES_NOT_EXIST u1002)
 (define-constant ERR_VOTE_HAS_ENDED u1003)
 (define-constant ERR_VOTE_STILL_IN_PROGRESS u1004)
 
@@ -96,7 +96,7 @@
 (define-public (vote-on-mining-contract (contract principal))
   (let
     (
-      (contractId (get id (unwrap! (get-mining-contract contract) (err ERR_CONTRACT_DO_NOT_EXISTS))))
+      (contractId (get id (unwrap! (get-mining-contract contract) (err ERR_CONTRACT_DOES_NOT_EXIST))))
       (contractVote (unwrap-panic (get-mining-contract-vote contractId)))
     )
     (asserts! (is-between block-height (get startBH contractVote) (get endBH contractVote)) 
@@ -123,7 +123,7 @@
 (define-public (close-mining-contract-vote (contractId uint))
   (let
     (
-      (contractVote (unwrap! (get-mining-contract-vote contractId) (err ERR_CONTRACT_DO_NOT_EXISTS)))
+      (contractVote (unwrap! (get-mining-contract-vote contractId) (err ERR_CONTRACT_DOES_NOT_EXIST)))
     )
     (asserts! (> block-height (get endBH contractVote)) (err ERR_VOTE_STILL_IN_PROGRESS))
     
@@ -142,7 +142,7 @@
 (define-private (activate-contract (address principal))
   (let
     (
-      (contract (unwrap! (get-mining-contract address) (err ERR_CONTRACT_DO_NOT_EXISTS)))
+      (contract (unwrap! (get-mining-contract address) (err ERR_CONTRACT_DOES_NOT_EXIST)))
     )
     (var-set activeMiningContract address)
     (map-set MiningContracts 
@@ -156,7 +156,7 @@
 (define-private (fail-contract (address principal))
   (let
     (
-      (contract (unwrap! (get-mining-contract address) (err ERR_CONTRACT_DO_NOT_EXISTS)))
+      (contract (unwrap! (get-mining-contract address) (err ERR_CONTRACT_DOES_NOT_EXIST)))
     )
     (map-set MiningContracts 
       address 
