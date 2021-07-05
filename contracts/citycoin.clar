@@ -306,7 +306,7 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
             (ok
                 (let (
                     (token-info (get-tokens-per-cycle cur-reward-cycle))
-                    (total-ft-supply (unwrap-panic (contract-call? .token get-total-supply)))
+                    (total-ft-supply (unwrap-panic (contract-call? .citycoin-token get-total-supply)))
                     (total-ustx-supply (stx-get-balance (as-contract tx-sender)))
                 )
                 {
@@ -326,7 +326,7 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
 
 ;; Produce the new tokens for the given claimant, who won the tokens at the given Stacks block height.
 (define-private (mint-coinbase (recipient principal) (stacks-block-ht uint))
-    (contract-call? .token mint (get-coinbase-amount stacks-block-ht) recipient)
+    (contract-call? .citycoin-token mint (get-coinbase-amount stacks-block-ht) recipient)
 )
 
 ;; Getter to obtain the list of miners and uSTX commitments at a given Stacks block height,
@@ -523,7 +523,7 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
         (asserts! (> amount-tokens u0)
             (err ERR-CANNOT-STACK))
 
-        (asserts! (<= amount-tokens (unwrap-panic (contract-call? .token get-balance stacker)))
+        (asserts! (<= amount-tokens (unwrap-panic (contract-call? .citycoin-token get-balance stacker)))
             (err ERR-INSUFFICIENT-BALANCE))
 
         (ok true)
@@ -750,7 +750,7 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
     (begin
         (try! (can-stack-tokens tx-sender amount-tokens block-height start-stacks-ht lock-period))
 
-        (unwrap! (contract-call? .token transfer amount-tokens tx-sender (as-contract tx-sender) none)
+        (unwrap! (contract-call? .citycoin-token transfer amount-tokens tx-sender (as-contract tx-sender) none)
             (err ERR-INSUFFICIENT-BALANCE))
 
         (fold stack-tokens-closure REWARD-CYCLE-INDEXES
@@ -904,7 +904,7 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
 
         ;; send back stacked tokens if user was eligible
         (if (> to-return u0)
-            (try! (as-contract (contract-call? .token transfer to-return tx-sender stacker none)))
+            (try! (as-contract (contract-call? .citycoin-token transfer to-return tx-sender stacker none)))
             true
         )
 

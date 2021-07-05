@@ -63,7 +63,7 @@ describe("[CityCoin]", () => {
     wallet_6 = accounts.get("wallet_6")!;
 
     client = new CityCoinClient("citycoin", chain, deployer);
-    tokenClient = new TokenClient("token", chain, deployer);
+    tokenClient = new TokenClient("citycoin-token", chain, deployer);
   }
 
   describe("Read Only:", () => {
