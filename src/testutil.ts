@@ -41,8 +41,8 @@ function _it(
     deployer = accounts.get("deployer")!;
     clients = {
       citycoin: new CityCoinClient("citycoin", chain, deployer),
-      token: new TokenClient("token", chain, deployer),
-      core: new CoreClient("core", chain, deployer),
+      token: new TokenClient("citycoin-token", chain, deployer),
+      core: new CoreClient("citycoin-core", chain, deployer),
     };
 
     await fn(chain, accounts, clients);
