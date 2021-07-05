@@ -34,6 +34,6 @@ depends_on = ["citycoin"]
 path = "contracts/clarinet/malicious.clar"
 depends_on = ["citycoin"]
 
-[contracts.city_wallet]
-path = "contracts/clarinet/city_wallet.clar"
+[contracts.test-city-wallet]
+path = "contracts/clarinet/test-city-wallet.clar"
 depends_on = ["citycoin"]
