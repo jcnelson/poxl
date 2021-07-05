@@ -13,13 +13,13 @@ depends_on = []
 path = "contracts/clarinet/token.clar"
 depends_on = ["sip-010-trait"]
 
-[contracts.bitcoin-vrf]
-path = "contracts/clarinet/bitcoin-vrf.clar"
+[contracts.citycoin-vrf]
+path = "contracts/clarinet/citycoin-vrf.clar"
 depends_on = []
 
 [contracts.citycoin]
 path = "contracts/clarinet/citycoin.clar"
-depends_on = ["citycoin-lifecycle-trait", "token", "bitcoin-vrf"]
+depends_on = ["citycoin-lifecycle-trait", "token", "citycoin-vrf"]
 
 [contracts.core]
 path = "contracts/clarinet/core.clar"

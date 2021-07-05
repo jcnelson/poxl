@@ -864,7 +864,7 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
 ;; this method.
 (define-public (claim-mining-reward (mined-stacks-block-ht uint))
     (let (
-        (random-sample (unwrap! (contract-call? .bitcoin-vrf get-random-uint-at-block (+ mined-stacks-block-ht (var-get token-reward-maturity)))
+        (random-sample (unwrap! (contract-call? .citycoin-vrf get-random-uint-at-block (+ mined-stacks-block-ht (var-get token-reward-maturity)))
                         (err ERR-IMMATURE-TOKEN-REWARD)))
         (block (unwrap! (map-get? mined-blocks { stacks-block-height: mined-stacks-block-ht })
                         (err ERR-NO-WINNER)))
