@@ -15,7 +15,7 @@ depends_on = ["sip-010-trait"]
 
 [contracts.citycoin-vrf]
 path = "contracts/clarinet/citycoin-vrf.clar"
-depends_on = []
+depends_on = ["citycoin-lifecycle-trait"]
 
 [contracts.citycoin]
 path = "contracts/clarinet/citycoin.clar"
