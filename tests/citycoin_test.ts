@@ -2525,7 +2525,7 @@ describe("[CityCoin]", () => {
         chain.mineBlock([client.setCityWalletUnsafe(cityWallet)]);
 
         const block = chain.mineBlock([
-          Tx.contractCall("malicious", "attack", [], wallet_1.address),
+          Tx.contractCall("test-malicious", "attack", [], wallet_1.address),
         ]);
 
         const result = block.receipts[0].result;
