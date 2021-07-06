@@ -40,7 +40,8 @@
     startBH: uint,
     endBH: uint,
     miners: uint,
-    votes: uint
+    votes: uint,
+    isOpen: bool
   }
 )
 
@@ -90,7 +91,8 @@
         startBH: (+ block-height u1),
         endBH: (+ block-height u1 DEFAULT_VOTING_PERIOD),
         miners: u0,
-        votes: u0
+        votes: u0,
+        isOpen: true
       }
     )
     (map-set Contracts address { proposalId: newNonce, name: name } )
@@ -137,10 +139,13 @@
       (proposal (unwrap! (get-proposal id) (err ERR_PROPOSAL_DOES_NOT_EXIST)))
     )
     (asserts! (> block-height (get endBH proposal)) (err ERR_VOTE_STILL_IN_PROGRESS))
-    
+    ;; close proposal
+    (map-set Proposals id (merge proposal { isOpen: false }))
+
+    ;; 
     (if (or (is-eq u0 (get miners proposal))
         (< (/ (* (get votes proposal) u100) (get miners proposal)) DEFAULT_VOTING_THRESHOLD))
-      (fail-contract (get address proposal))
+      (ok true) ;; the vote has been lost
       (activate-contract (get address proposal))
     )
   )
@@ -164,15 +169,6 @@
   )
 )
 
-(define-private (fail-contract (address principal))
-  (let
-    (
-      (contract (unwrap! (get-contract address) (err ERR_CONTRACT_DOES_NOT_EXIST)))
-    )
-    ;; do nothing...
-    (ok true)
-  )
-)
 
 ;; --------------------
 (define-private (is-authorized)

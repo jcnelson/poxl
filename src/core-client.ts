@@ -19,6 +19,15 @@ enum ContractState {
   STATE_FAILED = 4,
 }
 
+interface ProposalTuple {
+  contractAddress: string;
+  startBH: number;
+  endBH: number;
+  miners: number;
+  votes: number;
+  isOpen: boolean;
+}
+
 export class CoreClient extends Client {
   static readonly ErrCode = ErrCode;
   static readonly ContractState = ContractState;
@@ -62,9 +71,7 @@ export class CoreClient extends Client {
   }
 
   getProposal(id: number): ReadOnlyFn {
-    return this.callReadOnlyFn("get-proposal", [
-      types.uint(id),
-    ]);
+    return this.callReadOnlyFn("get-proposal", [types.uint(id)]);
   }
 
   voteOnContract(contractAddress: string, sender: Account): Tx {
@@ -89,19 +96,14 @@ export class CoreClient extends Client {
     return this.callReadOnlyFn("get-active-contract", [types.ascii(name)]);
   }
 
-  createProposalTuple(
-    contractAddress: string,
-    startBH: number,
-    endBH: number,
-    miners: number,
-    votes: number
-  ): object {
+  createProposalTuple(data: ProposalTuple): object {
     return {
-      address: contractAddress,
-      startBH: types.uint(startBH),
-      endBH: types.uint(endBH),
-      miners: types.uint(miners),
-      votes: types.uint(votes),
+      address: data.contractAddress,
+      startBH: types.uint(data.startBH),
+      endBH: types.uint(data.endBH),
+      miners: types.uint(data.miners),
+      votes: types.uint(data.votes),
+      isOpen: types.bool(data.isOpen),
     };
   }
 }

@@ -239,13 +239,14 @@ describe("[CityCoin Core]", () => {
         .result.expectSome()
         .expectTuple();
 
-      const expectedProposal = clients.core.createProposalTuple(
-        miningContractAddress,
-        addContractBlock.height,
-        addContractBlock.height + CoreClient.DEFAULT_VOTING_PERIOD,
-        1,
-        1
-      );
+      const expectedProposal = clients.core.createProposalTuple({
+        contractAddress: miningContractAddress,
+        startBH: addContractBlock.height,
+        endBH: addContractBlock.height + CoreClient.DEFAULT_VOTING_PERIOD,
+        miners: 1,
+        votes: 1,
+        isOpen: true,
+      });
 
       assertEquals(proposal, expectedProposal);
     });
@@ -280,13 +281,14 @@ describe("[CityCoin Core]", () => {
         .result.expectSome()
         .expectTuple();
 
-      const expectedProposal = clients.core.createProposalTuple(
-        miningContractAddress,
-        addContractBlock.height,
-        addContractBlock.height + CoreClient.DEFAULT_VOTING_PERIOD,
-        2,
-        2
-      );
+      const expectedProposal = clients.core.createProposalTuple({
+        contractAddress: miningContractAddress,
+        startBH: addContractBlock.height,
+        endBH: addContractBlock.height + CoreClient.DEFAULT_VOTING_PERIOD,
+        miners: 2,
+        votes: 2,
+        isOpen: true,
+      });
 
       assertEquals(proposal, expectedProposal);
     });
@@ -323,13 +325,14 @@ describe("[CityCoin Core]", () => {
         .result.expectSome()
         .expectTuple();
 
-      const expectedProposal = clients.core.createProposalTuple(
-        miningContractAddress,
-        addContractBlock.height,
-        addContractBlock.height + CoreClient.DEFAULT_VOTING_PERIOD,
-        1,
-        1
-      );
+      const expectedProposal = clients.core.createProposalTuple({
+        contractAddress: miningContractAddress,
+        startBH: addContractBlock.height,
+        endBH: addContractBlock.height + CoreClient.DEFAULT_VOTING_PERIOD,
+        miners: 1,
+        votes: 1,
+        isOpen: true,
+      });
 
       assertEquals(proposal, expectedProposal);
     });
@@ -375,7 +378,7 @@ describe("[CityCoin Core]", () => {
         .expectUint(CoreClient.ErrCode.ERR_VOTE_STILL_IN_PROGRESS);
     });
 
-    it("mark proposal as not active if it has less than 90% votes", (chain, accounts, clients) => {
+    it("mark proposal as closed if it has less than 90% votes", (chain, accounts, clients) => {
       // arrange
       const sender = accounts.get("wallet_1")!;
       const cityWallet = accounts.get("wallet_2")!;
@@ -403,11 +406,22 @@ describe("[CityCoin Core]", () => {
 
       // assert
       receipt.result.expectOk().expectBool(true);
-
-      // TODO
+      const expectedProposal = clients.core.createProposalTuple({
+        contractAddress: miningContractAddress,
+        startBH: addContractBlock.height,
+        endBH: addContractBlock.height + CoreClient.DEFAULT_VOTING_PERIOD,
+        miners: 0,
+        votes: 0,
+        isOpen: false,
+      });
+      const proposal = clients.core
+        .getProposal(1)
+        .result.expectSome()
+        .expectTuple();
+      assertEquals(proposal, expectedProposal);
     });
 
-    it("set contract as active if its proposal got at least 90% votes", (chain, accounts, clients) => {
+    it("mark contract as active and proposal as closed if got at least 90% votes", (chain, accounts, clients) => {
       // arrange
       const sender = accounts.get("wallet_1")!;
       const cityWallet = accounts.get("wallet_2")!;
@@ -444,6 +458,20 @@ describe("[CityCoin Core]", () => {
         .getActiveContract("mining")
         .result.expectSome()
         .expectPrincipal(miningContractAddress);
+
+      const expectedProposal = clients.core.createProposalTuple({
+        contractAddress: miningContractAddress,
+        startBH: addContractBlock.height,
+        endBH: addContractBlock.height + CoreClient.DEFAULT_VOTING_PERIOD,
+        miners: 1,
+        votes: 1,
+        isOpen: false,
+      });
+      const proposal = clients.core
+        .getProposal(1)
+        .result.expectSome()
+        .expectTuple();
+      assertEquals(proposal, expectedProposal);
     });
   });
 });
