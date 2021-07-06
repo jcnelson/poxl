@@ -54,6 +54,10 @@
   bool
 )
 
+(define-read-only (get-proposals-count)
+  (var-get proposalNonce)
+)
+
 (define-read-only (has-voted-on-proposal (proposalId uint) (who principal))
   (is-some (map-get? ProposalVoters
     { proposalId: proposalId, voter: who }
