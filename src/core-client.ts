@@ -8,6 +8,7 @@ enum ErrCode {
   ERR_VOTE_HAS_ENDED = 1003,
   ERR_VOTE_STILL_IN_PROGRESS = 1004,
   ERR_ALREADY_VOTED = 1005,
+  ERR_PROPOSAL_DOES_NOT_EXIST = 1006,
 }
 
 enum ContractState {
@@ -45,50 +46,50 @@ export class CoreClient extends Client {
     return this.callReadOnlyFn("get-city-wallet");
   }
 
-  addMiningContract(contractAddress: string, sender: Account): Tx {
+  proposeContract(name: string, contractAddress: string, sender: Account): Tx {
     return Tx.contractCall(
       this.contractName,
-      "add-mining-contract",
-      [types.principal(contractAddress)],
+      "propose-contract",
+      [types.ascii(name), types.principal(contractAddress)],
       sender.address
     );
   }
 
-  getMiningContract(contractAddress: string): ReadOnlyFn {
-    return this.callReadOnlyFn("get-mining-contract", [
+  getContract(contractAddress: string): ReadOnlyFn {
+    return this.callReadOnlyFn("get-contract", [
       types.principal(contractAddress),
     ]);
   }
 
-  getMiningContractVote(contractId: number): ReadOnlyFn {
-    return this.callReadOnlyFn("get-mining-contract-vote", [
-      types.uint(contractId),
+  getProposal(id: number): ReadOnlyFn {
+    return this.callReadOnlyFn("get-proposal", [
+      types.uint(id),
     ]);
   }
 
-  voteOnMiningContract(contractAddress: string, sender: Account): Tx {
+  voteOnContract(contractAddress: string, sender: Account): Tx {
     return Tx.contractCall(
       this.contractName,
-      "vote-on-mining-contract",
+      "vote-on-contract",
       [types.principal(contractAddress)],
       sender.address
     );
   }
 
-  closeMiningContractVote(contractId: number, sender: Account) {
+  closeProposal(id: number, sender: Account) {
     return Tx.contractCall(
       this.contractName,
-      "close-mining-contract-vote",
-      [types.uint(contractId)],
+      "close-proposal",
+      [types.uint(id)],
       sender.address
     );
   }
 
-  getActiveMiningContract(): ReadOnlyFn {
-    return this.callReadOnlyFn("get-active-mining-contract");
+  getActiveContract(name: string): ReadOnlyFn {
+    return this.callReadOnlyFn("get-active-contract", [types.ascii(name)]);
   }
 
-  createVoteTuple(
+  createProposalTuple(
     contractAddress: string,
     startBH: number,
     endBH: number,
