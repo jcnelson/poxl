@@ -243,7 +243,7 @@ describe("[CityCoin Core]", () => {
         contractAddress: miningContractAddress,
         startBH: addContractBlock.height,
         endBH: addContractBlock.height + CoreClient.DEFAULT_VOTING_PERIOD,
-        miners: 1,
+        voters: 1,
         votes: 1,
         isOpen: true,
       });
@@ -285,7 +285,7 @@ describe("[CityCoin Core]", () => {
         contractAddress: miningContractAddress,
         startBH: addContractBlock.height,
         endBH: addContractBlock.height + CoreClient.DEFAULT_VOTING_PERIOD,
-        miners: 2,
+        voters: 2,
         votes: 2,
         isOpen: true,
       });
@@ -329,7 +329,7 @@ describe("[CityCoin Core]", () => {
         contractAddress: miningContractAddress,
         startBH: addContractBlock.height,
         endBH: addContractBlock.height + CoreClient.DEFAULT_VOTING_PERIOD,
-        miners: 1,
+        voters: 1,
         votes: 1,
         isOpen: true,
       });
@@ -439,7 +439,7 @@ describe("[CityCoin Core]", () => {
         contractAddress: miningContractAddress,
         startBH: addContractBlock.height,
         endBH: addContractBlock.height + CoreClient.DEFAULT_VOTING_PERIOD,
-        miners: 0,
+        voters: 0,
         votes: 0,
         isOpen: false,
       });
@@ -492,7 +492,7 @@ describe("[CityCoin Core]", () => {
         contractAddress: miningContractAddress,
         startBH: addContractBlock.height,
         endBH: addContractBlock.height + CoreClient.DEFAULT_VOTING_PERIOD,
-        miners: 1,
+        voters: 1,
         votes: 1,
         isOpen: false,
       });

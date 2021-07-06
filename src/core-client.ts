@@ -24,7 +24,7 @@ interface ProposalTuple {
   contractAddress: string;
   startBH: number;
   endBH: number;
-  miners: number;
+  voters: number;
   votes: number;
   isOpen: boolean;
 }
@@ -102,7 +102,7 @@ export class CoreClient extends Client {
       address: data.contractAddress,
       startBH: types.uint(data.startBH),
       endBH: types.uint(data.endBH),
-      miners: types.uint(data.miners),
+      voters: types.uint(data.voters),
       votes: types.uint(data.votes),
       isOpen: types.bool(data.isOpen),
     };

@@ -40,7 +40,7 @@
     address: principal,
     startBH: uint,
     endBH: uint,
-    miners: uint,
+    voters: uint,
     votes: uint,
     isOpen: bool
   }
@@ -91,7 +91,7 @@
         address: address,
         startBH: (+ block-height u1),
         endBH: (+ block-height u1 DEFAULT_VOTING_PERIOD),
-        miners: u0,
+        voters: u0,
         votes: u0,
         isOpen: true
       }
@@ -122,7 +122,7 @@
       (merge proposal 
         { 
           votes: (+ (get votes proposal) u1),
-          miners: (+ (get miners proposal) u1)
+          voters: (+ (get voters proposal) u1)
         } 
       )
     )
@@ -145,8 +145,8 @@
     (map-set Proposals id (merge proposal { isOpen: false }))
 
     ;; 
-    (if (or (is-eq u0 (get miners proposal))
-        (< (/ (* (get votes proposal) u100) (get miners proposal)) DEFAULT_VOTING_THRESHOLD))
+    (if (or (is-eq u0 (get voters proposal))
+        (< (/ (* (get votes proposal) u100) (get voters proposal)) DEFAULT_VOTING_THRESHOLD))
       (ok true) ;; the vote has been lost
       (activate-contract (get address proposal))
     )
