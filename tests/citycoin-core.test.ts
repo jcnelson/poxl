@@ -139,21 +139,46 @@ describe("[CityCoin Core]", () => {
     });
   });
 
-  describe("vote-on-contract()", () => {
-    it("throws ERR_CONTRACT_DOES_NOT_EXIST when voted on unknown contract", (chain, accounts, clients) => {
+  describe("vote()", () => {
+    it("throws ERR_NOTHING_TO_VOTE_ON when there are no proposals", (chain, accounts, clients) => {
       // arrange
       const voter = accounts.get("wallet_1")!;
-      const miningContractAddress = clients.citycoin.getContractAddress();
+      const proposalId = 1;
 
       // act
-      const receipt = chain.mineBlock([
-        clients.core.voteOnContract(miningContractAddress, voter),
-      ]).receipts[0];
+      const receipt = chain.mineBlock([clients.core.vote(proposalId, voter)])
+        .receipts[0];
 
       // assert
       receipt.result
         .expectErr()
-        .expectUint(CoreClient.ErrCode.ERR_CONTRACT_DOES_NOT_EXIST);
+        .expectUint(CoreClient.ErrCode.ERR_NOTHING_TO_VOTE_ON);
+    });
+
+    it("throws ERR_CANT_VOTE_ON_NON_LAST_PROPOSAL when voted on non last proposal", (chain, accounts, clients) => {
+      // arrange
+      const voter = accounts.get("wallet_1")!;
+      const proposalId = 10;
+      const cityWallet = accounts.get("wallet_2")!;
+      const miningContractAddress = `${cityWallet.address}.mock`;
+      chain.mineBlock([
+        clients.core.unsafeSetCityWallet(cityWallet),
+        Tx.deployContract("mock", "", cityWallet.address),
+        clients.core.proposeContract(
+          "mining",
+          miningContractAddress,
+          cityWallet
+        ),
+      ]);
+
+      // act
+      const receipt = chain.mineBlock([clients.core.vote(proposalId, voter)])
+        .receipts[0];
+
+      // assert
+      receipt.result
+        .expectErr()
+        .expectUint(CoreClient.ErrCode.ERR_CANT_VOTE_ON_NON_LAST_PROPOSAL);
     });
 
     it("throws ERR_VOTE_HAS_ENDED when voted in the same block as adding contract", (chain, accounts, clients) => {
@@ -173,7 +198,7 @@ describe("[CityCoin Core]", () => {
           miningContractAddress,
           cityWallet
         ),
-        clients.core.voteOnContract(miningContractAddress, voter),
+        clients.core.vote(1, voter),
       ]).receipts[1];
 
       // assert
@@ -202,9 +227,8 @@ describe("[CityCoin Core]", () => {
       );
 
       //act
-      const receipt = chain.mineBlock([
-        clients.core.voteOnContract(miningContractAddress, voter),
-      ]).receipts[0];
+      const receipt = chain.mineBlock([clients.core.vote(1, voter)])
+        .receipts[0];
 
       // assert
       receipt.result
@@ -228,9 +252,8 @@ describe("[CityCoin Core]", () => {
       ]);
 
       // act
-      const receipt = chain.mineBlock([
-        clients.core.voteOnContract(miningContractAddress, voter),
-      ]).receipts[0];
+      const receipt = chain.mineBlock([clients.core.vote(1, voter)])
+        .receipts[0];
 
       // assert
       receipt.result.expectOk().expectBool(true);
@@ -269,8 +292,8 @@ describe("[CityCoin Core]", () => {
 
       // act
       const block = chain.mineBlock([
-        clients.core.voteOnContract(miningContractAddress, voter1),
-        clients.core.voteOnContract(miningContractAddress, voter2),
+        clients.core.vote(1, voter1),
+        clients.core.vote(1, voter2),
       ]);
 
       // assert
@@ -307,14 +330,11 @@ describe("[CityCoin Core]", () => {
           cityWallet
         ),
       ]);
-      chain.mineBlock([
-        clients.core.voteOnContract(miningContractAddress, voter),
-      ]);
+      chain.mineBlock([clients.core.vote(1, voter)]);
 
       // act
-      const receipt = chain.mineBlock([
-        clients.core.voteOnContract(miningContractAddress, voter),
-      ]).receipts[0];
+      const receipt = chain.mineBlock([clients.core.vote(1, voter)])
+        .receipts[0];
 
       // assert
       receipt.result
@@ -465,9 +485,7 @@ describe("[CityCoin Core]", () => {
           cityWallet
         ),
       ]);
-      chain.mineBlock([
-        clients.core.voteOnContract(miningContractAddress, voter),
-      ]);
+      chain.mineBlock([clients.core.vote(1, voter)]);
       chain.mineEmptyBlockUntil(
         addContractBlock.height + CoreClient.DEFAULT_VOTING_PERIOD + 1
       );

@@ -8,6 +8,8 @@
 (define-constant ERR_ALREADY_VOTED u1005)
 (define-constant ERR_PROPOSAL_DOES_NOT_EXIST u1006)
 (define-constant ERR_PROPOSAL_ALREADY_CLOSED u1007)
+(define-constant ERR_NOTHING_TO_VOTE_ON u1008)
+(define-constant ERR_CANT_VOTE_ON_NON_LAST_PROPOSAL u1009)
 
 ;; TODO: think about replacing with buff
 (define-constant STATE_DEFINED u0)
@@ -106,28 +108,34 @@
   (map-get? Proposals id)
 )
 
-;; Allows to vote on specific contract
-(define-public (vote-on-contract (contract principal))
+;; Allows to vote on specific proposal
+(define-public (vote (proposalId (optional uint)))
   (let
     (
-      (proposalId (get proposalId (unwrap! (get-contract contract) (err ERR_CONTRACT_DOES_NOT_EXIST))))
-      (proposal (unwrap-panic (get-proposal proposalId)))
+      (lastProposalId (var-get proposalNonce))
+      (proposal (unwrap! (get-proposal lastProposalId) (err ERR_NOTHING_TO_VOTE_ON)))
+      (providedLastProposalId (is-eq lastProposalId (default-to u0 proposalId)))
     )
+    (asserts! (or (is-none proposalId) providedLastProposalId) 
+      (err ERR_CANT_VOTE_ON_NON_LAST_PROPOSAL))
+
     (asserts! (is-between block-height (get startBH proposal) (get endBH proposal)) 
       (err ERR_VOTE_HAS_ENDED))
-    (asserts! (not (has-voted-on-proposal proposalId contract-caller))
+
+    (asserts! (not (has-voted-on-proposal lastProposalId contract-caller))
       (err ERR_ALREADY_VOTED))
+
     (map-set Proposals
-      proposalId
+      lastProposalId
       (merge proposal 
         { 
-          votes: (+ (get votes proposal) u1),
+          votes: (if providedLastProposalId (+ (get votes proposal) u1) (get votes proposal)),
           voters: (+ (get voters proposal) u1)
         } 
       )
     )
     (map-set ProposalVoters
-      { proposalId: proposalId, voter: contract-caller }
+      { proposalId: lastProposalId, voter: contract-caller }
       true
     )
     (ok true)

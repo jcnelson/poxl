@@ -10,6 +10,8 @@ enum ErrCode {
   ERR_ALREADY_VOTED = 1005,
   ERR_PROPOSAL_DOES_NOT_EXIST = 1006,
   ERR_PROPOSAL_ALREADY_CLOSED = 1007,
+  ERR_NOTHING_TO_VOTE_ON = 1008,
+  ERR_CANT_VOTE_ON_NON_LAST_PROPOSAL = 1009,
 }
 
 enum ContractState {
@@ -75,11 +77,11 @@ export class CoreClient extends Client {
     return this.callReadOnlyFn("get-proposal", [types.uint(id)]);
   }
 
-  voteOnContract(contractAddress: string, sender: Account): Tx {
+  vote(proposalId: number, sender: Account): Tx {
     return Tx.contractCall(
       this.contractName,
-      "vote-on-contract",
-      [types.principal(contractAddress)],
+      "vote",
+      [types.some(types.uint(proposalId))],
       sender.address
     );
   }
