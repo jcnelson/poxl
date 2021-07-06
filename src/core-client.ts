@@ -77,11 +77,15 @@ export class CoreClient extends Client {
     return this.callReadOnlyFn("get-proposal", [types.uint(id)]);
   }
 
-  vote(proposalId: number, sender: Account): Tx {
+  vote(proposalId: number | undefined, sender: Account): Tx {
     return Tx.contractCall(
       this.contractName,
       "vote",
-      [types.some(types.uint(proposalId))],
+      [
+        typeof proposalId === "undefined"
+          ? types.none()
+          : types.some(types.uint(proposalId)),
+      ],
       sender.address
     );
   }

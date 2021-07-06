@@ -356,6 +356,43 @@ describe("[CityCoin Core]", () => {
 
       assertEquals(proposal, expectedProposal);
     });
+
+    it("increments voters count when submit empty vote", (chain, accounts, clients) => {
+      // arrange
+      const voter = accounts.get("wallet_1")!;
+      const cityWallet = accounts.get("wallet_2")!;
+      const miningContractAddress = `${cityWallet.address}.mock`;
+      const addContractBlock = chain.mineBlock([
+        clients.core.unsafeSetCityWallet(cityWallet),
+        Tx.deployContract("mock", "", cityWallet.address),
+        clients.core.proposeContract(
+          "mining",
+          miningContractAddress,
+          cityWallet
+        ),
+      ]);
+
+      // act
+      const receipt = chain.mineBlock([clients.core.vote(undefined, voter)])
+        .receipts[0];
+
+      // assert
+      receipt.result.expectOk().expectBool(true);
+      const proposal = clients.core
+        .getProposal(1)
+        .result.expectSome()
+        .expectTuple();
+
+      const expectedProposal = clients.core.createProposalTuple({
+        contractAddress: miningContractAddress,
+        startBH: addContractBlock.height,
+        endBH: addContractBlock.height + CoreClient.DEFAULT_VOTING_PERIOD,
+        voters: 1,
+        votes: 0,
+        isOpen: true,
+      });
+      assertEquals(proposal, expectedProposal);
+    });
   });
 
   describe("close-proposal()", () => {
