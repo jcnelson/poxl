@@ -378,6 +378,35 @@ describe("[CityCoin Core]", () => {
         .expectUint(CoreClient.ErrCode.ERR_VOTE_STILL_IN_PROGRESS);
     });
 
+    it("throws ERR_PROPOSAL_ALREADY_CLOSED if tried to close closed proposal", (chain, accounts, clients) => {
+      // arrange
+      const sender = accounts.get("wallet_1")!;
+      const cityWallet = accounts.get("wallet_2")!;
+      const miningContractAddress = `${cityWallet.address}.mock`;
+      const addContractBlock = chain.mineBlock([
+        clients.core.unsafeSetCityWallet(cityWallet),
+        Tx.deployContract("mock", "", cityWallet.address),
+        clients.core.proposeContract(
+          "mining",
+          miningContractAddress,
+          cityWallet
+        ),
+      ]);
+      chain.mineEmptyBlockUntil(
+        addContractBlock.height + CoreClient.DEFAULT_VOTING_PERIOD + 1
+      );
+      chain.mineBlock([clients.core.closeProposal(1, sender)]);
+
+      // act
+      const receipt = chain.mineBlock([clients.core.closeProposal(1, sender)])
+        .receipts[0];
+
+      // assert
+      receipt.result
+        .expectErr()
+        .expectUint(CoreClient.ErrCode.ERR_PROPOSAL_ALREADY_CLOSED);
+    });
+
     it("mark proposal as closed if it has less than 90% votes", (chain, accounts, clients) => {
       // arrange
       const sender = accounts.get("wallet_1")!;

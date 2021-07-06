@@ -7,6 +7,7 @@
 (define-constant ERR_VOTE_STILL_IN_PROGRESS u1004)
 (define-constant ERR_ALREADY_VOTED u1005)
 (define-constant ERR_PROPOSAL_DOES_NOT_EXIST u1006)
+(define-constant ERR_PROPOSAL_ALREADY_CLOSED u1007)
 
 ;; TODO: think about replacing with buff
 (define-constant STATE_DEFINED u0)
@@ -139,6 +140,7 @@
       (proposal (unwrap! (get-proposal id) (err ERR_PROPOSAL_DOES_NOT_EXIST)))
     )
     (asserts! (> block-height (get endBH proposal)) (err ERR_VOTE_STILL_IN_PROGRESS))
+    (asserts! (get isOpen proposal) (err ERR_PROPOSAL_ALREADY_CLOSED))
     ;; close proposal
     (map-set Proposals id (merge proposal { isOpen: false }))
 
