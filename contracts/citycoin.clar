@@ -1,23 +1,23 @@
 ;; CityCoins on Stacks, simulating PoX in a smart contract
 
 ;; error codes
-(define-constant ERR-NO-WINNER u0)
-(define-constant ERR-NO-SUCH-MINER u1)
-(define-constant ERR-IMMATURE-TOKEN-REWARD u2)
-(define-constant ERR-UNAUTHORIZED u3)
-(define-constant ERR-ALREADY-CLAIMED u4)
-(define-constant ERR-STACKING-NOT-AVAILABLE u5)
-(define-constant ERR-CANNOT-STACK u6)
-(define-constant ERR-INSUFFICIENT-BALANCE u7)
-(define-constant ERR-ALREADY-MINED u8)
-(define-constant ERR-ROUND-FULL u9)  ;; deprecated - this error is not used anymore
-(define-constant ERR-NOTHING-TO-REDEEM u10)
-(define-constant ERR-CANNOT-MINE u11)
-(define-constant ERR-MINER-ALREADY-REGISTERED u12)
-(define-constant ERR-MINING-ACTIVATION-THRESHOLD-REACHED u13)
-(define-constant ERR-MINER-ID-NOT-FOUND u14)
-(define-constant ERR-TOO-SMALL-COMMITMENT u15)
-(define-constant ERR-CYCLE-NOT-COMPLETED u16)
+(define-constant ERR-NO-WINNER u2000)
+(define-constant ERR-NO-SUCH-MINER u2001)
+(define-constant ERR-IMMATURE-TOKEN-REWARD u2002)
+(define-constant ERR-UNAUTHORIZED u2003)
+(define-constant ERR-ALREADY-CLAIMED u2004)
+(define-constant ERR-STACKING-NOT-AVAILABLE u2005)
+(define-constant ERR-CANNOT-STACK u2006)
+(define-constant ERR-INSUFFICIENT-BALANCE u2007)
+(define-constant ERR-ALREADY-MINED u2008)
+(define-constant ERR-ROUND-FULL u2009)  ;; deprecated - this error is not used anymore
+(define-constant ERR-NOTHING-TO-REDEEM u2010)
+(define-constant ERR-CANNOT-MINE u2011)
+(define-constant ERR-MINER-ALREADY-REGISTERED u2012)
+(define-constant ERR-MINING-ACTIVATION-THRESHOLD-REACHED u2013)
+(define-constant ERR-MINER-ID-NOT-FOUND u2014)
+(define-constant ERR-TOO-SMALL-COMMITMENT u2015)
+(define-constant ERR-CYCLE-NOT-COMPLETED u2016)
 
 ;; Tailor to your needs.
 (define-constant TOKEN-REWARD-MATURITY u100)        ;; how long a miner must wait before claiming their minted tokens
@@ -306,7 +306,7 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
             (ok
                 (let (
                     (token-info (get-tokens-per-cycle cur-reward-cycle))
-                    (total-ft-supply (unwrap-panic (contract-call? .token get-total-supply)))
+                    (total-ft-supply (unwrap-panic (contract-call? .citycoin-token get-total-supply)))
                     (total-ustx-supply (stx-get-balance (as-contract tx-sender)))
                 )
                 {
@@ -326,7 +326,7 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
 
 ;; Produce the new tokens for the given claimant, who won the tokens at the given Stacks block height.
 (define-private (mint-coinbase (recipient principal) (stacks-block-ht uint))
-    (contract-call? .token mint (get-coinbase-amount stacks-block-ht) recipient)
+    (contract-call? .citycoin-token mint (get-coinbase-amount stacks-block-ht) recipient)
 )
 
 ;; Getter to obtain the list of miners and uSTX commitments at a given Stacks block height,
@@ -523,7 +523,7 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
         (asserts! (> amount-tokens u0)
             (err ERR-CANNOT-STACK))
 
-        (asserts! (<= amount-tokens (unwrap-panic (contract-call? .token get-balance stacker)))
+        (asserts! (<= amount-tokens (unwrap-panic (contract-call? .citycoin-token get-balance stacker)))
             (err ERR-INSUFFICIENT-BALANCE))
 
         (ok true)
@@ -750,7 +750,7 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
     (begin
         (try! (can-stack-tokens tx-sender amount-tokens block-height start-stacks-ht lock-period))
 
-        (unwrap! (contract-call? .token transfer amount-tokens tx-sender (as-contract tx-sender) none)
+        (unwrap! (contract-call? .citycoin-token transfer amount-tokens tx-sender (as-contract tx-sender) none)
             (err ERR-INSUFFICIENT-BALANCE))
 
         (fold stack-tokens-closure REWARD-CYCLE-INDEXES
@@ -864,7 +864,7 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
 ;; this method.
 (define-public (claim-mining-reward (mined-stacks-block-ht uint))
     (let (
-        (random-sample (unwrap! (contract-call? .bitcoin-vrf get-random-uint-at-block (+ mined-stacks-block-ht (var-get token-reward-maturity)))
+        (random-sample (unwrap! (contract-call? .citycoin-vrf get-random-uint-at-block (+ mined-stacks-block-ht (var-get token-reward-maturity)))
                         (err ERR-IMMATURE-TOKEN-REWARD)))
         (block (unwrap! (map-get? mined-blocks { stacks-block-height: mined-stacks-block-ht })
                         (err ERR-NO-WINNER)))
@@ -904,7 +904,7 @@ u113 u114 u115 u116 u117 u118 u119 u120 u121 u122 u123 u124 u125 u126 u127 u128
 
         ;; send back stacked tokens if user was eligible
         (if (> to-return u0)
-            (try! (as-contract (contract-call? .token transfer to-return tx-sender stacker none)))
+            (try! (as-contract (contract-call? .citycoin-token transfer to-return tx-sender stacker none)))
             true
         )
 

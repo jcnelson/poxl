@@ -63,7 +63,7 @@ describe("[CityCoin]", () => {
     wallet_6 = accounts.get("wallet_6")!;
 
     client = new CityCoinClient("citycoin", chain, deployer);
-    tokenClient = new TokenClient("token", chain, deployer);
+    tokenClient = new TokenClient("citycoin-token", chain, deployer);
   }
 
   describe("Read Only:", () => {
@@ -2525,7 +2525,7 @@ describe("[CityCoin]", () => {
         chain.mineBlock([client.setCityWalletUnsafe(cityWallet)]);
 
         const block = chain.mineBlock([
-          Tx.contractCall("malicious", "attack", [], wallet_1.address),
+          Tx.contractCall("test-malicious", "attack", [], wallet_1.address),
         ]);
 
         const result = block.receipts[0].result;
@@ -2552,8 +2552,8 @@ describe("[CityCoin]", () => {
 
       it("succeeds and sets new city wallet, when called by contract that was a previous city wallet", () => {
         const cityWallet: Account = {
-          name: "city_wallet",
-          address: "ST1HTBVD3JG9C05J7HBJTHGR0GGW7KXW28M5JS8QE.city_wallet",
+          name: "test-city-wallet",
+          address: "ST1HTBVD3JG9C05J7HBJTHGR0GGW7KXW28M5JS8QE.test-city-wallet",
           balance: 0,
           mnemonic: "unknown",
           derivation: "unknown",
@@ -2565,12 +2565,12 @@ describe("[CityCoin]", () => {
         client
           .getCityWallet()
           .result.expectPrincipal(
-            "ST1HTBVD3JG9C05J7HBJTHGR0GGW7KXW28M5JS8QE.city_wallet"
+            "ST1HTBVD3JG9C05J7HBJTHGR0GGW7KXW28M5JS8QE.test-city-wallet"
           );
 
         const block = chain.mineBlock([
           Tx.contractCall(
-            "city_wallet",
+            "test-city-wallet",
             "set-city-wallet",
             [types.principal(newCityWallet.address)],
             deployer.address

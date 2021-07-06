@@ -11,7 +11,7 @@ import {
 
 import { TokenClient } from "../src/token-client.ts";
 
-describe("[CityCoin token]", () => {
+describe("[CityCoin Token]", () => {
   let chain: Chain;
   let accounts: Map<string, Account>;
   let client: TokenClient;
@@ -42,7 +42,7 @@ describe("[CityCoin token]", () => {
     wallet_2 = accounts.get("wallet_2")!;
     wallet_3 = accounts.get("wallet_3")!;
 
-    client = new TokenClient("token", chain, deployer);
+    client = new TokenClient("citycoin-token", chain, deployer);
   }
 
   describe("SIP-010:", () => {
