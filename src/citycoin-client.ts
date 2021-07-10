@@ -2,7 +2,7 @@ import { Tx, Account, types, ReadOnlyFn } from "../deps.ts";
 import { Client } from "./client.ts";
 
 export enum ErrCode {
-  ERR_NO_WINNER = 0,
+  ERR_NO_WINNER = 2000,
   ERR_NO_SUCH_MINER,
   ERR_IMMATURE_TOKEN_REWARD,
   ERR_UNAUTHORIZED,

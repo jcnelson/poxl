@@ -4,9 +4,8 @@
   "description": "",
   "scripts": {
     "test": "npm run clarinet:test",
-    "test:native": "./tests/run-tests.sh",
-    "test:token": "npm run clarinet:prepare && clarinet test ./tests/citycoin_token_test.ts",
-    "test:all": "npm test; npm run test:native",
+    "test:token": "npm run clarinet:prepare && clarinet test ./tests/citycoin-token.test.ts",
+    "test:core": "npm run clarinet:prepare && clarinet test ./tests/citycoin-core.test.ts",
     "clarinet:check": "npm run clarinet:prepare && clarinet check",
     "clarinet:test": "npm run clarinet:prepare && clarinet test",
     "clarinet:console": "npm run clarinet:prepare && clarinet console",
