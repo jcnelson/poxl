@@ -61,7 +61,7 @@ describe("[CityCoin Core]", () => {
     it("successfully saves contract and creates proposal when called by city wallet", (chain, accounts, clients) => {
       // arrange
       const cityWallet = accounts.get("wallet_1")!;
-      const miningContractAddress = `${cityWallet.address}.mock`;
+      const logicContractAddress = `${cityWallet.address}.mock`;
       chain.mineBlock([
         clients.core.unsafeSetCityWallet(cityWallet),
         Tx.deployContract("mock", "", cityWallet.address),
@@ -69,17 +69,13 @@ describe("[CityCoin Core]", () => {
 
       // act
       const receipt = chain.mineBlock([
-        clients.core.proposeContract(
-          "logic",
-          miningContractAddress,
-          cityWallet
-        ),
+        clients.core.proposeContract("logic", logicContractAddress, cityWallet),
       ]).receipts[0];
 
       // assert
       receipt.result.expectOk().expectBool(true);
       const miningContract = clients.core
-        .getContract(miningContractAddress)
+        .getContract(logicContractAddress)
         .result.expectSome()
         .expectTuple();
 
@@ -92,23 +88,15 @@ describe("[CityCoin Core]", () => {
     it("throws ERR_CONTRACT_ALREADY_EXISTS when trying to propose the same contract again", (chain, accounts, clients) => {
       // arrange
       const cityWallet = accounts.get("wallet_1")!;
-      const miningContractAddress = clients.citycoin.getContractAddress();
+      const logicContractAddress = clients.citycoin.getContractAddress();
       chain.mineBlock([
         clients.core.unsafeSetCityWallet(cityWallet),
-        clients.core.proposeContract(
-          "logic",
-          miningContractAddress,
-          cityWallet
-        ),
+        clients.core.proposeContract("logic", logicContractAddress, cityWallet),
       ]);
 
       // act
       const receipt = chain.mineBlock([
-        clients.core.proposeContract(
-          "logic",
-          miningContractAddress,
-          cityWallet
-        ),
+        clients.core.proposeContract("logic", logicContractAddress, cityWallet),
       ]).receipts[0];
 
       // assert
@@ -120,17 +108,12 @@ describe("[CityCoin Core]", () => {
     it("throws ERR_CONTRACT_ALREADY_EXISTS when trying to propose contract that's been set as active during deployment", (chain, accounts, clients) => {
       // arrange
       const cityWallet = accounts.get("wallet_1")!;
-      const miningContractAddress = clients.citycoin.getContractAddress();
-      console.log(`\n\nWTF\n\n${miningContractAddress}\n\n`);
+      const logicContractAddress = clients.citycoin.getContractAddress();
       chain.mineBlock([clients.core.unsafeSetCityWallet(cityWallet)]);
 
       // act
       const receipt = chain.mineBlock([
-        clients.core.proposeContract(
-          "logic",
-          miningContractAddress,
-          cityWallet
-        ),
+        clients.core.proposeContract("logic", logicContractAddress, cityWallet),
       ]).receipts[0];
 
       // assert
@@ -161,15 +144,11 @@ describe("[CityCoin Core]", () => {
       const voter = accounts.get("wallet_1")!;
       const proposalId = 10;
       const cityWallet = accounts.get("wallet_2")!;
-      const miningContractAddress = `${cityWallet.address}.mock`;
+      const logicContractAddress = `${cityWallet.address}.mock`;
       chain.mineBlock([
         clients.core.unsafeSetCityWallet(cityWallet),
         Tx.deployContract("mock", "", cityWallet.address),
-        clients.core.proposeContract(
-          "logic",
-          miningContractAddress,
-          cityWallet
-        ),
+        clients.core.proposeContract("logic", logicContractAddress, cityWallet),
       ]);
 
       // act
@@ -186,7 +165,7 @@ describe("[CityCoin Core]", () => {
       // arrange
       const voter = accounts.get("wallet_1")!;
       const cityWallet = accounts.get("wallet_2")!;
-      const miningContractAddress = `${cityWallet.address}.mock`;
+      const logicContractAddress = `${cityWallet.address}.mock`;
       chain.mineBlock([
         clients.core.unsafeSetCityWallet(cityWallet),
         Tx.deployContract("mock", "", cityWallet.address),
@@ -194,11 +173,7 @@ describe("[CityCoin Core]", () => {
 
       //act
       const receipt = chain.mineBlock([
-        clients.core.proposeContract(
-          "logic",
-          miningContractAddress,
-          cityWallet
-        ),
+        clients.core.proposeContract("logic", logicContractAddress, cityWallet),
         clients.core.vote(1, voter),
       ]).receipts[1];
 
@@ -212,15 +187,11 @@ describe("[CityCoin Core]", () => {
       // arrange
       const voter = accounts.get("wallet_1")!;
       const cityWallet = accounts.get("wallet_2")!;
-      const miningContractAddress = `${cityWallet.address}.mock`;
+      const logicContractAddress = `${cityWallet.address}.mock`;
       const addContractBlock = chain.mineBlock([
         clients.core.unsafeSetCityWallet(cityWallet),
         Tx.deployContract("mock", "", cityWallet.address),
-        clients.core.proposeContract(
-          "logic",
-          miningContractAddress,
-          cityWallet
-        ),
+        clients.core.proposeContract("logic", logicContractAddress, cityWallet),
       ]);
       //move chain tip to the first block after voting period
       chain.mineEmptyBlockUntil(
@@ -241,15 +212,11 @@ describe("[CityCoin Core]", () => {
       // arrange
       const voter = accounts.get("wallet_1")!;
       const cityWallet = accounts.get("wallet_2")!;
-      const miningContractAddress = `${cityWallet.address}.mock`;
+      const logicContractAddress = `${cityWallet.address}.mock`;
       const addContractBlock = chain.mineBlock([
         clients.core.unsafeSetCityWallet(cityWallet),
         Tx.deployContract("mock", "", cityWallet.address),
-        clients.core.proposeContract(
-          "logic",
-          miningContractAddress,
-          cityWallet
-        ),
+        clients.core.proposeContract("logic", logicContractAddress, cityWallet),
       ]);
 
       // act
@@ -264,7 +231,7 @@ describe("[CityCoin Core]", () => {
         .expectTuple();
 
       const expectedProposal = clients.core.createProposalTuple({
-        contractAddress: miningContractAddress,
+        contractAddress: logicContractAddress,
         startBH: addContractBlock.height,
         endBH: addContractBlock.height + CoreClient.DEFAULT_VOTING_PERIOD,
         voters: 1,
@@ -280,15 +247,11 @@ describe("[CityCoin Core]", () => {
       const voter1 = accounts.get("wallet_1")!;
       const voter2 = accounts.get("wallet_2")!;
       const cityWallet = accounts.get("wallet_3")!;
-      const miningContractAddress = `${cityWallet.address}.mock`;
+      const logicContractAddress = `${cityWallet.address}.mock`;
       const addContractBlock = chain.mineBlock([
         clients.core.unsafeSetCityWallet(cityWallet),
         Tx.deployContract("mock", "", cityWallet.address),
-        clients.core.proposeContract(
-          "logic",
-          miningContractAddress,
-          cityWallet
-        ),
+        clients.core.proposeContract("logic", logicContractAddress, cityWallet),
       ]);
 
       // act
@@ -306,7 +269,7 @@ describe("[CityCoin Core]", () => {
         .expectTuple();
 
       const expectedProposal = clients.core.createProposalTuple({
-        contractAddress: miningContractAddress,
+        contractAddress: logicContractAddress,
         startBH: addContractBlock.height,
         endBH: addContractBlock.height + CoreClient.DEFAULT_VOTING_PERIOD,
         voters: 2,
@@ -321,15 +284,11 @@ describe("[CityCoin Core]", () => {
       // arrange
       const voter = accounts.get("wallet_1")!;
       const cityWallet = accounts.get("wallet_2")!;
-      const miningContractAddress = `${cityWallet.address}.mock`;
+      const logicContractAddress = `${cityWallet.address}.mock`;
       const addContractBlock = chain.mineBlock([
         clients.core.unsafeSetCityWallet(cityWallet),
         Tx.deployContract("mock", "", cityWallet.address),
-        clients.core.proposeContract(
-          "logic",
-          miningContractAddress,
-          cityWallet
-        ),
+        clients.core.proposeContract("logic", logicContractAddress, cityWallet),
       ]);
       chain.mineBlock([clients.core.vote(1, voter)]);
 
@@ -347,7 +306,7 @@ describe("[CityCoin Core]", () => {
         .expectTuple();
 
       const expectedProposal = clients.core.createProposalTuple({
-        contractAddress: miningContractAddress,
+        contractAddress: logicContractAddress,
         startBH: addContractBlock.height,
         endBH: addContractBlock.height + CoreClient.DEFAULT_VOTING_PERIOD,
         voters: 1,
@@ -362,15 +321,11 @@ describe("[CityCoin Core]", () => {
       // arrange
       const voter = accounts.get("wallet_1")!;
       const cityWallet = accounts.get("wallet_2")!;
-      const miningContractAddress = `${cityWallet.address}.mock`;
+      const logicContractAddress = `${cityWallet.address}.mock`;
       const addContractBlock = chain.mineBlock([
         clients.core.unsafeSetCityWallet(cityWallet),
         Tx.deployContract("mock", "", cityWallet.address),
-        clients.core.proposeContract(
-          "logic",
-          miningContractAddress,
-          cityWallet
-        ),
+        clients.core.proposeContract("logic", logicContractAddress, cityWallet),
       ]);
 
       // act
@@ -385,7 +340,7 @@ describe("[CityCoin Core]", () => {
         .expectTuple();
 
       const expectedProposal = clients.core.createProposalTuple({
-        contractAddress: miningContractAddress,
+        contractAddress: logicContractAddress,
         startBH: addContractBlock.height,
         endBH: addContractBlock.height + CoreClient.DEFAULT_VOTING_PERIOD,
         voters: 1,
@@ -415,15 +370,11 @@ describe("[CityCoin Core]", () => {
       // arrange
       const sender = accounts.get("wallet_1")!;
       const cityWallet = accounts.get("wallet_2")!;
-      const miningContractAddress = `${cityWallet.address}.mock`;
+      const logicContractAddress = `${cityWallet.address}.mock`;
       chain.mineBlock([
         clients.core.unsafeSetCityWallet(cityWallet),
         Tx.deployContract("mock", "", cityWallet.address),
-        clients.core.proposeContract(
-          "logic",
-          miningContractAddress,
-          cityWallet
-        ),
+        clients.core.proposeContract("logic", logicContractAddress, cityWallet),
       ]);
 
       // act
@@ -440,15 +391,11 @@ describe("[CityCoin Core]", () => {
       // arrange
       const sender = accounts.get("wallet_1")!;
       const cityWallet = accounts.get("wallet_2")!;
-      const miningContractAddress = `${cityWallet.address}.mock`;
+      const logicContractAddress = `${cityWallet.address}.mock`;
       const addContractBlock = chain.mineBlock([
         clients.core.unsafeSetCityWallet(cityWallet),
         Tx.deployContract("mock", "", cityWallet.address),
-        clients.core.proposeContract(
-          "logic",
-          miningContractAddress,
-          cityWallet
-        ),
+        clients.core.proposeContract("logic", logicContractAddress, cityWallet),
       ]);
       chain.mineEmptyBlockUntil(
         addContractBlock.height + CoreClient.DEFAULT_VOTING_PERIOD + 1
@@ -469,15 +416,11 @@ describe("[CityCoin Core]", () => {
       // arrange
       const sender = accounts.get("wallet_1")!;
       const cityWallet = accounts.get("wallet_2")!;
-      const miningContractAddress = `${cityWallet.address}.mock`;
+      const logicContractAddress = `${cityWallet.address}.mock`;
       const addContractBlock = chain.mineBlock([
         clients.core.unsafeSetCityWallet(cityWallet),
         Tx.deployContract("mock", "", cityWallet.address),
-        clients.core.proposeContract(
-          "logic",
-          miningContractAddress,
-          cityWallet
-        ),
+        clients.core.proposeContract("logic", logicContractAddress, cityWallet),
       ]);
       chain.mineEmptyBlockUntil(
         addContractBlock.height + CoreClient.DEFAULT_VOTING_PERIOD + 1
@@ -487,14 +430,14 @@ describe("[CityCoin Core]", () => {
       const receipt = chain.mineBlock([clients.core.closeProposal(1, sender)])
         .receipts[0];
       const contract = clients.core
-        .getContract(miningContractAddress)
+        .getContract(logicContractAddress)
         .result.expectSome()
         .expectTuple();
 
       // assert
       receipt.result.expectOk().expectBool(true);
       const expectedProposal = clients.core.createProposalTuple({
-        contractAddress: miningContractAddress,
+        contractAddress: logicContractAddress,
         startBH: addContractBlock.height,
         endBH: addContractBlock.height + CoreClient.DEFAULT_VOTING_PERIOD,
         voters: 0,
@@ -513,15 +456,11 @@ describe("[CityCoin Core]", () => {
       const sender = accounts.get("wallet_1")!;
       const cityWallet = accounts.get("wallet_2")!;
       const voter = accounts.get("wallet_3")!;
-      const miningContractAddress = `${cityWallet.address}.mock`;
+      const logicContractAddress = `${cityWallet.address}.mock`;
       const addContractBlock = chain.mineBlock([
         clients.core.unsafeSetCityWallet(cityWallet),
         Tx.deployContract("mock", "", cityWallet.address),
-        clients.core.proposeContract(
-          "logic",
-          miningContractAddress,
-          cityWallet
-        ),
+        clients.core.proposeContract("logic", logicContractAddress, cityWallet),
       ]);
       chain.mineBlock([clients.core.vote(1, voter)]);
       chain.mineEmptyBlockUntil(
@@ -532,7 +471,7 @@ describe("[CityCoin Core]", () => {
       const receipt = chain.mineBlock([clients.core.closeProposal(1, sender)])
         .receipts[0];
       const contract = clients.core
-        .getContract(miningContractAddress)
+        .getContract(logicContractAddress)
         .result.expectSome()
         .expectTuple();
 
@@ -542,10 +481,10 @@ describe("[CityCoin Core]", () => {
       clients.core
         .getActiveContract("logic")
         .result.expectSome()
-        .expectPrincipal(miningContractAddress);
+        .expectPrincipal(logicContractAddress);
 
       const expectedProposal = clients.core.createProposalTuple({
-        contractAddress: miningContractAddress,
+        contractAddress: logicContractAddress,
         startBH: addContractBlock.height,
         endBH: addContractBlock.height + CoreClient.DEFAULT_VOTING_PERIOD,
         voters: 1,
