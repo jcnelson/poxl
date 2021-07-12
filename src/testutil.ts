@@ -40,7 +40,7 @@ function _it(
 
     deployer = accounts.get("deployer")!;
     clients = {
-      citycoin: new CityCoinClient("citycoin", chain, deployer),
+      citycoin: new CityCoinClient("citycoin-logic-v1", chain, deployer),
       token: new TokenClient("citycoin-token", chain, deployer),
       core: new CoreClient("citycoin-core", chain, deployer),
     };
