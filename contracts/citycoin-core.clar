@@ -9,7 +9,7 @@
 (define-constant ERR_PROPOSAL_DOES_NOT_EXIST u1006)
 (define-constant ERR_PROPOSAL_ALREADY_CLOSED u1007)
 (define-constant ERR_NOTHING_TO_VOTE_ON u1008)
-(define-constant ERR_CANT_VOTE_ON_NON_LAST_PROPOSAL u1009)
+(define-constant ERR_CANT_VOTE_ON_OLD_PROPOSAL u1009)
 
 ;; TODO: think about replacing with buff
 (define-constant STATE_DEFINED u0)
@@ -121,7 +121,7 @@
       (providedLastProposalId (is-eq lastProposalId (default-to u0 proposalId)))
     )
     (asserts! (or (is-none proposalId) providedLastProposalId) 
-      (err ERR_CANT_VOTE_ON_NON_LAST_PROPOSAL))
+      (err ERR_CANT_VOTE_ON_OLD_PROPOSAL))
 
     (asserts! (is-between block-height (get startBH proposal) (get endBH proposal)) 
       (err ERR_VOTE_HAS_ENDED))

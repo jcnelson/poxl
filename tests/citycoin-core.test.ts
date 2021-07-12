@@ -155,7 +155,7 @@ describe("[CityCoin Core]", () => {
         .expectUint(CoreClient.ErrCode.ERR_NOTHING_TO_VOTE_ON);
     });
 
-    it("throws ERR_CANT_VOTE_ON_NON_LAST_PROPOSAL when voted on non last proposal", (chain, accounts, clients) => {
+    it("throws ERR_CANT_VOTE_ON_OLD_PROPOSAL when voted on non last proposal", (chain, accounts, clients) => {
       // arrange
       const voter = accounts.get("wallet_1")!;
       const proposalId = 10;
@@ -178,7 +178,7 @@ describe("[CityCoin Core]", () => {
       // assert
       receipt.result
         .expectErr()
-        .expectUint(CoreClient.ErrCode.ERR_CANT_VOTE_ON_NON_LAST_PROPOSAL);
+        .expectUint(CoreClient.ErrCode.ERR_CANT_VOTE_ON_OLD_PROPOSAL);
     });
 
     it("throws ERR_VOTE_HAS_ENDED when voted in the same block as adding contract", (chain, accounts, clients) => {
