@@ -24,7 +24,7 @@ import {
 } from "../src/logic-client.ts";
 import { TokenClient } from "../src/token-client.ts";
 
-describe("[CityCoin]", () => {
+describe("[CityCoin Logic]", () => {
   let chain: Chain;
   let accounts: Map<string, Account>;
   let client: CityCoinClient;
