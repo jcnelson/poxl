@@ -46,7 +46,7 @@ describe("[CityCoin Core]", () => {
       // act
       const receipt = chain.mineBlock([
         clients.core.proposeContract(
-          "mining",
+          "logic",
           clients.citycoin.getContractAddress(),
           wallet
         ),
@@ -70,7 +70,7 @@ describe("[CityCoin Core]", () => {
       // act
       const receipt = chain.mineBlock([
         clients.core.proposeContract(
-          "mining",
+          "logic",
           miningContractAddress,
           cityWallet
         ),
@@ -85,7 +85,7 @@ describe("[CityCoin Core]", () => {
 
       assertEquals(miningContract, {
         proposalId: types.uint(1),
-        name: types.ascii("mining"),
+        name: types.ascii("logic"),
       });
     });
 
@@ -96,7 +96,7 @@ describe("[CityCoin Core]", () => {
       chain.mineBlock([
         clients.core.unsafeSetCityWallet(cityWallet),
         clients.core.proposeContract(
-          "mining",
+          "logic",
           miningContractAddress,
           cityWallet
         ),
@@ -105,7 +105,7 @@ describe("[CityCoin Core]", () => {
       // act
       const receipt = chain.mineBlock([
         clients.core.proposeContract(
-          "mining",
+          "logic",
           miningContractAddress,
           cityWallet
         ),
@@ -121,12 +121,13 @@ describe("[CityCoin Core]", () => {
       // arrange
       const cityWallet = accounts.get("wallet_1")!;
       const miningContractAddress = clients.citycoin.getContractAddress();
+      console.log(`\n\nWTF\n\n${miningContractAddress}\n\n`);
       chain.mineBlock([clients.core.unsafeSetCityWallet(cityWallet)]);
 
       // act
       const receipt = chain.mineBlock([
         clients.core.proposeContract(
-          "mining",
+          "logic",
           miningContractAddress,
           cityWallet
         ),
@@ -165,7 +166,7 @@ describe("[CityCoin Core]", () => {
         clients.core.unsafeSetCityWallet(cityWallet),
         Tx.deployContract("mock", "", cityWallet.address),
         clients.core.proposeContract(
-          "mining",
+          "logic",
           miningContractAddress,
           cityWallet
         ),
@@ -194,7 +195,7 @@ describe("[CityCoin Core]", () => {
       //act
       const receipt = chain.mineBlock([
         clients.core.proposeContract(
-          "mining",
+          "logic",
           miningContractAddress,
           cityWallet
         ),
@@ -216,7 +217,7 @@ describe("[CityCoin Core]", () => {
         clients.core.unsafeSetCityWallet(cityWallet),
         Tx.deployContract("mock", "", cityWallet.address),
         clients.core.proposeContract(
-          "mining",
+          "logic",
           miningContractAddress,
           cityWallet
         ),
@@ -245,7 +246,7 @@ describe("[CityCoin Core]", () => {
         clients.core.unsafeSetCityWallet(cityWallet),
         Tx.deployContract("mock", "", cityWallet.address),
         clients.core.proposeContract(
-          "mining",
+          "logic",
           miningContractAddress,
           cityWallet
         ),
@@ -284,7 +285,7 @@ describe("[CityCoin Core]", () => {
         clients.core.unsafeSetCityWallet(cityWallet),
         Tx.deployContract("mock", "", cityWallet.address),
         clients.core.proposeContract(
-          "mining",
+          "logic",
           miningContractAddress,
           cityWallet
         ),
@@ -325,7 +326,7 @@ describe("[CityCoin Core]", () => {
         clients.core.unsafeSetCityWallet(cityWallet),
         Tx.deployContract("mock", "", cityWallet.address),
         clients.core.proposeContract(
-          "mining",
+          "logic",
           miningContractAddress,
           cityWallet
         ),
@@ -366,7 +367,7 @@ describe("[CityCoin Core]", () => {
         clients.core.unsafeSetCityWallet(cityWallet),
         Tx.deployContract("mock", "", cityWallet.address),
         clients.core.proposeContract(
-          "mining",
+          "logic",
           miningContractAddress,
           cityWallet
         ),
@@ -419,7 +420,7 @@ describe("[CityCoin Core]", () => {
         clients.core.unsafeSetCityWallet(cityWallet),
         Tx.deployContract("mock", "", cityWallet.address),
         clients.core.proposeContract(
-          "mining",
+          "logic",
           miningContractAddress,
           cityWallet
         ),
@@ -444,7 +445,7 @@ describe("[CityCoin Core]", () => {
         clients.core.unsafeSetCityWallet(cityWallet),
         Tx.deployContract("mock", "", cityWallet.address),
         clients.core.proposeContract(
-          "mining",
+          "logic",
           miningContractAddress,
           cityWallet
         ),
@@ -473,7 +474,7 @@ describe("[CityCoin Core]", () => {
         clients.core.unsafeSetCityWallet(cityWallet),
         Tx.deployContract("mock", "", cityWallet.address),
         clients.core.proposeContract(
-          "mining",
+          "logic",
           miningContractAddress,
           cityWallet
         ),
@@ -517,7 +518,7 @@ describe("[CityCoin Core]", () => {
         clients.core.unsafeSetCityWallet(cityWallet),
         Tx.deployContract("mock", "", cityWallet.address),
         clients.core.proposeContract(
-          "mining",
+          "logic",
           miningContractAddress,
           cityWallet
         ),
@@ -539,7 +540,7 @@ describe("[CityCoin Core]", () => {
       receipt.result.expectOk().expectBool(true);
 
       clients.core
-        .getActiveContract("mining")
+        .getActiveContract("logic")
         .result.expectSome()
         .expectPrincipal(miningContractAddress);
 

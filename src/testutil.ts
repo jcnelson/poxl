@@ -1,5 +1,5 @@
 import { Account, Chain, Tx } from "../deps.ts";
-import { CityCoinClient } from "./citycoin-client.ts";
+import { CityCoinClient } from "./logic-client.ts";
 import { TokenClient } from "./token-client.ts";
 import { it } from "../deps.ts";
 import { CoreClient } from "./core-client.ts";

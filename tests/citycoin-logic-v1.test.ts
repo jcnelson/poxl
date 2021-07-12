@@ -21,7 +21,7 @@ import {
   SPLIT_STACKER_PERCENTAGE,
   SPLIT_CITY_PERCENTAGE,
   TOKEN_REWARD_MATURITY,
-} from "../src/citycoin-client.ts";
+} from "../src/logic-client.ts";
 import { TokenClient } from "../src/token-client.ts";
 
 describe("[CityCoin]", () => {
@@ -62,7 +62,7 @@ describe("[CityCoin]", () => {
     wallet_5 = accounts.get("wallet_5")!;
     wallet_6 = accounts.get("wallet_6")!;
 
-    client = new CityCoinClient("citycoin", chain, deployer);
+    client = new CityCoinClient("citycoin-logic-v1", chain, deployer);
     tokenClient = new TokenClient("citycoin-token", chain, deployer);
   }
 

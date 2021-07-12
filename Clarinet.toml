@@ -17,8 +17,8 @@ depends_on = ["sip-010-trait"]
 path = "contracts/clarinet/citycoin-vrf.clar"
 depends_on = ["citycoin-lifecycle-trait"]
 
-[contracts.citycoin]
-path = "contracts/clarinet/citycoin.clar"
+[contracts.citycoin-logic-v1]
+path = "contracts/clarinet/citycoin-logic-v1.clar"
 depends_on = ["citycoin-lifecycle-trait", "citycoin-token", "citycoin-vrf"]
 
 [contracts.citycoin-core]
@@ -28,12 +28,12 @@ depends_on = []
 # contracts listed below are used only in test suite
 [contracts.test-utils]
 path = "contracts/clarinet/test-utils.clar"
-depends_on = ["citycoin"]
+depends_on = ["citycoin-logic-v1"]
 
 [contracts.test-malicious]
 path = "contracts/clarinet/test-malicious.clar"
-depends_on = ["citycoin"]
+depends_on = ["citycoin-logic-v1"]
 
 [contracts.test-city-wallet]
 path = "contracts/clarinet/test-city-wallet.clar"
-depends_on = ["citycoin"]
+depends_on = ["citycoin-logic-v1"]

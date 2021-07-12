@@ -198,4 +198,4 @@
 )
 
 ;; Initialize
-(map-set ActiveContracts "mining" .citycoin)
+(map-set ActiveContracts "logic" .citycoin-logic-v1)
