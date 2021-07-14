@@ -92,4 +92,4 @@
 ;; Contract initialization
 
 ;; add main contract to list of trusted callers
-(map-set trusted-callers .citycoin true)
+(map-set trusted-callers .citycoin-logic-v1 true)

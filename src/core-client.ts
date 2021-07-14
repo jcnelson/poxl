@@ -3,19 +3,32 @@ import { Client } from "./client.ts";
 
 enum ErrCode {
   ERR_UNAUTHORIZED = 1000,
-  ERR_CONTRACT_ALREADY_EXISTS = 1001,
-  ERR_CONTRACT_DOES_NOT_EXIST = 1002,
-  ERR_VOTE_HAS_ENDED = 1003,
-  ERR_VOTE_STILL_IN_PROGRESS = 1004,
-  ERR_ALREADY_VOTED = 1005,
+  ERR_CONTRACT_ALREADY_EXISTS,
+  ERR_CONTRACT_DOES_NOT_EXIST,
+  ERR_VOTE_HAS_ENDED,
+  ERR_VOTE_STILL_IN_PROGRESS,
+  ERR_ALREADY_VOTED,
+  ERR_PROPOSAL_DOES_NOT_EXIST,
+  ERR_PROPOSAL_ALREADY_CLOSED,
+  ERR_NOTHING_TO_VOTE_ON,
+  ERR_CANT_VOTE_ON_OLD_PROPOSAL,
 }
 
 enum ContractState {
   STATE_DEFINED = 0,
-  STATE_STARTED = 1,
-  STATE_LOCKED_IN = 2,
-  STATE_ACTIVE = 3,
-  STATE_FAILED = 4,
+  STATE_STARTED,
+  STATE_LOCKED_IN,
+  STATE_ACTIVE,
+  STATE_FAILED,
+}
+
+interface ProposalTuple {
+  contractAddress: string;
+  startBH: number;
+  endBH: number;
+  voters: number;
+  votes: number;
+  isOpen: boolean;
 }
 
 export class CoreClient extends Client {
@@ -45,62 +58,59 @@ export class CoreClient extends Client {
     return this.callReadOnlyFn("get-city-wallet");
   }
 
-  addMiningContract(contractAddress: string, sender: Account): Tx {
+  proposeContract(name: string, contractAddress: string, sender: Account): Tx {
     return Tx.contractCall(
       this.contractName,
-      "add-mining-contract",
-      [types.principal(contractAddress)],
+      "propose-contract",
+      [types.ascii(name), types.principal(contractAddress)],
       sender.address
     );
   }
 
-  getMiningContract(contractAddress: string): ReadOnlyFn {
-    return this.callReadOnlyFn("get-mining-contract", [
+  getContract(contractAddress: string): ReadOnlyFn {
+    return this.callReadOnlyFn("get-contract", [
       types.principal(contractAddress),
     ]);
   }
 
-  getMiningContractVote(contractId: number): ReadOnlyFn {
-    return this.callReadOnlyFn("get-mining-contract-vote", [
-      types.uint(contractId),
-    ]);
+  getProposal(id: number): ReadOnlyFn {
+    return this.callReadOnlyFn("get-proposal", [types.uint(id)]);
   }
 
-  voteOnMiningContract(contractAddress: string, sender: Account): Tx {
+  vote(proposalId: number | undefined, sender: Account): Tx {
     return Tx.contractCall(
       this.contractName,
-      "vote-on-mining-contract",
-      [types.principal(contractAddress)],
+      "vote",
+      [
+        typeof proposalId === "undefined"
+          ? types.none()
+          : types.some(types.uint(proposalId)),
+      ],
       sender.address
     );
   }
 
-  closeMiningContractVote(contractId: number, sender: Account) {
+  closeProposal(id: number, sender: Account) {
     return Tx.contractCall(
       this.contractName,
-      "close-mining-contract-vote",
-      [types.uint(contractId)],
+      "close-proposal",
+      [types.uint(id)],
       sender.address
     );
   }
 
-  getActiveMiningContract(): ReadOnlyFn {
-    return this.callReadOnlyFn("get-active-mining-contract");
+  getActiveContract(name: string): ReadOnlyFn {
+    return this.callReadOnlyFn("get-active-contract", [types.ascii(name)]);
   }
 
-  createVoteTuple(
-    contractAddress: string,
-    startBH: number,
-    endBH: number,
-    miners: number,
-    votes: number
-  ): object {
+  createProposalTuple(data: ProposalTuple): object {
     return {
-      address: contractAddress,
-      startBH: types.uint(startBH),
-      endBH: types.uint(endBH),
-      miners: types.uint(miners),
-      votes: types.uint(votes),
+      address: data.contractAddress,
+      startBH: types.uint(data.startBH),
+      endBH: types.uint(data.endBH),
+      voters: types.uint(data.voters),
+      votes: types.uint(data.votes),
+      isOpen: types.bool(data.isOpen),
     };
   }
 }

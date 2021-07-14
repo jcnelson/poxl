@@ -215,7 +215,7 @@ describe("[CityCoin Token]", () => {
     });
   });
 
-  describe("set-token-uri", () => {
+  describe("set-token-uri()", () => {
     it("fails with ERR_UNAUTHORIZED when called by someone who is not contract owner", () => {
       const block = chain.mineBlock([
         client.setTokenUri(wallet_2, "http://something-something.com"),
@@ -250,7 +250,7 @@ describe("[CityCoin Token]", () => {
     });
   });
 
-  describe("add-trusted-caller", () => {
+  describe("add-trusted-caller()", () => {
     beforeEach(() => {
       setupCleanEnv();
     });
@@ -278,7 +278,7 @@ describe("[CityCoin Token]", () => {
     });
   });
 
-  describe("remove-trusted-caller", () => {
+  describe("remove-trusted-caller()", () => {
     beforeEach(() => {
       setupCleanEnv();
     });
@@ -306,7 +306,7 @@ describe("[CityCoin Token]", () => {
     });
   });
 
-  describe("is-trusted-caller", () => {
+  describe("is-trusted-caller()", () => {
     beforeEach(() => {
       setupCleanEnv();
     });
@@ -342,7 +342,7 @@ describe("[CityCoin Token]", () => {
     });
   });
 
-  describe("mint", () => {
+  describe("mint()", () => {
     beforeEach(() => {
       setupCleanEnv();
     });

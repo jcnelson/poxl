@@ -1,5 +1,5 @@
 import { Account, Chain, Tx } from "../deps.ts";
-import { CityCoinClient } from "./citycoin-client.ts";
+import { CityCoinClient } from "./logic-client.ts";
 import { TokenClient } from "./token-client.ts";
 import { it } from "../deps.ts";
 import { CoreClient } from "./core-client.ts";
@@ -40,7 +40,7 @@ function _it(
 
     deployer = accounts.get("deployer")!;
     clients = {
-      citycoin: new CityCoinClient("citycoin", chain, deployer),
+      citycoin: new CityCoinClient("citycoin-logic-v1", chain, deployer),
       token: new TokenClient("citycoin-token", chain, deployer),
       core: new CoreClient("citycoin-core", chain, deployer),
     };
