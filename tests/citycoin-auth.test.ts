@@ -196,5 +196,66 @@ describe("[CityCoin Auth]", () => {
         .expectErr()
         .expectUint(AuthClient.ErrCode.ERR_ALREADY_APPROVED);
     });
+
+    it("throws ERR_UNAUTHORIZED while approving job by user who is not approver", (chain, accounts, clients) => {
+      // arrange
+      const name = "job-123456";
+      const target = clients.core.getContractAddress();
+      const creator = accounts.get("wallet_1")!;
+      const approver = accounts.get("wallet_5")!;
+      const jobId = 1;
+      chain.mineBlock([
+        clients.auth.createJob(name, target, creator),
+        clients.auth.activateJob(jobId, creator),
+      ]);
+
+      // act
+      const block = chain.mineBlock([clients.auth.approveJob(jobId, approver)]);
+
+      // assert
+      block.receipts[0].result
+        .expectErr()
+        .expectUint(AuthClient.ErrCode.ERR_UNAUTHORIZED);
+    });
+
+    it("successfully saves approvals", (chain, accounts, clients) => {
+      // arrange
+      const name = "job-123456";
+      const target = clients.core.getContractAddress();
+      const creator = accounts.get("wallet_1")!;
+      const approver1 = accounts.get("wallet_2")!;
+      const approver2 = accounts.get("wallet_3")!;
+      const jobId = 1;
+      chain.mineBlock([
+        clients.auth.createJob(name, target, creator),
+        clients.auth.activateJob(jobId, creator),
+      ]);
+
+      // act
+      const block = chain.mineBlock([
+        clients.auth.approveJob(jobId, approver1),
+        clients.auth.approveJob(jobId, approver2),
+      ]);
+
+      // assert
+      block.receipts[0].result.expectOk().expectBool(true);
+      block.receipts[1].result.expectOk().expectBool(true);
+
+      const expectedJob = {
+        creator: creator.address,
+        name: types.ascii(name),
+        target: target,
+        approvals: types.uint(2),
+        isActive: types.bool(true),
+        isExecuted: types.bool(false),
+      };
+
+      const actualJob = clients.auth
+        .getJob(jobId)
+        .result.expectSome()
+        .expectTuple();
+
+      assertEquals(actualJob, expectedJob);
+    });
   });
 });

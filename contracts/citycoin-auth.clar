@@ -26,6 +26,11 @@
   bool
 )
 
+(define-map Approvers
+  principal
+  bool
+)
+
 (define-read-only (get-last-job-id)
   (var-get lastJobId)
 )
@@ -78,7 +83,7 @@
     )
     (asserts! (get isActive job) (err ERR_JOB_IS_NOT_ACTIVE))
     (asserts! (not (has-approved jobId tx-sender)) (err ERR_ALREADY_APPROVED))
-    
+    (asserts! (is-approver tx-sender) (err ERR_UNAUTHORIZED))
     (map-set JobApprovers
       { jobId: jobId, approver: tx-sender }
       true
@@ -95,3 +100,13 @@
 (define-private (has-approved (jobId uint) (approver principal))
   (default-to false (map-get? JobApprovers { jobId: jobId, approver: approver }))
 )
+
+(define-private (is-approver (user principal))
+  (default-to false (map-get? Approvers user))
+)
+
+
+;; CONTRACT INITIALIZATION
+(map-insert Approvers 'ST1J4G6RR643BCG8G8SR6M2D9Z9KXT2NJDRK3FBTK true)
+(map-insert Approvers 'ST20ATRN26N9P05V2F1RHFRV24X8C8M3W54E427B2 true)
+(map-insert Approvers 'ST21HMSJATHZ888PD0S0SSTWP4J61TCRJYEVQ0STB true)
