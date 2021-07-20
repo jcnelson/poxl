@@ -320,11 +320,166 @@ describe("[CityCoin Auth]", () => {
       ]);
 
       // act
-      // act
       const result = clients.auth.isJobApproved(jobId).result;
 
       // assert
       result.expectBool(true);
+    });
+  });
+
+  describe("mark-job-as-executed()", () => {
+    it("throws ERR_UNKNOWN_JOB when requested to mark unknown job", (chain, accounts, clients) => {
+      // arrange
+      const jobId = 123;
+      const sender = accounts.get("wallet_1")!;
+
+      // act
+      const block = chain.mineBlock([
+        clients.auth.markJobAsExecuted(jobId, sender),
+      ]);
+
+      // assert
+      block.receipts[0].result
+        .expectErr()
+        .expectUint(AuthClient.ErrCode.ERR_UNKNOWN_JOB);
+    });
+
+    it("throws ERR_JOB_IS_NOT_ACTIVE when requested to mark not active job", (chain, accounts, clients) => {
+      // arrange
+      const name = "job-name";
+      const creator = accounts.get("wallet_1")!;
+      const target = clients.core.getContractAddress();
+      const jobId = 1;
+      const sender = accounts.get("wallet_1")!;
+      chain.mineBlock([clients.auth.createJob(name, target, creator)]);
+
+      // act
+      const block = chain.mineBlock([
+        clients.auth.markJobAsExecuted(jobId, sender),
+      ]);
+
+      // assert
+      block.receipts[0].result
+        .expectErr()
+        .expectUint(AuthClient.ErrCode.ERR_JOB_IS_NOT_ACTIVE);
+    });
+
+    it("throws ERR_JOB_IS_NOT_APPROVED when requested to mark not approved job", (chain, accounts, clients) => {
+      // arrange
+      const name = "job-name";
+      const creator = accounts.get("wallet_1")!;
+      const target = clients.core.getContractAddress();
+      const jobId = 1;
+      const sender = accounts.get("wallet_1")!;
+      chain.mineBlock([
+        clients.auth.createJob(name, target, creator),
+        clients.auth.activateJob(jobId, creator),
+      ]);
+
+      // act
+      const block = chain.mineBlock([
+        clients.auth.markJobAsExecuted(jobId, sender),
+      ]);
+
+      // assert
+      block.receipts[0].result
+        .expectErr()
+        .expectUint(AuthClient.ErrCode.ERR_JOB_IS_NOT_APPROVED);
+    });
+
+    it("throws ERR_UNAUTHORIZED when requested to mark as approved not by target", (chain, accounts, clients) => {
+      // arrange
+      const name = "job-name";
+      const creator = accounts.get("wallet_1")!;
+      const target = clients.core.getContractAddress();
+      const jobId = 1;
+      const approver1 = accounts.get("wallet_2")!;
+      const approver2 = accounts.get("wallet_3")!;
+      const sender = accounts.get("wallet_1")!;
+      chain.mineBlock([
+        clients.auth.createJob(name, target, creator),
+        clients.auth.activateJob(jobId, creator),
+        clients.auth.approveJob(jobId, approver1),
+        clients.auth.approveJob(jobId, approver2),
+      ]);
+
+      // act
+      const block = chain.mineBlock([
+        clients.auth.markJobAsExecuted(jobId, sender),
+      ]);
+
+      // assert
+      block.receipts[0].result
+        .expectErr()
+        .expectUint(AuthClient.ErrCode.ERR_UNAUTHORIZED);
+    });
+
+    it("successfully marks job as executed when called by target", (chain, accounts, clients) => {
+      // arrange
+      const name = "job-name";
+      const creator = accounts.get("wallet_1")!;
+      const sender = accounts.get("wallet_5")!;
+      const target = sender.address;
+      const jobId = 1;
+      const approver1 = accounts.get("wallet_2")!;
+      const approver2 = accounts.get("wallet_3")!;
+      chain.mineBlock([
+        clients.auth.createJob(name, target, creator),
+        clients.auth.activateJob(jobId, creator),
+        clients.auth.approveJob(jobId, approver1),
+        clients.auth.approveJob(jobId, approver2),
+      ]);
+
+      // act
+      const block = chain.mineBlock([
+        clients.auth.markJobAsExecuted(jobId, sender),
+      ]);
+
+      // assert
+      block.receipts[0].result.expectOk().expectBool(true);
+
+      const expectedJob = {
+        creator: creator.address,
+        name: types.ascii(name),
+        target: target,
+        approvals: types.uint(2),
+        isActive: types.bool(true),
+        isExecuted: types.bool(true),
+      };
+
+      const actualJob = clients.auth
+        .getJob(jobId)
+        .result.expectSome()
+        .expectTuple();
+      assertEquals(actualJob, expectedJob);
+    });
+
+    it("throws ERR_JOB_IS_EXECUTED while trying to mark same job 2nd time", (chain, accounts, clients) => {
+      // arrange
+      const name = "job-name";
+      const creator = accounts.get("wallet_1")!;
+      const sender = accounts.get("wallet_5")!;
+      const target = sender.address;
+      const jobId = 1;
+      const approver1 = accounts.get("wallet_2")!;
+      const approver2 = accounts.get("wallet_3")!;
+      chain.mineBlock([
+        clients.auth.createJob(name, target, creator),
+        clients.auth.activateJob(jobId, creator),
+        clients.auth.approveJob(jobId, approver1),
+        clients.auth.approveJob(jobId, approver2),
+        clients.auth.markJobAsExecuted(jobId, sender),
+      ]);
+
+      // act
+      const block = chain.mineBlock([
+        clients.auth.markJobAsExecuted(jobId, sender),
+      ]);
+
+      // assert
+      block.receipts[0].result
+        .expectErr()
+        .expectUint(AuthClient.ErrCode.ERR_JOB_IS_EXECUTED);
     });
   });
 });

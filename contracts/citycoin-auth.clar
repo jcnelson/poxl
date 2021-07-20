@@ -6,6 +6,8 @@
 (define-constant ERR_JOB_IS_ACTIVE u6002)
 (define-constant ERR_JOB_IS_NOT_ACTIVE u6003)
 (define-constant ERR_ALREADY_APPROVED u6004)
+(define-constant ERR_JOB_IS_EXECUTED u6005)
+(define-constant ERR_JOB_IS_NOT_APPROVED u6006)
 
 (define-constant REQUIRED_APPROVALS u2)
 
@@ -103,6 +105,23 @@
   (match (get-job jobId) job
     (>= (get approvals job) REQUIRED_APPROVALS)
     false
+  )
+)
+
+(define-public (mark-job-as-executed (jobId uint))
+  (let
+    (
+      (job (unwrap! (get-job jobId) (err ERR_UNKNOWN_JOB)))
+    )
+    (asserts! (get isActive job) (err ERR_JOB_IS_NOT_ACTIVE))
+    (asserts! (>= (get approvals job) REQUIRED_APPROVALS) (err ERR_JOB_IS_NOT_APPROVED))
+    (asserts! (is-eq (get target job) contract-caller) (err ERR_UNAUTHORIZED))
+    (asserts! (not (get isExecuted job)) (err ERR_JOB_IS_EXECUTED))
+    (map-set Jobs
+      jobId
+      (merge job { isExecuted: true })
+    )
+    (ok true)
   )
 )
 
