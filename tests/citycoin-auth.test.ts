@@ -258,4 +258,73 @@ describe("[CityCoin Auth]", () => {
       assertEquals(actualJob, expectedJob);
     });
   });
+
+  describe("is-job-approved()", () => {
+    it("returns false when asked about unknown job", (chain, accounts, clients) => {
+      // arrange
+      const jobId = 234234;
+
+      // act
+      const result = clients.auth.isJobApproved(jobId).result;
+
+      // assert
+      result.expectBool(false);
+    });
+
+    it("returns false when asked about inactive job", (chain, accounts, clients) => {
+      // arrange
+      const name = "job-123456";
+      const target = clients.core.getContractAddress();
+      const creator = accounts.get("wallet_1")!;
+      const jobId = 1;
+      chain.mineBlock([clients.auth.createJob(name, target, creator)]);
+
+      // act
+      const result = clients.auth.isJobApproved(jobId).result;
+
+      // assert
+      result.expectBool(false);
+    });
+
+    it("returns false when asked about active job without any approvals", (chain, accounts, clients) => {
+      // arrange
+      const name = "job-123456";
+      const target = clients.core.getContractAddress();
+      const creator = accounts.get("wallet_1")!;
+      const jobId = 1;
+      chain.mineBlock([
+        clients.auth.createJob(name, target, creator),
+        clients.auth.approveJob(jobId, creator),
+      ]);
+
+      // act
+      const result = clients.auth.isJobApproved(jobId).result;
+
+      // assert
+      result.expectBool(false);
+    });
+
+    it("returns when asked about active job with 2 or more approvals", (chain, accounts, clients) => {
+      // arrange
+      const name = "job-123456";
+      const target = clients.core.getContractAddress();
+      const creator = accounts.get("wallet_1")!;
+      const approver1 = accounts.get("wallet_2")!;
+      const approver2 = accounts.get("wallet_3")!;
+      const jobId = 1;
+      chain.mineBlock([
+        clients.auth.createJob(name, target, creator),
+        clients.auth.activateJob(jobId, creator),
+        clients.auth.approveJob(jobId, approver1),
+        clients.auth.approveJob(jobId, approver2),
+      ]);
+
+      // act
+      // act
+      const result = clients.auth.isJobApproved(jobId).result;
+
+      // assert
+      result.expectBool(true);
+    });
+  });
 });

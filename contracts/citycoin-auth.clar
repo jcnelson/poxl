@@ -7,6 +7,8 @@
 (define-constant ERR_JOB_IS_NOT_ACTIVE u6003)
 (define-constant ERR_ALREADY_APPROVED u6004)
 
+(define-constant REQUIRED_APPROVALS u2)
+
 (define-data-var lastJobId uint u0)
 
 (define-map Jobs
@@ -94,6 +96,13 @@
     )
     
     (ok true)
+  )
+)
+
+(define-read-only (is-job-approved (jobId uint))
+  (match (get-job jobId) job
+    (>= (get approvals job) REQUIRED_APPROVALS)
+    false
   )
 )
 

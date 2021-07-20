@@ -46,4 +46,8 @@ export class AuthClient extends Client {
       approver.address
     );
   }
+
+  isJobApproved(jobId: number) {
+    return this.callReadOnlyFn("is-job-approved", [types.uint(jobId)]);
+  }
 }
