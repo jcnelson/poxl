@@ -6,6 +6,7 @@
     "test": "npm run clarinet:test",
     "test:token": "npm run clarinet:prepare && clarinet test ./tests/citycoin-token.test.ts",
     "test:core": "npm run clarinet:prepare && clarinet test ./tests/citycoin-core.test.ts",
+    "test:auth": "npm run clarinet:prepare && clarinet test ./tests/citycoin-auth.test.ts",
     "clarinet:check": "npm run clarinet:prepare && clarinet check",
     "clarinet:test": "npm run clarinet:prepare && clarinet test",
     "clarinet:codecov": "npm run clarinet:prepare && clarinet test --coverage",
