@@ -21,7 +21,7 @@ describe("[CityCoin Auth]", () => {
   });
 
   describe("get-job()", () => {
-    it("returns 'none' for unknow jobId", (chain, accounts, clients) => {
+    it("returns 'none' for unknown jobId", (chain, accounts, clients) => {
       // arrange
       const jobId = 1;
 
@@ -57,8 +57,8 @@ describe("[CityCoin Auth]", () => {
   });
 
   describe("activate-job()", () => {
-    it("throws ERR_UNKNOWN_JOB while activating unknonw job", (chain, accounts, clients) => {
-      // arrage
+    it("throws ERR_UNKNOWN_JOB while activating unknown job", (chain, accounts, clients) => {
+      // arrange
       const jobId = 10;
       const wallet = accounts.get("wallet_4")!;
 
@@ -72,7 +72,7 @@ describe("[CityCoin Auth]", () => {
     });
 
     it("throws ERR_UNAUTHORIZED while activating job by someone who is not its creator", (chain, accounts, clients) => {
-      // arrage
+      // arrange
       const name = "job-123456";
       const target = clients.core.getContractAddress();
       const creator = accounts.get("wallet_1")!;
