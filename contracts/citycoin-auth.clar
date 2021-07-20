@@ -5,6 +5,7 @@
 (define-constant ERR_UNAUTHORIZED u6001)
 (define-constant ERR_JOB_IS_ACTIVE u6002)
 (define-constant ERR_JOB_IS_NOT_ACTIVE u6003)
+(define-constant ERR_ALREADY_APPROVED u6004)
 
 (define-data-var lastJobId uint u0)
 
@@ -76,6 +77,21 @@
       (job (unwrap! (get-job jobId) (err ERR_UNKNOWN_JOB)))
     )
     (asserts! (get isActive job) (err ERR_JOB_IS_NOT_ACTIVE))
+    (asserts! (not (has-aproved jobId tx-sender)) (err ERR_ALREADY_APPROVED))
+    
+    (map-set JobApprovers
+      { jobId: jobId, approver: tx-sender }
+      true
+    )
+    (map-set Jobs
+      jobId
+      (merge job { approvals: (+ (get approvals job) u1) })
+    )
+    
     (ok true)
   )
+)
+
+(define-private (has-aproved (jobId uint) (approver principal))
+  (default-to false (map-get? JobApprovers { jobId: jobId, approver: approver }))
 )

@@ -6,6 +6,7 @@ enum ErrCode {
   ERR_UNAUTHORIZED = 6001,
   ERR_JOB_IS_ACTIVE = 6002,
   ERR_JOB_IS_NOT_ACTIVE = 6003,
+  ERR_ALREADY_APPROVED = 6004,
 }
 
 export class AuthClient extends Client {

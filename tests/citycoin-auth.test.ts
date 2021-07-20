@@ -174,5 +174,27 @@ describe("[CityCoin Auth]", () => {
         .expectErr()
         .expectUint(AuthClient.ErrCode.ERR_JOB_IS_NOT_ACTIVE);
     });
+
+    it("throws ERR_ALREADY_APPROVED while approving job previously approved", (chain, accounts, clients) => {
+      // arrange
+      const name = "job-123456";
+      const target = clients.core.getContractAddress();
+      const creator = accounts.get("wallet_1")!;
+      const approver = accounts.get("wallet_2")!;
+      const jobId = 1;
+      chain.mineBlock([
+        clients.auth.createJob(name, target, creator),
+        clients.auth.activateJob(jobId, creator),
+        clients.auth.approveJob(jobId, approver),
+      ]);
+
+      // act
+      const block = chain.mineBlock([clients.auth.approveJob(jobId, approver)]);
+
+      // assert
+      block.receipts[0].result
+        .expectErr()
+        .expectUint(AuthClient.ErrCode.ERR_ALREADY_APPROVED);
+    });
   });
 });
