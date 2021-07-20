@@ -4,6 +4,7 @@
 (define-constant ERR_UNKNOWN_JOB u6000)
 (define-constant ERR_UNAUTHORIZED u6001)
 (define-constant ERR_JOB_IS_ACTIVE u6002)
+(define-constant ERR_JOB_IS_NOT_ACTIVE u6003)
 
 (define-data-var lastJobId uint u0)
 
@@ -17,6 +18,11 @@
     isActive: bool,
     isExecuted: bool,
   }
+)
+
+(define-map JobApprovers
+  { jobId: uint, approver: principal }
+  bool
 )
 
 (define-read-only (get-last-job-id)
@@ -56,12 +62,20 @@
     )
     (asserts! (is-eq (get creator job) tx-sender) (err ERR_UNAUTHORIZED))
     (asserts! (not (get isActive job)) (err ERR_JOB_IS_ACTIVE))
-
     (map-set Jobs 
       jobId
       (merge job { isActive: true })
     )
     (ok true)
   )
-  
+)
+
+(define-public (approve-job (jobId uint))
+  (let
+    (
+      (job (unwrap! (get-job jobId) (err ERR_UNKNOWN_JOB)))
+    )
+    (asserts! (get isActive job) (err ERR_JOB_IS_NOT_ACTIVE))
+    (ok true)
+  )
 )

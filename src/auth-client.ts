@@ -5,6 +5,7 @@ enum ErrCode {
   ERR_UNKNOWN_JOB = 6000,
   ERR_UNAUTHORIZED = 6001,
   ERR_JOB_IS_ACTIVE = 6002,
+  ERR_JOB_IS_NOT_ACTIVE = 6003,
 }
 
 export class AuthClient extends Client {
@@ -33,6 +34,15 @@ export class AuthClient extends Client {
       "activate-job",
       [types.uint(jobId)],
       sender.address
+    );
+  }
+
+  approveJob(jobId: number, approver: Account) {
+    return Tx.contractCall(
+      this.contractName,
+      "approve-job",
+      [types.uint(jobId)],
+      approver.address
     );
   }
 }

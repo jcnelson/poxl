@@ -141,4 +141,38 @@ describe("[CityCoin Auth]", () => {
       assertEquals(actualJob, expectedJob);
     });
   });
+
+  describe("approve-job()", () => {
+    it("throws ERR_UNKNOWN_JOB while approving unknown job", (chain, accounts, clients) => {
+      // arrange
+      const approver = accounts.get("wallet_2")!;
+      const jobId = 399;
+
+      // act
+      const block = chain.mineBlock([clients.auth.approveJob(jobId, approver)]);
+
+      // assert
+      block.receipts[0].result
+        .expectErr()
+        .expectUint(AuthClient.ErrCode.ERR_UNKNOWN_JOB);
+    });
+
+    it("throws ERR_JOB_IS_NOT_ACTIVE while approving not active job", (chain, accounts, clients) => {
+      // arrange
+      const name = "job-123456";
+      const target = clients.core.getContractAddress();
+      const creator = accounts.get("wallet_1")!;
+      const approver = accounts.get("wallet_2")!;
+      const jobId = 1;
+      chain.mineBlock([clients.auth.createJob(name, target, creator)]);
+
+      // act
+      const block = chain.mineBlock([clients.auth.approveJob(jobId, approver)]);
+
+      // assert
+      block.receipts[0].result
+        .expectErr()
+        .expectUint(AuthClient.ErrCode.ERR_JOB_IS_NOT_ACTIVE);
+    });
+  });
 });
