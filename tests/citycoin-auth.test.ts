@@ -55,4 +55,90 @@ describe("[CityCoin Auth]", () => {
       assertEquals(actualJob, expectedJob);
     });
   });
+
+  describe("activate-job()", () => {
+    it("throws ERR_UNKNOWN_JOB while activating unknonw job", (chain, accounts, clients) => {
+      // arrage
+      const jobId = 10;
+      const wallet = accounts.get("wallet_4")!;
+
+      // act
+      const block = chain.mineBlock([clients.auth.activateJob(jobId, wallet)]);
+
+      // assert
+      block.receipts[0].result
+        .expectErr()
+        .expectUint(AuthClient.ErrCode.ERR_UNKNOWN_JOB);
+    });
+
+    it("throws ERR_UNAUTHORIZED while activating job by someone who is not its creator", (chain, accounts, clients) => {
+      // arrage
+      const name = "job-123456";
+      const target = clients.core.getContractAddress();
+      const creator = accounts.get("wallet_1")!;
+      const jobId = 1;
+      const wallet = accounts.get("wallet_4")!;
+
+      chain.mineBlock([clients.auth.createJob(name, target, creator)]);
+
+      // act
+      const block = chain.mineBlock([clients.auth.activateJob(jobId, wallet)]);
+
+      // assert
+      block.receipts[0].result
+        .expectErr()
+        .expectUint(AuthClient.ErrCode.ERR_UNAUTHORIZED);
+    });
+
+    it("throws ERR_JOB_IS_ACTIVE while activating job that is already active", (chain, accounts, clients) => {
+      // arrange
+      const name = "job-123456";
+      const target = clients.core.getContractAddress();
+      const creator = accounts.get("wallet_1")!;
+      const jobId = 1;
+      chain.mineBlock([
+        clients.auth.createJob(name, target, creator),
+        clients.auth.activateJob(1, creator),
+      ]);
+
+      // act
+      const block = chain.mineBlock([clients.auth.activateJob(jobId, creator)]);
+
+      // assert
+      block.receipts[0].result
+        .expectErr()
+        .expectUint(AuthClient.ErrCode.ERR_JOB_IS_ACTIVE);
+    });
+
+    it("successfully activate job by its creator", (chain, accounts, clients) => {
+      // arrange
+      const name = "job-123456";
+      const target = clients.core.getContractAddress();
+      const creator = accounts.get("wallet_1")!;
+      const jobId = 1;
+      chain.mineBlock([clients.auth.createJob(name, target, creator)]);
+
+      // act
+      const block = chain.mineBlock([clients.auth.activateJob(jobId, creator)]);
+
+      // assert
+      block.receipts[0].result.expectOk().expectBool(true);
+
+      const expectedJob = {
+        creator: creator.address,
+        name: types.ascii(name),
+        target: target,
+        approvals: types.uint(0),
+        isActive: types.bool(true),
+        isExecuted: types.bool(false),
+      };
+
+      const actualJob = clients.auth
+        .getJob(jobId)
+        .result.expectSome()
+        .expectTuple();
+
+      assertEquals(actualJob, expectedJob);
+    });
+  });
 });
