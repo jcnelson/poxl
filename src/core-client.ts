@@ -3,15 +3,8 @@ import { Client } from "./client.ts";
 
 enum ErrCode {
   ERR_UNAUTHORIZED = 1000,
-  ERR_CONTRACT_ALREADY_EXISTS,
-  ERR_CONTRACT_DOES_NOT_EXIST,
-  ERR_VOTE_HAS_ENDED,
-  ERR_VOTE_STILL_IN_PROGRESS,
-  ERR_ALREADY_VOTED,
-  ERR_PROPOSAL_DOES_NOT_EXIST,
-  ERR_PROPOSAL_ALREADY_CLOSED,
-  ERR_NOTHING_TO_VOTE_ON,
-  ERR_CANT_VOTE_ON_OLD_PROPOSAL,
+  ERR_USER_ALREADY_REGISTERED = 1001,
+  ERR_ACTIVATION_THRESHOLD_REACHED = 1003,
 }
 
 enum ContractState {
@@ -45,6 +38,15 @@ export class CoreClient extends Client {
     );
   }
 
+  unsafeSetActivationThreshold(newThreshold: number): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "test-set-activation-threshold",
+      [types.uint(newThreshold)],
+      this.deployer.address
+    );
+  }
+
   setCityWallet(newCityWallet: Account, sender: Account): Tx {
     return Tx.contractCall(
       this.contractName,
@@ -56,5 +58,22 @@ export class CoreClient extends Client {
 
   getCityWallet(): ReadOnlyFn {
     return this.callReadOnlyFn("get-city-wallet");
+  }
+
+  registerUser(sender: Account, memo: string | undefined = undefined): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "register-user",
+      [
+        typeof memo == "undefined"
+          ? types.none()
+          : types.some(types.utf8(memo)),
+      ],
+      sender.address
+    );
+  }
+
+  getUserId(user: Account): ReadOnlyFn {
+    return this.callReadOnlyFn("get-user-id", [types.principal(user.address)]);
   }
 }

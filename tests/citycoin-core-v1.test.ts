@@ -37,4 +37,82 @@ describe("[CityCoin Core]", () => {
         .result.expectPrincipal(newCityWallet.address);
     });
   });
+
+  describe("register-user()", () => {
+    it("successfully register new user and emits print event with memo when supplied", (chain, accounts, clients) => {
+      // arrange
+      const user = accounts.get("wallet_5")!;
+      const memo = "hello world";
+
+      // act
+      const receipt = chain.mineBlock([clients.core.registerUser(user, memo)])
+        .receipts[0];
+
+      // assert
+      receipt.result.expectOk().expectBool(true);
+      clients.core.getUserId(user).result.expectSome().expectUint(1);
+
+      assertEquals(receipt.events.length, 1);
+
+      const expectedEvent = {
+        type: "contract_event",
+        contract_event: {
+          contract_identifier: clients.core.getContractAddress(),
+          topic: "print",
+          value: types.some(types.utf8(memo)),
+        },
+      };
+
+      assertEquals(receipt.events[0], expectedEvent);
+    });
+
+    it("successfully register new user and do not emit any events when memo is not supplied", (chain, accounts, clients) => {
+      // arrange
+      const user = accounts.get("wallet_4")!;
+
+      // act
+      const receipt = chain.mineBlock([clients.core.registerUser(user)])
+        .receipts[0];
+
+      // assert
+      receipt.result.expectOk().expectBool(true);
+      clients.core.getUserId(user).result.expectSome().expectUint(1);
+
+      assertEquals(receipt.events.length, 0);
+    });
+
+    it("throws ERR_USER_ALREADY_REGISTERED while trying to register user 2nd time", (chain, accounts, clients) => {
+      // arrange
+      const user = accounts.get("wallet_4")!;
+      const registerUserTx = clients.core.registerUser(user);
+      chain.mineBlock([registerUserTx]);
+
+      // act
+      const receipt = chain.mineBlock([registerUserTx]).receipts[0];
+
+      // assert
+      receipt.result
+        .expectErr()
+        .expectUint(CoreClient.ErrCode.ERR_USER_ALREADY_REGISTERED);
+    });
+
+    it("throws ERR_ACTIVATION_THRESHOLD_REACHED error when user wants to register after reaching activation threshold", (chain, accounts, clients) => {
+      // arrange
+      const user1 = accounts.get("wallet_4")!;
+      const user2 = accounts.get("wallet_5")!;
+      chain.mineBlock([
+        clients.core.unsafeSetActivationThreshold(1),
+        clients.core.registerUser(user1),
+      ]);
+
+      // act
+      const receipt = chain.mineBlock([clients.core.registerUser(user2)])
+        .receipts[0];
+
+      // assert
+      receipt.result
+        .expectErr()
+        .expectUint(CoreClient.ErrCode.ERR_ACTIVATION_THRESHOLD_REACHED);
+    });
+  });
 });
