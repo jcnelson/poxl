@@ -183,6 +183,9 @@
 ;; define split to custodied wallet address for the city
 (define-constant SPLIT_CITY_PCT u30)
 
+;; how long a miner must wait before block winner can claim their minted tokens
+(define-data-var tokenRewardMaturity uint u100)
+
 ;; At a given Stacks block height:
 ;; - how many miners were there
 ;; - what was the total amount submitted
@@ -367,9 +370,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MINING REWARD CLAIM ACTIONS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; how long a miner must wait before block winner can claim their minted tokens
-(define-data-var tokenRewardMaturity uint u100)
 
 ;; calls function to claim mining reward in active logic contract
 (define-public (claim-mining-reward (minerBlockHeight uint))
@@ -598,13 +598,14 @@
         toReturn: (+ toReturn (get toReturn stackerAtCycle))
       }
     )
+    ;; TODO: remove and evaluate indeterminate response issue
     (asserts! true (err u0))
     (ok true)
   )
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; TOKEN
+;; TOKEN CONFIGURATION
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; how many blocks until the next halving occurs
