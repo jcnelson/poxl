@@ -17,8 +17,22 @@
 (define-constant ERR_UNAUTHORIZED u1000)
 (define-constant ERR_USER_ALREADY_REGISTERED u1001)
 (define-constant ERR_USER_NOT_FOUND u1002)
+(define-constant ERR_USER_ID_NOT_FOUND u2004)
 (define-constant ERR_ACTIVATION_THRESHOLD_REACHED u1003)
 (define-constant ERR_CONTRACT_NOT_ACTIVATED u1004)
+(define-constant ERR_USER_ALREADY_MINED u2001)
+(define-constant ERR_INSUFFICIENT_COMMITMENT u2002)
+(define-constant ERR_INSUFFICIENT_BALANCE u2003)
+(define-constant ERR_USER_DID_NOT_MINE_IN_BLOCK u2005)
+(define-constant ERR_CLAIMED_BEFORE_MATURITY u2006)
+(define-constant ERR_NO_MINERS_AT_BLOCK u2007)
+(define-constant ERR_REWARD_ALREADY_CLAIMED u2007)
+(define-constant ERR_MINER_DID_NOT_WIN u2008)
+(define-constant ERR_NO_VRF_SEED_FOUND u2009)
+(define-constant ERR_STACKING_NOT_AVAILABLE u2010)
+(define-constant ERR_CANNOT_STACK u2011)
+(define-constant ERR_REWARD_CYCLE_NOT_COMPLETED u2012)
+(define-constant ERR_NOTHING_TO_REDEEM u2013)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CITY WALLET MANAGEMENT
@@ -285,7 +299,67 @@
       )
       (toStackers (- amountUstx toCity))
     )
-    (asserts! true (err u0))
+    (asserts! (get-activation-status) (err ERR_CONTRACT_NOT_ACTIVATED))
+    (asserts! (not (has-mined-at-block stacksHeight userId)) (err ERR_USER_ALREADY_MINED))
+    (asserts! (> amountUstx u0) (err ERR_INSUFFICIENT_COMMITMENT))
+    (asserts! (>= (stx-get-balance tx-sender) amountUstx) (err ERR_INSUFFICIENT_BALANCE))
+    (try! (set-tokens-mined userId stacksHeight amountUstx toStackers toCity))
+    (if (is-some memo)
+      (print memo)
+      none
+    )
+    (if stackingActive
+      (try! (stx-transfer? toStackers tx-sender .citycoin-core))
+      false
+    )
+    (try! (stx-transfer? toCity tx-sender (var-get cityWallet)))
+    (ok true)
+  )
+)
+
+(define-public (set-tokens-mined (userId uint) (stacksHeight uint) (amountUstx uint) (toStackers uint) (toCity uint))
+  (let
+    (
+      (blockStats (get-mining-stats-at-block-or-default stacksHeight))
+      (newMinersCount (+ (get minersCount blockStats) u1))
+      (minerLowVal (get-last-high-value-at-block stacksHeight))
+      (rewardCycle (unwrap! (get-reward-cycle stacksHeight)
+        (err ERR_STACKING_NOT_AVAILABLE)))
+      (rewardCycleStats (get-stacking-stats-at-cycle-or-default rewardCycle))
+    )
+    (map-set MiningStatsAtBlock
+      stacksHeight
+      {
+        minersCount: newMinersCount,
+        amount: (+ (get amount blockStats) amountUstx),
+        amountToCity: (+ (get amountToCity blockStats) toCity),
+        amountToStackers: (+ (get amountToStackers blockStats) toStackers),
+        rewardClaimed: false
+      }
+    )
+    (map-set MinersAtBlock
+      {
+        stacksHeight: stacksHeight,
+        userId: userId
+      }
+      {
+        ustx: amountUstx,
+        lowValue: (+ minerLowVal u1),
+        highValue: (+ minerLowVal amountUstx),
+        winner: false
+      }
+    )
+    (map-set MinersAtBlockHighValue
+      stacksHeight
+      (+ minerLowVal amountUstx)
+    )
+    (map-set StackingStatsAtCycle
+      stacksHeight
+      {
+        amountUstx: (+ (get amountUstx rewardCycleStats) toStackers),
+        amountToken: (get amountToken rewardCycleStats)
+      }
+    )
     (ok true)
   )
 )
