@@ -39,7 +39,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; initial value for city wallet
-(define-data-var cityWallet principal 'ST1HTBVD3JG9C05J7HBJTHGR0GGW7KXW28M5JS8QE)
+(define-data-var cityWallet principal 'STFCVYY1RJDNJHST7RRTPACYHVJQDJ7R1DWTQHQA)
 
 ;; returns set city wallet principal
 (define-read-only (get-city-wallet)

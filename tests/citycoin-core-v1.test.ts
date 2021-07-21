@@ -3,6 +3,18 @@ import { CoreClient } from "../src/core-client.ts";
 import { it } from "../src/testutil.ts";
 
 describe("[CityCoin Core]", () => {
+  describe("Read Only:", () => {
+    describe("get-city-wallet()", () => {
+      it("returns current city wallet variable", (chain, accounts, clients) => {
+        // arrange
+        const cityWallet = accounts.get("city_wallet")!;
+        const result = clients.core.getCityWallet().result;
+
+        // assert
+        result.expectPrincipal(cityWallet.address);
+      });
+    });
+  });
   describe("set-city-wallet()", () => {
     it("throws ERR_UNAUTHORIZED when called by non-city wallet", (chain, accounts, clients) => {
       // arrange
