@@ -3,7 +3,7 @@
 ;; FUNCTIONS ONLY USED DURING TESTS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define-public (test-unsafe-city-wallet (newCityWallet principal))
+(define-public (test-unsafe-set-city-wallet (newCityWallet principal))
   (ok (var-set cityWallet newCityWallet))
 )
 

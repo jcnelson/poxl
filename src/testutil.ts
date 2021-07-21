@@ -42,7 +42,7 @@ function _it(
     clients = {
       citycoin: new CityCoinClient("citycoin-logic-v1", chain, deployer),
       token: new TokenClient("citycoin-token", chain, deployer),
-      core: new CoreClient("citycoin-core", chain, deployer),
+      core: new CoreClient("citycoin-core-v1", chain, deployer),
     };
 
     await fn(chain, accounts, clients);
