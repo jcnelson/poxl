@@ -494,6 +494,42 @@
   )
 )
 
+;; getter for get-entitled-stacking-reward that specifies block height
+(define-read-only (get-stacking-reward (userId uint) (targetCycle uint))
+  (get-entitled-stacking-reward userId targetCycle block-height)
+)
+
+;; get uSTX a Stacker can claim, given reward cycle they stacked in and current block height
+;; this method only returns a positive value if:
+;; - the current block height is in a subsequent reward cycle
+;; - the stacker actually locked up tokens in the target reward cycle
+;; - the stacker locked up _enough_ tokens to get at least one uSTX
+;; it is possible to Stack tokens and not receive uSTX:
+;; - if no miners commit during this reward cycle
+;; - the amount stacked by user is too few that you'd be entitled to less than 1 uSTX
+(define-private (get-entitled-stacking-reward (userId uint) (targetCycle uint) (stacksHeight uint))
+  (let
+    (
+      (rewardCycleStats (unwrap-panic (get-stacking-stats-at-cycle targetCycle)))
+      (stackerAtCycle (unwrap-panic (get-stacker-at-cycle targetCycle userId)))
+      (totalUstxThisCycle (get amountUstx rewardCycleStats))
+      (totalStackedThisCycle (get amountToken rewardCycleStats))
+      (userStackedThisCycle (get amountStacked stackerAtCycle))
+    )
+    (match (get-reward-cycle stacksHeight)
+      currentCycle
+      (if (or (<= currentCycle targetCycle) (is-eq u0 userStackedThisCycle))
+        ;; this cycle hasn't finished, or Stacker contributed nothing
+        u0
+        ;; (totalUstxThisCycle * userStackedThisCycle) / totalStackedThisCycle
+        (/ (* totalUstxThisCycle userStackedThisCycle) totalStackedThisCycle)
+      )
+      ;; before first reward cycle
+      u0
+    )
+  )
+)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; STACKING ACTIONS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -600,6 +636,54 @@
     )
     ;; TODO: remove and evaluate indeterminate response issue
     (asserts! true (err u0))
+    (ok true)
+  )
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; STACKING REWARD CLAIMS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; calls function to claim stacking reward in active logic contract
+(define-public (claim-stacking-reward (targetCycle uint))
+  (begin
+    (try! (claim-stacking-reward-at-cycle tx-sender block-height targetCycle))
+    (ok true)
+  )
+)
+
+(define-private (claim-stacking-reward-at-cycle (user principal) (stacksHeight uint) (targetCycle uint))
+  (let
+    (
+      (currentCycle (unwrap! (get-reward-cycle stacksHeight) (err ERR_STACKING_NOT_AVAILABLE)))
+      (userId (unwrap! (get-user-id user) (err ERR_USER_ID_NOT_FOUND)))
+      (entitledUstx (get-entitled-stacking-reward userId targetCycle stacksHeight))
+      (stackerAtCycle (get-stacker-at-cycle-or-default targetCycle userId))
+      (toReturn (get toReturn stackerAtCycle))
+    )
+    (asserts! (> currentCycle targetCycle) (err ERR_REWARD_CYCLE_NOT_COMPLETED))
+    (asserts! (or (> toReturn u0) (> entitledUstx u0)) (err ERR_NOTHING_TO_REDEEM))
+    ;; disable ability to claim again
+    (map-set StackerAtCycle
+      {
+        rewardCycle: targetCycle,
+        userId: userId
+      }
+      {
+        amountStacked: u0,
+        toReturn: u0
+      }
+    )
+    ;; send back tokens if user was eligible
+    (if (> toReturn u0)
+      (try! (as-contract (contract-call? .citycoin-token transfer toReturn tx-sender user none)))
+      true
+    )
+    ;; send back rewards if user was eligible
+    (if (> entitledUstx u0)
+      (try! (as-contract (stx-transfer? entitledUstx tx-sender user)))
+      true
+    )
     (ok true)
   )
 )
