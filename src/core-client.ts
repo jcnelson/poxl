@@ -61,6 +61,10 @@ export class CoreClient extends Client {
     return this.callReadOnlyFn("get-city-wallet");
   }
 
+  getActivationBlock(): ReadOnlyFn {
+    return this.callReadOnlyFn("get-activation-block");
+  }
+
   registerUser(sender: Account, memo: string | undefined = undefined): Tx {
     return Tx.contractCall(
       this.contractName,

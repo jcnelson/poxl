@@ -14,6 +14,33 @@ describe("[CityCoin Core]", () => {
         result.expectPrincipal(cityWallet.address);
       });
     });
+    describe("get-activation-block()", () => {
+      it("throws ERR_CONTRACT_NOT_ACTIVATED if called before contract is activated", (chain, accounts, clients) => {
+        // act
+        const result = clients.core.getActivationBlock().result;
+
+        // assert
+        result
+          .expectErr()
+          .expectUint(CoreClient.ErrCode.ERR_CONTRACT_NOT_ACTIVATED);
+      });
+      it("succeeds and returns activation height", (chain, accounts, clients) => {
+        // arrange
+        const user = accounts.get("wallet_4")!;
+        const block = chain.mineBlock([
+          clients.core.unsafeSetActivationThreshold(1),
+          clients.core.registerUser(user),
+        ]);
+        const activationBlockHeight =
+          block.height + CoreClient.ACTIVATION_DELAY - 1;
+
+        // act
+        const result = clients.core.getActivationBlock().result;
+
+        // assert
+        result.expectOk().expectUint(activationBlockHeight);
+      });
+    });
   });
   describe("set-city-wallet()", () => {
     it("throws ERR_UNAUTHORIZED when called by non-city wallet", (chain, accounts, clients) => {
