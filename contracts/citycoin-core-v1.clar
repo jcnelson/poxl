@@ -317,7 +317,7 @@
   )
 )
 
-(define-public (set-tokens-mined (userId uint) (stacksHeight uint) (amountUstx uint) (toStackers uint) (toCity uint))
+(define-private (set-tokens-mined (userId uint) (stacksHeight uint) (amountUstx uint) (toStackers uint) (toCity uint))
   (let
     (
       (blockStats (get-mining-stats-at-block-or-default stacksHeight))
@@ -360,6 +360,59 @@
         amountToken: (get amountToken rewardCycleStats)
       }
     )
+    (ok true)
+  )
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; MINING REWARD CLAIM ACTIONS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; how long a miner must wait before block winner can claim their minted tokens
+(define-data-var tokenRewardMaturity uint u100)
+
+;; calls function to claim mining reward in active logic contract
+(define-public (claim-mining-reward (minerBlockHeight uint))
+  (begin
+    (try! (claim-mining-reward-at-block tx-sender block-height minerBlockHeight))
+    (ok true)
+  )
+)
+
+;; Determine whether or not the given principal can claim the mined tokens at a particular block height,
+;; given the miners record for that block height, a random sample, and the current block height.
+(define-private (claim-mining-reward-at-block (user principal) (stacksHeight uint) (minerBlockHeight uint))
+  (let
+    (
+      (maturityHeight (+ (var-get tokenRewardMaturity) minerBlockHeight))
+      (userId (unwrap! (get-user-id user) (err ERR_USER_ID_NOT_FOUND)))
+      (blockStats (unwrap! (get-mining-stats-at-block minerBlockHeight) (err ERR_NO_MINERS_AT_BLOCK)))
+      (minerStats (unwrap! (get-miner-at-block minerBlockHeight userId) (err ERR_USER_DID_NOT_MINE_IN_BLOCK)))
+      (vrfSample (unwrap! (contract-call? .citycoin-vrf get-random-uint-at-block maturityHeight) (err ERR_NO_VRF_SEED_FOUND)))
+      (commitTotal (get-last-high-value-at-block minerBlockHeight))
+      (winningValue (mod vrfSample commitTotal))
+    )
+    (asserts! (> stacksHeight maturityHeight) (err ERR_CLAIMED_BEFORE_MATURITY))
+    (asserts! (has-mined-at-block minerBlockHeight userId) (err ERR_USER_DID_NOT_MINE_IN_BLOCK))
+    (asserts! (not (get rewardClaimed blockStats)) (err ERR_REWARD_ALREADY_CLAIMED))
+    (asserts! (not (is-eq commitTotal u0)) (err ERR_NO_MINERS_AT_BLOCK))
+    (asserts! (and (>= winningValue (get lowValue minerStats)) (<= winningValue (get highValue minerStats)))
+      (err ERR_MINER_DID_NOT_WIN))
+    (try! (set-mining-reward-claimed userId minerBlockHeight))
+    (ok true)
+  )
+)
+
+(define-private (set-mining-reward-claimed (userId uint) (minerBlockHeight uint))
+  (let
+    (
+      (blockStats (get-mining-stats-at-block-or-default minerBlockHeight))
+      (minerStats (get-miner-at-block-or-default minerBlockHeight userId))
+      (user (unwrap! (get-user userId) (err ERR_USER_NOT_FOUND)))
+    )
+    (merge blockStats { rewardClaimed: true })
+    (merge minerStats { winner: true })
+    (try! (mint-coinbase user minerBlockHeight))
     (ok true)
   )
 )
