@@ -33,7 +33,7 @@ describe("[CityCoin Core]", () => {
 
     it("successfully change city walled when called by current city wallet", (chain, accounts, clients) => {
       // arrange
-      const cityWallet = accounts.get("wallet_1")!;
+      const cityWallet = accounts.get("city_wallet")!;
       const newCityWallet = accounts.get("wallet_2")!;
       chain.mineBlock([clients.core.unsafeSetCityWallet(cityWallet)]);
 
@@ -207,7 +207,7 @@ describe("[CityCoin Core]", () => {
 
     it("succeeds and cause one stx_transfer_event to city-wallet during first cycle", (chain, accounts, clients) => {
       // arrange
-      const cityWallet = accounts.get("wallet_6")!;
+      const cityWallet = accounts.get("city_wallet")!;
       const miner = accounts.get("wallet_2")!;
       const amountUstx = 200;
       const block = chain.mineBlock([
@@ -234,7 +234,7 @@ describe("[CityCoin Core]", () => {
 
     it("succeeds and cause one stx_transfer event to city-wallet and one to stacker while mining in cycle with stackers", (chain, accounts, clients) => {
       // arrange
-      const cityWallet = accounts.get("wallet_6")!;
+      const cityWallet = accounts.get("city_wallet")!;
       const miner = accounts.get("wallet_2")!;
       const amountUstx = 200;
       const amountTokens = 500;
