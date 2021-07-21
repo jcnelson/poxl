@@ -115,4 +115,215 @@ describe("[CityCoin Core]", () => {
         .expectUint(CoreClient.ErrCode.ERR_ACTIVATION_THRESHOLD_REACHED);
     });
   });
+
+  describe("mine-tokens()", () => {
+    it("throws ERR_CONTRACT_NOT_ACTIVATED while trying to mine before reaching activation threshold", (chain, accounts, clients) => {
+      // arrange
+      const miner = accounts.get("wallet_2")!;
+      const amountUstx = 200;
+
+      // act
+      const receipt = chain.mineBlock([
+        clients.core.mineTokens(amountUstx, miner),
+      ]).receipts[0];
+
+      // assert
+      receipt.result
+        .expectErr()
+        .expectUint(CoreClient.ErrCode.ERR_CONTRACT_NOT_ACTIVATED);
+    });
+
+    it("throws ERR_INSUFFICIENT_COMMITMENT while trying to mine with 0 commitment", (chain, accounts, clients) => {
+      // arrange
+      const miner = accounts.get("wallet_2")!;
+      const amountUstx = 0;
+      chain.mineBlock([
+        clients.core.unsafeSetActivationThreshold(1),
+        clients.core.registerUser(miner),
+      ]);
+
+      // act
+      const receipt = chain.mineBlock([
+        clients.core.mineTokens(amountUstx, miner),
+      ]).receipts[0];
+
+      // assert
+      receipt.result
+        .expectErr()
+        .expectUint(CoreClient.ErrCode.ERR_INSUFFICIENT_COMMITMENT);
+    });
+
+    it("throws ERR_INSUFFICIENT_BALANCE while trying to mine with commitment larger than current balance", (chain, accounts, clients) => {
+      // arrange
+      const miner = accounts.get("wallet_2")!;
+      const amountUstx = miner.balance + 1;
+      chain.mineBlock([
+        clients.core.unsafeSetActivationThreshold(1),
+        clients.core.registerUser(miner),
+      ]);
+
+      // act
+      const receipt = chain.mineBlock([
+        clients.core.mineTokens(amountUstx, miner),
+      ]).receipts[0];
+
+      // assert
+      receipt.result
+        .expectErr()
+        .expectUint(CoreClient.ErrCode.ERR_INSUFFICIENT_BALANCE);
+    });
+
+    it("throws ERR_STACKING_NOT_AVAILABLE while trying to mine before activation period end", (chain, accounts, clients) => {
+      // arrange
+      const miner = accounts.get("wallet_2")!;
+      const amountUstx = 200;
+      chain.mineBlock([
+        clients.core.unsafeSetActivationThreshold(1),
+        clients.core.registerUser(miner),
+      ]);
+
+      // act
+      const receipt = chain.mineBlock([
+        clients.core.mineTokens(amountUstx, miner),
+      ]).receipts[0];
+
+      //assert
+      receipt.result
+        .expectErr()
+        .expectUint(CoreClient.ErrCode.ERR_STACKING_NOT_AVAILABLE);
+    });
+
+    it("succeeds and cause one stx_transfer_event to city-wallet during first cycle", (chain, accounts, clients) => {
+      // arrange
+      const cityWallet = accounts.get("wallet_6")!;
+      const miner = accounts.get("wallet_2")!;
+      const amountUstx = 200;
+      const block = chain.mineBlock([
+        clients.core.unsafeSetCityWallet(cityWallet),
+        clients.core.unsafeSetActivationThreshold(1),
+        clients.core.registerUser(miner),
+      ]);
+      chain.mineEmptyBlockUntil(block.height + CoreClient.ACTIVATION_DELAY - 1);
+
+      // act
+      const receipt = chain.mineBlock([
+        clients.core.mineTokens(amountUstx, miner),
+      ]).receipts[0];
+
+      //assert
+      receipt.result.expectOk().expectBool(true);
+      assertEquals(receipt.events.length, 1);
+      receipt.events.expectSTXTransferEvent(
+        amountUstx,
+        miner.address,
+        cityWallet.address
+      );
+    });
+
+    it("succeeds and cause one stx_transfer event to city-wallet and one to stacker while mining in cycle with stackers", (chain, accounts, clients) => {
+      // arrange
+      const cityWallet = accounts.get("wallet_6")!;
+      const miner = accounts.get("wallet_2")!;
+      const amountUstx = 200;
+      const amountTokens = 500;
+      const block = chain.mineBlock([
+        clients.core.unsafeSetCityWallet(cityWallet),
+        clients.token.ftMint(amountTokens, miner),
+        clients.core.unsafeSetActivationThreshold(1),
+        clients.core.registerUser(miner),
+      ]);
+
+      const activationBlockHeight =
+        block.height + CoreClient.ACTIVATION_DELAY - 1;
+      const cycle1FirstBlockHeight =
+        activationBlockHeight + CoreClient.REWARD_CYCLE_LENGTH;
+
+      chain.mineEmptyBlockUntil(activationBlockHeight);
+      chain.mineBlock([clients.core.stackTokens(amountTokens, 1, miner)]);
+      chain.mineEmptyBlockUntil(cycle1FirstBlockHeight);
+
+      // act
+      const receipt = chain.mineBlock([
+        clients.core.mineTokens(amountUstx, miner),
+      ]).receipts[0];
+
+      //assert
+      receipt.result.expectOk().expectBool(true);
+      assertEquals(receipt.events.length, 2);
+
+      receipt.events.expectSTXTransferEvent(
+        amountUstx * CoreClient.SPLIT_CITY_PCT,
+        miner.address,
+        cityWallet.address
+      );
+
+      receipt.events.expectSTXTransferEvent(
+        amountUstx * (1 - CoreClient.SPLIT_CITY_PCT),
+        miner.address,
+        clients.core.getContractAddress()
+      );
+    });
+
+    it("succeeds and prints memo when supplied", (chain, accounts, clients) => {
+      // arrange
+      const miner = accounts.get("wallet_2")!;
+      const amountUstx = 200;
+      const memo = new TextEncoder().encode("hello world");
+      const block = chain.mineBlock([
+        clients.core.unsafeSetActivationThreshold(1),
+        clients.core.registerUser(miner),
+      ]);
+
+      const activationBlockHeight =
+        block.height + CoreClient.ACTIVATION_DELAY - 1;
+
+      chain.mineEmptyBlockUntil(activationBlockHeight);
+
+      // act
+      const receipt = chain.mineBlock([
+        clients.core.mineTokens(amountUstx, miner, memo),
+      ]).receipts[0];
+
+      //assert
+      receipt.result.expectOk().expectBool(true);
+      assertEquals(receipt.events.length, 2);
+
+      const expectedEvent = {
+        type: "contract_event",
+        contract_event: {
+          contract_identifier: clients.core.getContractAddress(),
+          topic: "print",
+          value: types.some(types.buff(memo)),
+        },
+      };
+
+      assertEquals(receipt.events[0], expectedEvent);
+    });
+
+    it("throws ERR_USER_ALREADY_MINED while trying to mine same block 2nd time", (chain, accounts, clients) => {
+      // arrange
+      const miner = accounts.get("wallet_2")!;
+      const amountUstx = 200;
+      const memo = new TextEncoder().encode("hello world");
+      const block = chain.mineBlock([
+        clients.core.unsafeSetActivationThreshold(1),
+        clients.core.registerUser(miner),
+      ]);
+
+      const activationBlockHeight =
+        block.height + CoreClient.ACTIVATION_DELAY - 1;
+
+      chain.mineEmptyBlockUntil(activationBlockHeight);
+
+      // act
+      const mineTokensTx = clients.core.mineTokens(amountUstx, miner, memo);
+      const receipts = chain.mineBlock([mineTokensTx, mineTokensTx]).receipts;
+
+      //assert
+      receipts[0].result.expectOk().expectBool(true);
+      receipts[1].result
+        .expectErr()
+        .expectUint(CoreClient.ErrCode.ERR_USER_ALREADY_MINED);
+    });
+  });
 });
