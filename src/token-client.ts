@@ -17,7 +17,7 @@ export class TokenClient extends Client {
   ftMint(amount: number, recipient: Account): Tx {
     return Tx.contractCall(
       this.contractName,
-      "ft-mint",
+      "test-mint",
       [types.uint(amount), types.principal(recipient.address)],
       this.deployer.address
     );
