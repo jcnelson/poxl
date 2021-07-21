@@ -309,7 +309,7 @@
       none
     )
     (if stackingActive
-      (try! (stx-transfer? toStackers tx-sender .citycoin-core))
+      (try! (stx-transfer? toStackers tx-sender (as-contract tx-sender)))
       false
     )
     (try! (stx-transfer? toCity tx-sender (var-get cityWallet)))
@@ -421,6 +421,9 @@
 ;; STACKING CONFIGURATION
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(define-constant MAX_REWARD_CYCLES u32)
+(define-constant REWARD_CYCLE_INDEXES (list u0 u1 u2 u3 u4 u5 u6 u7 u8 u9 u10 u11 u12 u13 u14 u15 u16 u17 u18 u19 u20 u21 u22 u23 u24 u25 u26 u27 u28 u29 u30 u31))
+
 ;; how long a reward cycle is
 (define-data-var rewardCycleLength uint u2100)
 
@@ -495,7 +498,110 @@
 ;; STACKING ACTIONS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(define-public (stack-tokens (amountTokens uint) (lockPeriod uint))
+  (let
+    (
+      (userId (get-or-create-user-id tx-sender))
+    )
+    (try! (stack-tokens-at-cycle tx-sender userId amountTokens block-height lockPeriod))
+    (ok true)
+  )
+)
 
+(define-private (stack-tokens-at-cycle (user principal) (userId uint) (amountTokens uint) (startHeight uint) (lockPeriod uint))
+  (let
+    (
+      (currentCycle (unwrap! (get-reward-cycle startHeight) (err ERR_STACKING_NOT_AVAILABLE)))
+      (targetCycle (+ u1 currentCycle))
+      (commitment {
+        stackerId: userId,
+        amount: amountTokens,
+        first: targetCycle,
+        last: (+ targetCycle lockPeriod)
+      })
+    )
+    (asserts! (and (> lockPeriod u0) (<= lockPeriod MAX_REWARD_CYCLES))
+      (err ERR_CANNOT_STACK))
+    (asserts! (> amountTokens u0) (err ERR_CANNOT_STACK))
+    (asserts! (<= amountTokens (unwrap-panic (contract-call? .citycoin-token get-balance user)))
+      (err ERR_INSUFFICIENT_BALANCE))
+    (try! (contract-call? .citycoin-token transfer amountTokens tx-sender (as-contract tx-sender) none))
+    (match (fold stack-tokens-closure REWARD_CYCLE_INDEXES (ok commitment))
+      okValue (ok true)
+      errValue (err errValue)
+    )
+  )
+)
+
+(define-private (stack-tokens-closure (rewardCycleIdx uint)
+  (commitmentResponse (response 
+    {
+      stackerId: uint,
+      amount: uint,
+      first: uint,
+      last: uint
+    }
+    uint
+  )))
+
+  (match commitmentResponse
+    commitment 
+    (let
+      (
+        (stackerId (get stackerId commitment))
+        (amountToken (get amount commitment))
+        (firstCycle (get first commitment))
+        (lastCycle (get last commitment))
+        (targetCycle (+ firstCycle rewardCycleIdx))
+        (stackerAtCycle (get-stacker-at-cycle-or-default targetCycle stackerId))
+        (amountStacked (get amountStacked stackerAtCycle))
+        (toReturn (get toReturn stackerAtCycle))
+      )
+      (begin
+        (if (and (>= targetCycle firstCycle) (< targetCycle lastCycle))
+          (begin
+            (if (is-eq targetCycle (- lastCycle u1))
+              (try! (set-tokens-stacked stackerId targetCycle amountStacked (+ toReturn amountToken)))
+              (try! (set-tokens-stacked stackerId targetCycle amountStacked toReturn))
+            )
+            true
+          )
+          false
+        )
+        commitmentResponse
+      )
+    )
+    errValue commitmentResponse
+  )
+)
+
+(define-private (set-tokens-stacked (userId uint) (targetCycle uint) (amountStacked uint) (toReturn uint))
+  (let
+    (
+      (rewardCycleStats (get-stacking-stats-at-cycle-or-default targetCycle))
+      (stackerAtCycle (get-stacker-at-cycle-or-default targetCycle userId))
+    )
+    (map-set StackingStatsAtCycle
+      targetCycle
+      {
+        amountUstx: (get amountUstx rewardCycleStats),
+        amountToken: (+ amountStacked (get amountToken rewardCycleStats))
+      }
+    )
+    (map-set StackerAtCycle
+      {
+        rewardCycle: targetCycle,
+        userId: userId
+      }
+      {
+        amountStacked: (+ amountStacked (get amountStacked stackerAtCycle)),
+        toReturn: (+ toReturn (get toReturn stackerAtCycle))
+      }
+    )
+    (asserts! true (err u0))
+    (ok true)
+  )
+)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TOKEN

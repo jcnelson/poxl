@@ -69,7 +69,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define-data-var tokenUri (optional (string-utf8 256)) (some u"https://cdn.citycoins.co/metadata/citycoin.json"))
-(define-data-var trustedCaller principal .citycoin-core)
+(define-data-var trustedCaller principal .citycoin-core-v1)
 
 ;; set token URI to new value, only accessible by CITYCOIN CORE
 (define-public (set-token-uri (newUri (optional (string-utf8 256))))
