@@ -93,30 +93,6 @@ export class TokenClient extends Client {
     );
   }
 
-  isTrustedCaller(caller: Account): ReadOnlyFn {
-    return this.callReadOnlyFn("is-trusted-caller", [
-      types.principal(caller.address),
-    ]);
-  }
-
-  addTrustedCaller(caller: Account, sender: Account): Tx {
-    return Tx.contractCall(
-      this.contractName,
-      "add-trusted-caller",
-      [types.principal(caller.address)],
-      sender.address
-    );
-  }
-
-  removeTrustedCaller(caller: Account, sender: Account): Tx {
-    return Tx.contractCall(
-      this.contractName,
-      "remove-trusted-caller",
-      [types.principal(caller.address)],
-      sender.address
-    );
-  }
-
   mint(amount: number, recipient: Account, sender: Account): Tx {
     return Tx.contractCall(
       this.contractName,

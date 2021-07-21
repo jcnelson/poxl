@@ -251,98 +251,6 @@ describe("[CityCoin Token]", () => {
   //   });
   // });
 
-  describe("add-trusted-caller()", () => {
-    beforeEach(() => {
-      setupCleanEnv();
-    });
-
-    it("fails with ERR_UNAUTHORIZED when called who is not contract owner", () => {
-      const block = chain.mineBlock([
-        client.addTrustedCaller(wallet_2, wallet_2),
-      ]);
-
-      const receipt = block.receipts[0];
-
-      receipt.result
-        .expectErr()
-        .expectUint(TokenClient.ErrCode.ERR_UNAUTHORIZED);
-    });
-
-    it("succeeds when called by contract owner", () => {
-      const block = chain.mineBlock([
-        client.addTrustedCaller(wallet_2, deployer),
-      ]);
-
-      const receipt = block.receipts[0];
-
-      receipt.result.expectOk().expectBool(true);
-    });
-  });
-
-  describe("remove-trusted-caller()", () => {
-    beforeEach(() => {
-      setupCleanEnv();
-    });
-
-    it("fails with ERR_UNAUTHORIZED when called who is not contract owner", () => {
-      const block = chain.mineBlock([
-        client.removeTrustedCaller(wallet_2, wallet_2),
-      ]);
-
-      const receipt = block.receipts[0];
-
-      receipt.result
-        .expectErr()
-        .expectUint(TokenClient.ErrCode.ERR_UNAUTHORIZED);
-    });
-
-    it("succeeds when called by contract owner", () => {
-      const block = chain.mineBlock([
-        client.removeTrustedCaller(wallet_2, deployer),
-      ]);
-
-      const receipt = block.receipts[0];
-
-      receipt.result.expectOk().expectBool(true);
-    });
-  });
-
-  describe("is-trusted-caller()", () => {
-    beforeEach(() => {
-      setupCleanEnv();
-    });
-
-    it("returns false when asked about not trusted caller", () => {
-      const result = client.isTrustedCaller(wallet_2).result;
-
-      result.expectBool(false);
-    });
-
-    it("returns false when asked about caller that has been removed", () => {
-      let block = chain.mineBlock([
-        client.addTrustedCaller(wallet_2, deployer),
-        client.removeTrustedCaller(wallet_2, deployer),
-      ]);
-
-      const result = client.isTrustedCaller(wallet_2).result;
-
-      result.expectBool(false);
-    });
-
-    it("returns true when asked about trusted caller", () => {
-      let block = chain.mineBlock([
-        client.addTrustedCaller(wallet_2, deployer),
-        client.addTrustedCaller(wallet_3, deployer),
-      ]);
-
-      const result1 = client.isTrustedCaller(wallet_2).result;
-      const result2 = client.isTrustedCaller(wallet_3).result;
-
-      result1.expectBool(true);
-      result2.expectBool(true);
-    });
-  });
-
   describe("mint()", () => {
     beforeEach(() => {
       setupCleanEnv();
@@ -362,10 +270,7 @@ describe("[CityCoin Token]", () => {
       const amount = 200;
       const recipient = wallet_3;
 
-      let block = chain.mineBlock([
-        client.addTrustedCaller(wallet_2, deployer),
-        client.mint(amount, recipient, wallet_2),
-      ]);
+      let block = chain.mineBlock([client.mint(amount, recipient, wallet_2)]);
 
       let receipt = block.receipts[1];
       receipt.result.expectOk().expectBool(true);
