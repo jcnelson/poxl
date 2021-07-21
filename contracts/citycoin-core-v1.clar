@@ -357,7 +357,7 @@
       (+ minerLowVal amountUstx)
     )
     (map-set StackingStatsAtCycle
-      stacksHeight
+      rewardCycle
       {
         amountUstx: (+ (get amountUstx rewardCycleStats) toStackers),
         amountToken: (get amountToken rewardCycleStats)
@@ -410,8 +410,30 @@
       (minerStats (get-miner-at-block-or-default minerBlockHeight userId))
       (user (unwrap! (get-user userId) (err ERR_USER_NOT_FOUND)))
     )
-    (merge blockStats { rewardClaimed: true })
-    (merge minerStats { winner: true })
+    (map-set MiningStatsAtBlock
+      minerBlockHeight
+      {
+        minersCount: (get minersCount blockStats),
+        amount: (get amount blockStats),
+        amountToCity: (get amountToCity blockStats),
+        amountToStackers: (get amountToStackers blockStats),
+        rewardClaimed: true
+      }
+    )
+    (map-set MinersAtBlock
+      {
+        stacksHeight: minerBlockHeight,
+        userId: userId
+      }
+      {
+        ustx: (get ustx minerStats),
+        lowValue: (get lowValue minerStats),
+        highValue: (get highValue minerStats),
+        winner: true
+      }
+    )
+    ;; (merge blockStats { rewardClaimed: true })
+    ;; (merge minerStats { winner: true })
     (try! (mint-coinbase user minerBlockHeight))
     (ok true)
   )
@@ -510,6 +532,7 @@
 (define-private (get-entitled-stacking-reward (userId uint) (targetCycle uint) (stacksHeight uint))
   (let
     (
+      ;; TODO: find and remove all unwrap-panic
       (rewardCycleStats (unwrap-panic (get-stacking-stats-at-cycle targetCycle)))
       (stackerAtCycle (unwrap-panic (get-stacker-at-cycle targetCycle userId)))
       (totalUstxThisCycle (get amountUstx rewardCycleStats))
@@ -597,8 +620,8 @@
         (if (and (>= targetCycle firstCycle) (< targetCycle lastCycle))
           (begin
             (if (is-eq targetCycle (- lastCycle u1))
-              (try! (set-tokens-stacked stackerId targetCycle amountStacked (+ toReturn amountToken)))
-              (try! (set-tokens-stacked stackerId targetCycle amountStacked toReturn))
+              (try! (set-tokens-stacked stackerId targetCycle amountToken (+ toReturn amountToken)))
+              (try! (set-tokens-stacked stackerId targetCycle amountToken toReturn))
             )
             true
           )
