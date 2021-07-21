@@ -23,6 +23,15 @@ export class TokenClient extends Client {
     );
   }
 
+  setTrustedCaller(newTrustedCaller: Account): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "test-set-trusted-caller",
+      [types.principal(newTrustedCaller.address)],
+      this.deployer.address
+    );
+  }
+
   // SIP-010 functions
   transfer(
     amount: number,
