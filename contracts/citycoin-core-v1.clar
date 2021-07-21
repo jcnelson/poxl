@@ -163,6 +163,214 @@
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; MINING CONFIGURATION
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; define split to custodied wallet address for the city
+(define-constant SPLIT_CITY_PCT u30)
+
+;; At a given Stacks block height:
+;; - how many miners were there
+;; - what was the total amount submitted
+;; - what was the total amount submitted to the city
+;; - what was the total amount submitted to Stackers
+;; - was the block reward claimed
+(define-map MiningStatsAtBlock
+  uint
+  {
+    minersCount: uint,
+    amount: uint,
+    amountToCity: uint,
+    amountToStackers: uint,
+    rewardClaimed: bool
+  }
+)
+
+;; returns map MiningStatsAtBlock at a given Stacks block height if it exists
+(define-read-only (get-mining-stats-at-block (stacksHeight uint))
+  (map-get? MiningStatsAtBlock stacksHeight)
+)
+
+;; returns map MiningStatsAtBlock at a given Stacks block height
+;; or, an empty structure
+(define-read-only (get-mining-stats-at-block-or-default (stacksHeight uint))
+  (default-to {
+      minersCount: u0,
+      amount: u0,
+      amountToCity: u0,
+      amountToStackers: u0,
+      rewardClaimed: false
+    }
+    (map-get? MiningStatsAtBlock stacksHeight)
+  )
+)
+
+;; At a given Stacks block height and user ID:
+;; - what is their ustx commitment
+;; - what are the low/high values (used for VRF)
+(define-map MinersAtBlock
+  {
+    stacksHeight: uint,
+    userId: uint
+  }
+  {
+    ustx: uint,
+    lowValue: uint,
+    highValue: uint,
+    winner: bool
+  }
+)
+
+;; returns true if a given miner has already mined at a given block height
+(define-read-only (has-mined-at-block (stacksHeight uint) (userId uint))
+  (is-some 
+    (map-get? MinersAtBlock { stacksHeight: stacksHeight, userId: userId })
+  )
+)
+
+;; returns map MinersAtBlock at a given Stacks block height for a user ID
+(define-read-only (get-miner-at-block (stacksHeight uint) (userId uint))
+  (map-get? MinersAtBlock { stacksHeight: stacksHeight, userId: userId })
+)
+
+;; returns map MinersAtBlock at a given Stacks block height for a user ID
+;; or, an empty structure
+(define-read-only (get-miner-at-block-or-default (stacksHeight uint) (userId uint))
+  (default-to {
+    highValue: u0,
+    lowValue: u0,
+    ustx: u0,
+    winner: false
+  }
+    (map-get? MinersAtBlock { stacksHeight: stacksHeight, userId: userId }))
+)
+
+;; At a given Stacks block height:
+;; - what is the max highValue from MinersAtBlock (used for VRF)
+(define-map MinersAtBlockHighValue
+  uint
+  uint
+)
+
+;; returns last high value from map MinersAtBlockHighValue
+(define-read-only (get-last-high-value-at-block (stacksHeight uint))
+  (default-to u0
+    (map-get? MinersAtBlockHighValue stacksHeight))
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; MINING ACTIONS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define-public (mine-tokens (amountUstx uint) (memo (optional (buff 34))))
+  (let
+    (
+      (userId (get-or-create-user-id tx-sender))
+    )
+    (try! (mine-tokens-at-block userId block-height amountUstx memo))
+    (ok true)
+  )
+)
+
+(define-private (mine-tokens-at-block (userId uint) (stacksHeight uint) (amountUstx uint) (memo (optional (buff 34))))
+  (let
+    (
+      (rewardCycle (default-to u0 (get-reward-cycle stacksHeight)))
+      (stackingActive (stacking-active-at-cycle rewardCycle))
+      (toCity
+        (if stackingActive
+          (/ (* SPLIT_CITY_PCT amountUstx) u100)
+          amountUstx
+        )
+      )
+      (toStackers (- amountUstx toCity))
+    )
+    (asserts! true (err u0))
+    (ok true)
+  )
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; STACKING CONFIGURATION
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; how long a reward cycle is
+(define-data-var rewardCycleLength uint u2100)
+
+;; At a given reward cycle:
+;; - how many Stackers were there
+;; - what is the total uSTX submitted by miners
+;; - what is the total amount of tokens stacked
+(define-map StackingStatsAtCycle
+  uint
+  {
+    amountUstx: uint,
+    amountToken: uint
+  }
+)
+
+;; returns the total stacked tokens and committed uSTX for a given reward cycle
+(define-read-only (get-stacking-stats-at-cycle (rewardCycle uint))
+  (map-get? StackingStatsAtCycle rewardCycle)
+)
+
+;; returns the total stacked tokens and committed uSTX for a given reward cycle
+;; or, an empty structure
+(define-read-only (get-stacking-stats-at-cycle-or-default (rewardCycle uint))
+  (default-to { amountUstx: u0, amountToken: u0 }
+    (map-get? StackingStatsAtCycle rewardCycle))
+)
+
+;; At a given reward cycle and user ID:
+;; - what is the total tokens Stacked?
+;; - how many tokens should be returned? (based on Stacking period)
+(define-map StackerAtCycle
+  {
+    rewardCycle: uint,
+    userId: uint
+  }
+  {
+    amountStacked: uint,
+    toReturn: uint
+  }
+)
+
+(define-read-only (get-stacker-at-cycle (rewardCycle uint) (userId uint))
+  (map-get? StackerAtCycle { rewardCycle: rewardCycle, userId: userId })
+)
+
+(define-read-only (get-stacker-at-cycle-or-default (rewardCycle uint) (userId uint))
+  (default-to { amountStacked: u0, toReturn: u0 }
+    (map-get? StackerAtCycle { rewardCycle: rewardCycle, userId: userId }))
+)
+
+;; get the reward cycle for a given Stacks block height
+(define-read-only (get-reward-cycle (stacksHeight uint))
+  (let
+    (
+      (firstStackingBlock (var-get activationBlock))
+      (rcLen (var-get rewardCycleLength))
+    )
+    (if (>= stacksHeight firstStackingBlock)
+      (some (/ (- stacksHeight firstStackingBlock) rcLen))
+      none)
+  )
+)
+
+;; determine if stacking is active in a given cycle
+(define-read-only (stacking-active-at-cycle (rewardCycle uint))
+  (is-some
+    (get amountToken (map-get? StackingStatsAtCycle rewardCycle))
+  )
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; STACKING ACTIONS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TOKEN
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
