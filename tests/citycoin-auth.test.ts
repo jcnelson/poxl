@@ -483,7 +483,7 @@ describe("[CityCoin Auth]", () => {
     });
   });
 
-  describe("add-uint-argument", () => {
+  describe("add-uint-argument()", () => {
     it("throws ERR_UNKNOWN_JOB while adding argument to unknown job", (chain, accounts, clients) => {
       // arrange
       const sender = accounts.get("wallet_1")!;
@@ -593,6 +593,125 @@ describe("[CityCoin Auth]", () => {
       // act
       const block = chain.mineBlock([
         clients.auth.addUIntArgument(jobId, argumentName, value, sender),
+      ]);
+
+      // assert
+      block.receipts[0].result
+        .expectErr()
+        .expectUint(AuthClient.ErrCode.ERR_ARGUMENT_ALREADY_EXISTS);
+    });
+  });
+
+  describe("add-principal-argument()", () => {
+    it("throws ERR_UNKNOWN_JOB while adding argument to unknown job", (chain, accounts, clients) => {
+      // arrange
+      const sender = accounts.get("wallet_1")!;
+      const jobId = 1;
+      const argumentName = "test1";
+      const value = sender.address;
+
+      // act
+      const block = chain.mineBlock([
+        clients.auth.addPrincipalArgument(jobId, argumentName, value, sender),
+      ]);
+
+      // assert
+      block.receipts[0].result
+        .expectErr()
+        .expectUint(AuthClient.ErrCode.ERR_UNKNOWN_JOB);
+    });
+
+    it("throws ERR_JOB_IS_ACTIVE while adding argument to active job", (chain, accounts, clients) => {
+      // arrange
+      const sender = accounts.get("wallet_1")!;
+      const jobId = 1;
+      const argumentName = "test1";
+      const value = sender.address;
+      const jobName = "test-job";
+      const target = sender.address;
+      chain.mineBlock([
+        clients.auth.createJob(jobName, target, sender),
+        clients.auth.activateJob(jobId, sender),
+      ]);
+
+      // act
+      const block = chain.mineBlock([
+        clients.auth.addPrincipalArgument(jobId, argumentName, value, sender),
+      ]);
+
+      // assert
+      block.receipts[0].result
+        .expectErr()
+        .expectUint(AuthClient.ErrCode.ERR_JOB_IS_ACTIVE);
+    });
+
+    it("throws ERR_UNAUTHORIZED while adding argument by someone who is not job creator", (chain, accounts, clients) => {
+      // arrange
+      const sender = accounts.get("wallet_1")!;
+      const jobId = 1;
+      const argumentName = "test1";
+      const value = sender.address;
+      const jobName = "test-job";
+      const target = sender.address;
+      const creator = accounts.get("wallet_2")!;
+      chain.mineBlock([clients.auth.createJob(jobName, target, creator)]);
+
+      // act
+      const block = chain.mineBlock([
+        clients.auth.addPrincipalArgument(jobId, argumentName, value, sender),
+      ]);
+
+      // assert
+      block.receipts[0].result
+        .expectErr()
+        .expectUint(AuthClient.ErrCode.ERR_UNAUTHORIZED);
+    });
+
+    it("successfully save new argument", (chain, accounts, clients) => {
+      // arrange
+      const sender = accounts.get("wallet_1")!;
+      const jobId = 1;
+      const argumentName = "test1";
+      const value = sender.address;
+      const jobName = "test-job";
+      const target = sender.address;
+      chain.mineBlock([clients.auth.createJob(jobName, target, sender)]);
+
+      // act
+      const block = chain.mineBlock([
+        clients.auth.addPrincipalArgument(jobId, argumentName, value, sender),
+      ]);
+
+      // assert
+      block.receipts[0].result.expectOk().expectBool(true);
+
+      clients.auth
+        .getPrincipalValueByName(jobId, argumentName)
+        .result.expectSome()
+        .expectPrincipal(value);
+
+      clients.auth
+        .getPrincipalValueById(jobId, 1)
+        .result.expectSome()
+        .expectPrincipal(value);
+    });
+
+    it("throws ERR_ARGUMENT_ALREADY_EXISTS while adding same argument 2nd time", (chain, accounts, clients) => {
+      // arrange
+      const sender = accounts.get("wallet_1")!;
+      const jobId = 1;
+      const argumentName = "test1";
+      const value = sender.address;
+      const jobName = "test-job";
+      const target = sender.address;
+      chain.mineBlock([
+        clients.auth.createJob(jobName, target, sender),
+        clients.auth.addPrincipalArgument(jobId, argumentName, value, sender),
+      ]);
+
+      // act
+      const block = chain.mineBlock([
+        clients.auth.addPrincipalArgument(jobId, argumentName, value, sender),
       ]);
 
       // assert

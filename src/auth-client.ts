@@ -90,4 +90,32 @@ export class AuthClient extends Client {
       types.uint(argumentId),
     ]);
   }
+
+  addPrincipalArgument(
+    jobId: number,
+    argumentName: string,
+    value: string,
+    sender: Account
+  ) {
+    return Tx.contractCall(
+      this.contractName,
+      "add-principal-argument",
+      [types.uint(jobId), types.ascii(argumentName), types.principal(value)],
+      sender.address
+    );
+  }
+
+  getPrincipalValueByName(jobId: number, argumentName: string) {
+    return this.callReadOnlyFn("get-principal-value-by-name", [
+      types.uint(jobId),
+      types.ascii(argumentName),
+    ]);
+  }
+
+  getPrincipalValueById(jobId: number, argumentId: number) {
+    return this.callReadOnlyFn("get-principal-value-by-id", [
+      types.uint(jobId),
+      types.uint(argumentId),
+    ]);
+  }
 }

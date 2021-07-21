@@ -51,6 +51,16 @@
   { argumentName: (string-ascii 255), value: uint }
 )
 
+(define-map PrincipalArgumentsByName
+  { jobId: uint, argumentName: (string-ascii 255) }
+  { argumentId: uint, value: principal }
+)
+
+(define-map PrincipalArgumentsById
+  { jobId: uint, argumentId: uint }
+  { argumentName: (string-ascii 255), value: principal }
+)
+
 ;; FUNCTIONS
 (define-read-only (get-last-job-id)
   (var-get lastJobId)
@@ -179,6 +189,45 @@
 
 (define-read-only (get-uint-value-by-id (jobId uint) (argumentId uint))
   (get value (get-uint-argument-by-id jobId argumentId))
+)
+
+(define-public (add-principal-argument (jobId uint) (argumentName (string-ascii 255)) (value principal))
+  (let
+    (
+      (argumentId (generate-argument-id jobId "principal"))
+    )
+    (try! (guard-add-argument jobId))
+    (asserts! 
+      (and
+        (map-insert PrincipalArgumentsById
+          { jobId: jobId, argumentId: argumentId }
+          { argumentName: argumentName, value: value }
+        )
+        (map-insert PrincipalArgumentsByName
+          { jobId: jobId, argumentName: argumentName }
+          { argumentId: argumentId, value: value}
+        )
+      ) 
+      (err ERR_ARGUMENT_ALREADY_EXISTS)
+    )
+    (ok true)
+  )
+)
+
+(define-read-only (get-principal-argument-by-name (jobId uint) (argumentName (string-ascii 255)))
+  (map-get? PrincipalArgumentsByName { jobId: jobId, argumentName: argumentName })
+)
+
+(define-read-only (get-principal-argument-by-id (jobId uint) (argumentId uint))
+  (map-get? PrincipalArgumentsById { jobId: jobId, argumentId: argumentId })
+)
+
+(define-read-only (get-principal-value-by-name (jobId uint) (argumentName (string-ascii 255)))
+  (get value (get-principal-argument-by-name jobId argumentName))
+)
+
+(define-read-only (get-principal-value-by-id (jobId uint) (argumentId uint))
+  (get value (get-principal-argument-by-id jobId argumentId))
 )
 
 ;; PRIVATE FUNCIONS
