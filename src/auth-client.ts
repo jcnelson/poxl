@@ -9,6 +9,7 @@ enum ErrCode {
   ERR_ALREADY_APPROVED = 6004,
   ERR_JOB_IS_EXECUTED = 6005,
   ERR_JOB_IS_NOT_APPROVED = 6006,
+  ERR_ARGUMENT_ALREADY_EXISTS = 6007,
 }
 
 export class AuthClient extends Client {
@@ -60,5 +61,33 @@ export class AuthClient extends Client {
       [types.uint(jobId)],
       sender.address
     );
+  }
+
+  addUIntArgument(
+    jobId: number,
+    argumentName: string,
+    value: number,
+    sender: Account
+  ) {
+    return Tx.contractCall(
+      this.contractName,
+      "add-uint-argument",
+      [types.uint(jobId), types.ascii(argumentName), types.uint(value)],
+      sender.address
+    );
+  }
+
+  getUIntValueByName(jobId: number, argumentName: string) {
+    return this.callReadOnlyFn("get-uint-value-by-name", [
+      types.uint(jobId),
+      types.ascii(argumentName),
+    ]);
+  }
+
+  getUIntValueById(jobId: number, argumentId: number) {
+    return this.callReadOnlyFn("get-uint-value-by-id", [
+      types.uint(jobId),
+      types.uint(argumentId),
+    ]);
   }
 }

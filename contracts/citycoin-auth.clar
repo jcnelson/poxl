@@ -8,6 +8,7 @@
 (define-constant ERR_ALREADY_APPROVED u6004)
 (define-constant ERR_JOB_IS_EXECUTED u6005)
 (define-constant ERR_JOB_IS_NOT_APPROVED u6006)
+(define-constant ERR_ARGUMENT_ALREADY_EXISTS u6007)
 
 (define-constant REQUIRED_APPROVALS u2)
 
@@ -35,6 +36,22 @@
   bool
 )
 
+(define-map ArgumentLastIdsByType
+  { jobId: uint, argumentType: (string-ascii 25) }
+  uint
+)
+
+(define-map UIntArgumentsByName
+  { jobId: uint, argumentName: (string-ascii 255) }
+  { argumentId: uint, value: uint}
+)
+
+(define-map UIntArgumentsById
+  { jobId: uint, argumentId: uint }
+  { argumentName: (string-ascii 255), value: uint }
+)
+
+;; FUNCTIONS
 (define-read-only (get-last-job-id)
   (var-get lastJobId)
 )
@@ -125,6 +142,46 @@
   )
 )
 
+(define-public (add-uint-argument (jobId uint) (argumentName (string-ascii 255)) (value uint))
+  (let
+    (
+      (argumentId (generate-argument-id jobId "uint"))
+    )
+    (try! (guard-add-argument jobId))
+    (asserts! 
+      (and
+        (map-insert UIntArgumentsById
+          { jobId: jobId, argumentId: argumentId }
+          { argumentName: argumentName, value: value }
+        )
+        (map-insert UIntArgumentsByName
+          { jobId: jobId, argumentName: argumentName }
+          { argumentId: argumentId, value: value}
+        )
+      ) 
+      (err ERR_ARGUMENT_ALREADY_EXISTS)
+    )
+    (ok true)
+  )
+)
+
+(define-read-only (get-uint-argument-by-name (jobId uint) (argumentName (string-ascii 255)))
+  (map-get? UIntArgumentsByName { jobId: jobId, argumentName: argumentName })
+)
+
+(define-read-only (get-uint-argument-by-id (jobId uint) (argumentId uint))
+  (map-get? UIntArgumentsById { jobId: jobId, argumentId: argumentId })
+)
+
+(define-read-only (get-uint-value-by-name (jobId uint) (argumentName (string-ascii 255)))
+  (get value (get-uint-argument-by-name jobId argumentName))
+)
+
+(define-read-only (get-uint-value-by-id (jobId uint) (argumentId uint))
+  (get value (get-uint-argument-by-id jobId argumentId))
+)
+
+;; PRIVATE FUNCIONS
 (define-private (has-approved (jobId uint) (approver principal))
   (default-to false (map-get? JobApprovers { jobId: jobId, approver: approver }))
 )
@@ -133,6 +190,30 @@
   (default-to false (map-get? Approvers user))
 )
 
+(define-private (generate-argument-id (jobId uint) (argumentType (string-ascii 25)))
+  (let
+    (
+      (argumentId (+ (default-to u0 (map-get? ArgumentLastIdsByType { jobId: jobId, argumentType: argumentType })) u1))
+    )
+    (map-set ArgumentLastIdsByType
+      { jobId: jobId, argumentType: argumentType }
+      argumentId
+    )
+    ;; return
+    argumentId
+  )
+)
+
+(define-private (guard-add-argument (jobId uint))
+  (let
+    (
+      (job (unwrap! (get-job jobId) (err ERR_UNKNOWN_JOB)))
+    )
+    (asserts! (not (get isActive job)) (err ERR_JOB_IS_ACTIVE))
+    (asserts! (is-eq (get creator job) contract-caller) (err ERR_UNAUTHORIZED))
+    (ok true)
+  )
+)
 
 ;; CONTRACT INITIALIZATION
 (map-insert Approvers 'ST1J4G6RR643BCG8G8SR6M2D9Z9KXT2NJDRK3FBTK true)
