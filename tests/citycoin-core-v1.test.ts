@@ -719,4 +719,153 @@ describe("[CityCoin Core]", () => {
       }
     });
   });
+
+  describe("claim-mining-reward()", () => {
+    it("throws ERR_USER_NOT_FOUND when called by non-registered user or user who didn't mine at all", (chain, accounts, clients) => {
+      // arrange
+      const miner = accounts.get("wallet_2")!;
+
+      // act
+      const receipt = chain.mineBlock([
+        clients.core.claimMiningReward(0, miner),
+      ]).receipts[0];
+
+      // assert
+      receipt.result
+        .expectErr()
+        .expectUint(CoreClient.ErrCode.ERR_USER_ID_NOT_FOUND);
+    });
+
+    it("throws ERR_NO_MINERS_AT_BLOCK when called with block-hight at which nobody decided to mine", (chain, accounts, clients) => {
+      // arrange
+      const miner = accounts.get("wallet_2")!;
+      chain.mineBlock([clients.core.registerUser(miner)]);
+
+      // act
+      const receipt = chain.mineBlock([
+        clients.core.claimMiningReward(0, miner),
+      ]).receipts[0];
+
+      // assert
+      receipt.result
+        .expectErr()
+        .expectUint(CoreClient.ErrCode.ERR_NO_MINERS_AT_BLOCK);
+    });
+
+    it("throws ERR_USER_DID_NOT_MINE_IN_BLOCK when called by user who didn't mine specific block", (chain, accounts, clients) => {
+      // arrange
+      const otherMiner = accounts.get("wallet_4")!;
+      const miner = accounts.get("wallet_2")!;
+      const amount = 2000;
+      const setupBlock = chain.mineBlock([
+        clients.core.unsafeSetActivationThreshold(1),
+        clients.core.registerUser(miner),
+      ]);
+      const activationBlockHeight =
+        setupBlock.height + CoreClient.ACTIVATION_DELAY - 1;
+
+      chain.mineEmptyBlockUntil(activationBlockHeight);
+
+      const block = chain.mineBlock([
+        clients.core.mineTokens(amount, otherMiner),
+      ]);
+
+      // act
+      const receipt = chain.mineBlock([
+        clients.core.claimMiningReward(block.height - 1, miner),
+      ]);
+
+      // assert
+      receipt.receipts[0].result
+        .expectErr()
+        .expectUint(CoreClient.ErrCode.ERR_USER_DID_NOT_MINE_IN_BLOCK);
+    });
+
+    it("throws ERR_CLAIMED_BEFORE_MATURITY when called before reward was mature to be claimed", (chain, accounts, clients) => {
+      // arrange
+      const miner = accounts.get("wallet_2")!;
+      const amount = 2000;
+      const setupBlock = chain.mineBlock([
+        clients.core.unsafeSetActivationThreshold(1),
+        clients.core.registerUser(miner),
+      ]);
+      const activationBlockHeight =
+        setupBlock.height + CoreClient.ACTIVATION_DELAY - 1;
+
+      chain.mineEmptyBlockUntil(activationBlockHeight);
+
+      const block = chain.mineBlock([clients.core.mineTokens(amount, miner)]);
+
+      // act
+      const receipt = chain.mineBlock([
+        clients.core.claimMiningReward(block.height - 1, miner),
+      ]).receipts[0];
+
+      // assert
+      receipt.result
+        .expectErr()
+        .expectUint(CoreClient.ErrCode.ERR_CLAIMED_BEFORE_MATURITY);
+    });
+
+    it("throws ERR_REWARD_ALREADY_CLAIMED when trying to claim reward 2nd time", (chain, accounts, clients) => {
+      // arrange
+      const miner = accounts.get("wallet_2")!;
+      const amount = 2000;
+      const setupBlock = chain.mineBlock([
+        clients.core.unsafeSetActivationThreshold(1),
+        clients.core.registerUser(miner),
+      ]);
+      const activationBlockHeight =
+        setupBlock.height + CoreClient.ACTIVATION_DELAY - 1;
+
+      chain.mineEmptyBlockUntil(activationBlockHeight);
+
+      const block = chain.mineBlock([clients.core.mineTokens(amount, miner)]);
+      chain.mineEmptyBlock(CoreClient.TOKEN_REWARD_MATURITY);
+
+      // act
+      const receipt = chain.mineBlock([
+        clients.core.claimMiningReward(block.height - 1, miner),
+        clients.core.claimMiningReward(block.height - 1, miner),
+      ]).receipts[1];
+
+      // assert
+      receipt.result
+        .expectErr()
+        .expectUint(CoreClient.ErrCode.ERR_REWARD_ALREADY_CLAIMED);
+    });
+
+    it("throws ERR_MINER_DID_NOT_WIN when trying to claim reward owed to someone else", (chain, accounts, clients) => {
+      // arrange
+      const miner = accounts.get("wallet_2")!;
+      const otherMiner = accounts.get("wallet_3")!;
+      const amount = 2;
+      const setupBlock = chain.mineBlock([
+        clients.core.unsafeSetActivationThreshold(1),
+        clients.core.registerUser(miner),
+      ]);
+      const activationBlockHeight =
+        setupBlock.height + CoreClient.ACTIVATION_DELAY - 1;
+
+      chain.mineEmptyBlockUntil(activationBlockHeight);
+
+      const block = chain.mineBlock([
+        clients.core.mineTokens(amount, miner),
+        clients.core.mineTokens(amount * 10000, otherMiner),
+      ]);
+      chain.mineEmptyBlock(CoreClient.TOKEN_REWARD_MATURITY);
+
+      // act
+      const receipt = chain.mineBlock([
+        clients.core.claimMiningReward(block.height - 1, miner),
+      ]).receipts[0];
+
+      // assert
+      receipt.result
+        .expectErr()
+        .expectUint(CoreClient.ErrCode.ERR_MINER_DID_NOT_WIN);
+    });
+
+    // TODO: add tests for success path
+  });
 });

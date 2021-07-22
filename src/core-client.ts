@@ -29,6 +29,7 @@ export class CoreClient extends Client {
   static readonly TOKEN_HALVING_BLOCKS = 210000;
   static readonly REWARD_CYCLE_LENGTH = 2100;
   static readonly SPLIT_CITY_PCT = 0.3;
+  static readonly TOKEN_REWARD_MATURITY = 100;
 
   unsafeSetCityWallet(newCityWallet: Account): Tx {
     return Tx.contractCall(
@@ -114,5 +115,14 @@ export class CoreClient extends Client {
       types.uint(rewardCycle),
       types.uint(userId),
     ]);
+  }
+
+  claimMiningReward(minerBlockHeight: number, sender: Account): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "claim-mining-reward",
+      [types.uint(minerBlockHeight)],
+      sender.address
+    );
   }
 }
