@@ -26,6 +26,8 @@ April 2021
   - [Token Economics](#token-economics)
     - [Fair and Open Launch](#fair-and-open-launch)
     - [Issuance Schedule](#issuance-schedule)
+  - [Resources](#resources)
+    - [Additional Links](#additional-links)
     - [Citations](#citations)
 
 ## General Information
@@ -218,6 +220,16 @@ The issuance schedule does not begin until mining is activated, and once it begi
 | After 1,050,000 Stacks Blocks | 3,125 CityCoins   | continues indefinitely              |
 
 After the final halving at 1,050,000 Stacks blocks past the Stacks block height recorded at activation, the total supply is estimated to be `42,187,500,000` and will increase indefinitely by `164,062,500` per year.
+
+## Resources
+
+### Additional Links
+
+- [CityCoins Website](https://citycoins.co)
+- [CityCoins Documentation](https://docs.citycoins.co)
+- [CityCoins GitHub Organization](https://github.com/citycoins)
+- [CityCoins Discord](https://chat.citycoins.co)
+- [CityCoins Twitter](https://twitter.com/mineCityCoins)
 
 ### Citations
 
