@@ -620,8 +620,8 @@
         (if (and (>= targetCycle firstCycle) (< targetCycle lastCycle))
           (begin
             (if (is-eq targetCycle (- lastCycle u1))
-              (try! (set-tokens-stacked stackerId targetCycle amountToken (+ toReturn amountToken)))
-              (try! (set-tokens-stacked stackerId targetCycle amountToken toReturn))
+              (try! (set-tokens-stacked stackerId targetCycle amountToken amountToken))
+              (try! (set-tokens-stacked stackerId targetCycle amountToken u0))
             )
             true
           )

@@ -108,4 +108,11 @@ export class CoreClient extends Client {
       stacker.address
     );
   }
+
+  getStackerAtCycleOrDefault(rewardCycle: number, userId: number): ReadOnlyFn {
+    return this.callReadOnlyFn("get-stacker-at-cycle-or-default", [
+      types.uint(rewardCycle),
+      types.uint(userId),
+    ]);
+  }
 }

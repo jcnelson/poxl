@@ -1,6 +1,7 @@
 export type {
   Account,
   ReadOnlyFn,
+  TxReceipt,
 } from "https://deno.land/x/clarinet@v0.14.2/index.ts";
 
 export {
