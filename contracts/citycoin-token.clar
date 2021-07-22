@@ -14,7 +14,7 @@
 ;; ERROR CODES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define-constant ERR_UNAUTHORIZED u3)
+(define-constant ERR_UNAUTHORIZED u2000)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SIP-010 DEFINITION

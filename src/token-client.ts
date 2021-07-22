@@ -2,7 +2,7 @@ import { Account, ReadOnlyFn, Tx, types } from "../deps.ts";
 import { Client } from "./client.ts";
 
 enum ErrCode {
-  ERR_UNAUTHORIZED = 3,
+  ERR_UNAUTHORIZED = 2000,
 }
 
 export class TokenClient extends Client {

@@ -76,7 +76,6 @@ describe("[CityCoin Token]", () => {
         block.receipts[0].result.expectErr().expectUint(1);
       });
 
-      // TODO: remove
       it("fails with u2 when sender and recipient are the same", (chain, accounts, clients) => {
         const from = accounts.get("wallet_1")!;
         const to = accounts.get("wallet_1")!;
@@ -91,16 +90,22 @@ describe("[CityCoin Token]", () => {
         block.receipts[0].result.expectErr().expectUint(2);
       });
 
-      it("fails with u3 when token sender is different than transaction sender", (chain, accounts, clients) => {
+      it("fails with ERR_UNAUTHORIZED when token sender is different than transaction sender", (chain, accounts, clients) => {
         const from = accounts.get("wallet_1")!;
         const to = accounts.get("wallet_2")!;
+        const sender = accounts.get("wallet_3")!;
+        const amount = 100;
+
+        chain.mineBlock([clients.token.ftMint(amount, from)]);
 
         const block = chain.mineBlock([
-          clients.token.transfer(10, from, to, to),
+          clients.token.transfer(amount, from, to, sender),
         ]);
 
         assertEquals(block.receipts.length, 1);
-        block.receipts[0].result.expectErr().expectUint(3);
+        block.receipts[0].result
+          .expectErr()
+          .expectUint(TokenClient.ErrCode.ERR_UNAUTHORIZED);
       });
     });
 
