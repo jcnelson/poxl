@@ -119,7 +119,7 @@
 (define-private (send-citycoin-with-memo (amount uint) (to principal) (memo (buff 34)))
   (let
     (
-      (transferOk (try! (contract-call? .citycoin-token transfer amount tx-sender to)))
+      (transferOk (try! (transfer amount tx-sender to memo)))
     )
     (print memo)
     (ok transferOk)
