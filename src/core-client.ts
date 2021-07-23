@@ -30,6 +30,7 @@ export class CoreClient extends Client {
   static readonly REWARD_CYCLE_LENGTH = 2100;
   static readonly SPLIT_CITY_PCT = 0.3;
   static readonly TOKEN_REWARD_MATURITY = 100;
+  static readonly BONUS_PERIOD_LENGTH = 10000;
 
   unsafeSetCityWallet(newCityWallet: Account): Tx {
     return Tx.contractCall(

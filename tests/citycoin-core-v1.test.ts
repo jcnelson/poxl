@@ -866,6 +866,212 @@ describe("[CityCoin Core]", () => {
         .expectUint(CoreClient.ErrCode.ERR_MINER_DID_NOT_WIN);
     });
 
-    // TODO: add tests for success path
+    it("succeeds and mints 250000 tokens in 1st issuance cycle, during bonus period", (chain, accounts, clients) => {
+      // arrange
+      const miner = accounts.get("wallet_2")!;
+      const amount = 2;
+      const setupBlock = chain.mineBlock([
+        clients.core.unsafeSetActivationThreshold(1),
+        clients.core.registerUser(miner),
+      ]);
+      const activationBlockHeight =
+        setupBlock.height + CoreClient.ACTIVATION_DELAY - 1;
+
+      chain.mineEmptyBlockUntil(activationBlockHeight);
+
+      const block = chain.mineBlock([clients.core.mineTokens(amount, miner)]);
+      chain.mineEmptyBlock(CoreClient.TOKEN_REWARD_MATURITY);
+
+      // act
+      const receipt = chain.mineBlock([
+        clients.core.claimMiningReward(block.height - 1, miner),
+      ]).receipts[0];
+
+      // assert
+      receipt.result.expectOk().expectBool(true);
+
+      assertEquals(receipt.events.length, 1);
+
+      receipt.events.expectFungibleTokenMintEvent(
+        250000,
+        miner.address,
+        "citycoins"
+      );
+    });
+
+    it("succeeds and mints 100000 tokens in 1st issuance cycle, after bonus period", (chain, accounts, clients) => {
+      // arrange
+      const miner = accounts.get("wallet_2")!;
+      const amount = 2;
+      const setupBlock = chain.mineBlock([
+        clients.core.unsafeSetActivationThreshold(1),
+        clients.core.registerUser(miner),
+      ]);
+      const activationBlockHeight =
+        setupBlock.height + CoreClient.ACTIVATION_DELAY - 1;
+
+      chain.mineEmptyBlockUntil(
+        activationBlockHeight + CoreClient.BONUS_PERIOD_LENGTH + 1
+      );
+
+      const block = chain.mineBlock([clients.core.mineTokens(amount, miner)]);
+      chain.mineEmptyBlock(CoreClient.TOKEN_REWARD_MATURITY);
+
+      // act
+      const receipt = chain.mineBlock([
+        clients.core.claimMiningReward(block.height - 1, miner),
+      ]).receipts[0];
+
+      // assert
+      receipt.result.expectOk().expectBool(true);
+
+      assertEquals(receipt.events.length, 1);
+
+      receipt.events.expectFungibleTokenMintEvent(
+        100000,
+        miner.address,
+        "citycoins"
+      );
+    });
+
+    it("succeeds and mints 50000 tokens in 2nd issuance cycle", (chain, accounts, clients) => {
+      // arrange
+      const miner = accounts.get("wallet_2")!;
+      const amount = 2;
+      const setupBlock = chain.mineBlock([
+        clients.core.unsafeSetActivationThreshold(1),
+        clients.core.registerUser(miner),
+      ]);
+      const activationBlockHeight =
+        setupBlock.height + CoreClient.ACTIVATION_DELAY - 1;
+
+      chain.mineEmptyBlockUntil(
+        activationBlockHeight + CoreClient.TOKEN_HALVING_BLOCKS + 1
+      );
+
+      const block = chain.mineBlock([clients.core.mineTokens(amount, miner)]);
+      chain.mineEmptyBlock(CoreClient.TOKEN_REWARD_MATURITY);
+
+      // act
+      const receipt = chain.mineBlock([
+        clients.core.claimMiningReward(block.height - 1, miner),
+      ]).receipts[0];
+
+      // assert
+      receipt.result.expectOk().expectBool(true);
+
+      assertEquals(receipt.events.length, 1);
+
+      receipt.events.expectFungibleTokenMintEvent(
+        50000,
+        miner.address,
+        "citycoins"
+      );
+    });
+
+    it("succeeds and mints 25000 tokens in 3rd issuance cycle", (chain, accounts, clients) => {
+      // arrange
+      const miner = accounts.get("wallet_2")!;
+      const amount = 2;
+      const setupBlock = chain.mineBlock([
+        clients.core.unsafeSetActivationThreshold(1),
+        clients.core.registerUser(miner),
+      ]);
+      const activationBlockHeight =
+        setupBlock.height + CoreClient.ACTIVATION_DELAY - 1;
+
+      chain.mineEmptyBlockUntil(
+        activationBlockHeight + CoreClient.TOKEN_HALVING_BLOCKS * 2 + 1
+      );
+
+      const block = chain.mineBlock([clients.core.mineTokens(amount, miner)]);
+      chain.mineEmptyBlock(CoreClient.TOKEN_REWARD_MATURITY);
+
+      // act
+      const receipt = chain.mineBlock([
+        clients.core.claimMiningReward(block.height - 1, miner),
+      ]).receipts[0];
+
+      // assert
+      receipt.result.expectOk().expectBool(true);
+
+      assertEquals(receipt.events.length, 1);
+
+      receipt.events.expectFungibleTokenMintEvent(
+        25000,
+        miner.address,
+        "citycoins"
+      );
+    });
+
+    it("succeeds and mints 12500 tokens in 4th issuance cycle", (chain, accounts, clients) => {
+      // arrange
+      const miner = accounts.get("wallet_2")!;
+      const amount = 2;
+      const setupBlock = chain.mineBlock([
+        clients.core.unsafeSetActivationThreshold(1),
+        clients.core.registerUser(miner),
+      ]);
+      const activationBlockHeight =
+        setupBlock.height + CoreClient.ACTIVATION_DELAY - 1;
+
+      chain.mineEmptyBlockUntil(
+        activationBlockHeight + CoreClient.TOKEN_HALVING_BLOCKS * 3 + 1
+      );
+
+      const block = chain.mineBlock([clients.core.mineTokens(amount, miner)]);
+      chain.mineEmptyBlock(CoreClient.TOKEN_REWARD_MATURITY);
+
+      // act
+      const receipt = chain.mineBlock([
+        clients.core.claimMiningReward(block.height - 1, miner),
+      ]).receipts[0];
+
+      // assert
+      receipt.result.expectOk().expectBool(true);
+
+      assertEquals(receipt.events.length, 1);
+
+      receipt.events.expectFungibleTokenMintEvent(
+        12500,
+        miner.address,
+        "citycoins"
+      );
+    });
+
+    it("succeeds and mints 6250 tokens in 5th (infinite) issuance cycle", (chain, accounts, clients) => {
+      // arrange
+      const miner = accounts.get("wallet_2")!;
+      const amount = 2;
+      const setupBlock = chain.mineBlock([
+        clients.core.unsafeSetActivationThreshold(1),
+        clients.core.registerUser(miner),
+      ]);
+      const activationBlockHeight =
+        setupBlock.height + CoreClient.ACTIVATION_DELAY - 1;
+
+      chain.mineEmptyBlockUntil(
+        activationBlockHeight + CoreClient.TOKEN_HALVING_BLOCKS * 4 + 1
+      );
+
+      const block = chain.mineBlock([clients.core.mineTokens(amount, miner)]);
+      chain.mineEmptyBlock(CoreClient.TOKEN_REWARD_MATURITY);
+
+      // act
+      const receipt = chain.mineBlock([
+        clients.core.claimMiningReward(block.height - 1, miner),
+      ]).receipts[0];
+
+      // assert
+      receipt.result.expectOk().expectBool(true);
+
+      assertEquals(receipt.events.length, 1);
+
+      receipt.events.expectFungibleTokenMintEvent(
+        6250,
+        miner.address,
+        "citycoins"
+      );
+    });
   });
 });
