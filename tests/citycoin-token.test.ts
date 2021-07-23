@@ -312,7 +312,7 @@ describe("[CityCoin Token]", () => {
       let sendManyIdx = 0;
 
       receipt.events.forEach((event, n) => {
-        if (event.type == "contract_event") {
+        if (typeof sendManyRecords[sendManyIdx].memo !== "undefined") {
           receipt.events.expectPrintEvent(
             clients.token.getContractAddress(),
             types.some(
@@ -376,16 +376,109 @@ describe("[CityCoin Token]", () => {
 
       const receipt = block.receipts[0];
 
-      sendManyRecords.forEach((sendManyTx: SendManyRecord) => {
-        receipt.events.expectFungibleTokenTransferEvent(
-          sendManyTx.amount,
-          from.address,
-          sendManyTx.to.address,
-          "citycoins"
-        );
+      let sendManyIdx = 0;
+
+      receipt.events.forEach((event, n) => {
+        if (typeof sendManyRecords[sendManyIdx].memo !== "undefined") {
+          receipt.events.expectPrintEvent(
+            clients.token.getContractAddress(),
+            types.some(
+              types.buff(<ArrayBuffer>sendManyRecords[sendManyIdx].memo)
+            )
+          );
+        } else {
+          receipt.events.expectFungibleTokenTransferEvent(
+            sendManyRecords[sendManyIdx].amount,
+            from.address,
+            sendManyRecords[sendManyIdx].to.address,
+            "citycoins"
+          );
+        }
+
+        if (!(n % 2 == 0)) {
+          sendManyIdx++;
+        }
       });
 
       assertEquals(receipt.events.length, sendManyRecords.length);
+    });
+
+    it("succeeds with five ft_transfer_events and two print events if memo supplied", (chain, accounts, clients) => {
+      // arrange
+      const from = accounts.get("wallet_1")!;
+
+      const recipients: Array<Account> = [
+        accounts.get("wallet_2")!,
+        accounts.get("wallet_3")!,
+        accounts.get("wallet_4")!,
+        accounts.get("wallet_5")!,
+        accounts.get("wallet_6")!,
+      ];
+      const amounts: Array<number> = [100, 200, 300, 400, 500];
+      const memos: Array<ArrayBuffer> = [
+        new TextEncoder().encode("MiamiCoin is the first CityCoin"),
+        new TextEncoder().encode("Support your favorite cities"),
+      ];
+
+      const sendManyRecords: SendManyRecord[] = [];
+
+      recipients.forEach((recipient, recipientIdx) => {
+        let record = new SendManyRecord(
+          recipient,
+          amounts[recipientIdx],
+          memos[recipientIdx]
+        );
+        sendManyRecords.push(record);
+      });
+
+      const amountTotal = sendManyRecords.reduce(
+        (sum, record) => sum + record.amount,
+        0
+      );
+
+      // act
+
+      chain.mineBlock([clients.token.ftMint(amountTotal, from)]);
+
+      const block = chain.mineBlock([
+        clients.token.sendMany(sendManyRecords, from),
+      ]);
+
+      // assert
+
+      assertEquals(block.receipts.length, 1);
+      block.receipts[0].result.expectOk();
+
+      const receipt = block.receipts[0];
+
+      let sendManyIdx = 0;
+
+      receipt.events.forEach((event, n) => {
+        if (typeof sendManyRecords[sendManyIdx].memo !== "undefined") {
+          receipt.events.expectPrintEvent(
+            clients.token.getContractAddress(),
+            types.some(
+              types.buff(<ArrayBuffer>sendManyRecords[sendManyIdx].memo)
+            )
+          );
+        } else {
+          receipt.events.expectFungibleTokenTransferEvent(
+            sendManyRecords[sendManyIdx].amount,
+            from.address,
+            sendManyRecords[sendManyIdx].to.address,
+            "citycoins"
+          );
+        }
+
+        if (!(n % 2 == 0)) {
+          sendManyIdx++;
+        }
+      });
+
+      assertEquals(
+        receipt.events.length,
+        sendManyRecords.length + memos.length
+      );
     });
   });
 });
