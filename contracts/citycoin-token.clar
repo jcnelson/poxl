@@ -121,7 +121,6 @@
     (
       (transferOk (try! (transfer amount tx-sender to memo)))
     )
-    (print memo)
     (ok transferOk)
   )
 )
