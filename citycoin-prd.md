@@ -11,8 +11,7 @@ April 2021
 - [Product Requirements Document](#product-requirements-document)
   - [Table of Contents](#table-of-contents)
   - [General Information](#general-information)
-    - [Contributors](#contributors)
-    - [Executive Summary](#executive-summary)
+    - [Summary](#summary)
     - [Objective, Vision and Goals](#objective-vision-and-goals)
     - [Purpose and Scope](#purpose-and-scope)
     - [Stakeholder Identification](#stakeholder-identification)
@@ -32,61 +31,41 @@ April 2021
 
 ## General Information
 
-### Contributors
 
-Jason Schrader, Devops Engineer at [Freehold](https://joinfreehold.com)
+### Summary
 
-Shawn Mahon, Angel Investor, Marketing and Growth contributor
+A CityCoin leverages similar properties of the [Proof of Transfer (PoX) consensus mechanism](https://docs.stacks.co/understand-stacks/proof-of-transfer) of the Stacks blockchain, programmed through a smart contract in Clarity. Anyone can mine a CityCoin, program a CityCoin via smart contracts, and even earn BTC from the respective Citycoin's protocol as it gets more usage.
 
-[Asteria](https://github.com/SyAsteria), founder of [Syvita Guild](https://github.com/syvita) `PGP | A303 BCFE CA30 DDF9`
+Each CityCoin initially will not have its own blockchain, but rather will exist on the Stacks blockchain as a fungible token adhering to the SIP-010 standard. The [Stacks blockchain](https://stacks.org/stacks-blockchain) is a layer one blockchain that settles on the Bitcoin blockchain, inheriting its security.
 
-### Executive Summary
+A CityCoin will not be premined or have an initial coin offering (ICO), but instead will be fairly mined in competition with anyone who wishes to interact with the smart contract, and following a diminishing issuance schedule similar to that of Bitcoin and Stacks. Mining of the CityCoin will not begin until the [activation threshold](#fair-and-open-launch) is reached.
 
-A CityCoin leverages similar properties of the [Proof of Transfer (PoX) consensus mechanism](https://docs.stacks.co/understand-stacks/proof-of-transfer) of the Stacks blockchain, programmed through a smart contract in Clarity, as a way to generate new funding and wealth building opportunities for the city, its inhabitants, and its supporters.
+When miners submit a mining transaction to the smart contract, 30% of the STX spent will be sent to the designated city's wallet which the will control. The remaining 70% of the submitted STX will be distributed to the CityCoin holders who lock ("Stack") their CityCoins in support of the initiative.
 
-A CityCoin will not have its own blockchain, but rather will exist on the Stacks blockchain as a fungible token adhering to the SIP-010 standard. The [Stacks blockchain](https://stacks.org/stacks-blockchain) is a layer one blockchain that settles on the Bitcoin blockchain, inheriting its security.
-
-A CityCoin will not have an initial coin offering (ICO), but instead will be fairly mined in competition with anyone who wishes to interact with the smart contract, and following a diminishing issuance schedule similar to that of Bitcoin and Stacks. Mining of the CityCoin will not begin until the [activation threshold](#fair-and-open-launch) is reached.
-
-When miners submit a mining transaction to the smart contract, 30% of the STX spent will be sent to the designated city's wallet overseen by a trusted third party custodian. The remaining 70% of the submitted STX will be distributed to the CityCoin holders who lock ("Stack") their CityCoins in support of the initiative.
-
-### Objective, Vision and Goals
-
-**Objective:** to create a smart contract that simulates Proof of Transfer (PoX) to reward CityCoin holders and contribute to a general fund for the respective city
-
-**Vision:** to signal support for a city is as simple as mining or buying the associated CityCoin, and holding the CityCoin generates revenue that comes directly from miners
-
-**Goal:** to enable a global market that can create a stronger, healthier, and more sustainable local economy
 
 ### Purpose and Scope
 
-Starting with the city of Miami, fairly launch a CityCoin that can be "mined" by spending Stacks tokens, as well as locked ("Stacked") to generate yield in Stacks tokens.
+
+CityCoins is designed to empower communities of stakeholders to support and build for their favorite cities in a permissionless environment. You can also think of CityCoins as a bedrock protocol for an open source city stack. Since CityCoins are programmable they can be used as fuel to build apps specific to each city. Earnings are generated for the city the more the protocol is used. 
+
+Starting with the city of Miami, the community plans to fairly launch a CityCoin that can be "mined" by spending Stacks tokens, as well as locked ("Stacked") to generate yield in Stacks tokens, which can further be Stacked to earn BTC.
 
 As miners compete to mint new CityCoins, a portion of the Stacks tokens that miners spend are deposited into a custodied Stacks wallet, and available for the city leaders to take control of at any time.
 
 There are no time restrictions for city leaders to take control of the funds, nor any usage restrictions for city leaders to decide how the funds should be spent.
 
-This enables a global market in which participants can show support for a city while simultaneously contributing to its local economy.
+This enables a global market in which participants, technical and non-technial alike, can show support for a city.
 
-### Stakeholder Identification
-
-**City Leaders:** provide a new source of funding and encourage constituent participation in designated use of funds
-
-**Citizens:** provide a method to invest directly in the city through mining of a CityCoin, purchase of a CityCoin, and holding/Stacking of a CityCoin
-
-**Corporations:** provide a method to invest directly in the city through mining of a CityCoin, purchase of a CityCoin, and holding/Stacking of a CityCoin
-
-**External Supporters:** provide a method to invest directly in the city through mining of a CityCoin, purchase of a CityCoin, and holding/Stacking of a CityCoin
 
 ### Market Assessment and Target Demographics
 
 Bitcoin is finding utility on the balance sheet of several corporate treasuries as protection against monetary debasement and inflation, and local officials are looking into use cases for cryptocurrency, generally starting with Bitcoin.
 
-For example, both Mayor Suarez of Miami and Mayor Conger of Tennessee are openly and publicly exploring Bitcoin mining as well as programs that allow citizens to pay for services in Bitcoin.
+For example, both Mayor Suarez of Miami and Mayor Conger of Jackson Tennessee are openly and publicly exploring Bitcoin mining as well as programs that allow citizens to pay for services in Bitcoin.
 
-One challenge to mining or holding Bitcoin is that it does not produce yield, and market fluctuations can greatly affect the balance sheet. Mining Bitcoin is a competitive market dominated by large players, such that the capital requirement to start mining, the break-even point, and the power consumption are all considerations a city would need to resolve.
+One challenge for a city mining Bitcoin to put it on their balance sheet is that it expensive to do and it does not produce additional earnings once the asset is mined. Mining Bitcoin is a competitive market dominated by large players, such that the capital requirement to start mining, the break-even point, and the power consumption are all considerations a city would need to resolve.
 
-The Stacks blockchain is a Layer 1 blockchain connected to Bitcoin, in which miners spend Bitcoin to bid for and win a fixed amount of Stacks tokens. Stackers have the option to lock up Stacks tokens for a specified amount of time, and in turn, receive a portion of the Bitcoin spent by miners proportionate to the amount Stacked. The average APY as of writing this document is 10% and additional statistics can be seen on [Stacking.Club](https://stacking.club).
+The Stacks blockchain is a Layer 1 blockchain connected to Bitcoin, in which miners spend Bitcoin to bid for and win a fixed amount of Stacks tokens. Stackers have the option to lock up Stacks tokens for a specified amount of time, and in turn, receive a portion of the Bitcoin spent by miners proportionate to the amount Stacked. The average APY earnings in Bitcoin at the time of writing this document is 13%. Statistics can be seen on [Stacking.Club](https://stacking.club).
 
 Taking this concept a level further, a new token (a "CityCoin") would be created on the Stacks blockchain, following the SIP-010 fungible token standard, such that CityCoins can be mined and Stacked per the methods stated above except a portion of the miner's bid would be redirected to the city's wallet overseen by a trusted third party custodian.
 
@@ -128,7 +107,7 @@ In addition to the functions above, the Stacks token (STX) rewards can be Stacke
 
 ### Trading and Open Markets
 
-The CityCoins can be listed and available for trading on centralized and decentralized exchanges.
+CityCoins is an open source project and any CityCoin can be listed and available for trading on centralized and decentralized exchanges at any time after mining has begun.
 
 ### Usability
 
@@ -199,7 +178,7 @@ Additional performance metrics that may be of use to both the user interfaces ab
 
 ### Fair and Open Launch
 
-The launch of a CityCoin will require at 20 unique wallets to signal activation as part of a function in the smart contract, after which a countdown begins and anyone is eligible to mine the CityCoins within a given Stacks block.
+The launch of a CityCoin will require at 20 unique wallets to signal activation as part of a function in the smart contract, after which a countdown begins and anyone is eligible to mine the CityCoins within a given Stacks block thereafter.
 
 There are no CityCoins issued or distributed prior to the start of mining.
 
