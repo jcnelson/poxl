@@ -110,4 +110,35 @@ export class TokenClient extends Client {
       sender.address
     );
   }
+
+  // send many
+  sendMany(recipients: Array<SendManyRecord>, sender: Account): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "send-many",
+      [
+        types.list(
+          recipients.map((record) => {
+            return types.tuple({
+              to: types.principal(record.to.address),
+              amount: types.uint(record.amount),
+              memo:
+                typeof record.memo == "undefined"
+                  ? types.none()
+                  : types.some(types.buff(record.memo)),
+            });
+          })
+        ),
+      ],
+      sender.address
+    );
+  }
+}
+
+export class SendManyRecord {
+  constructor(
+    readonly to: Account,
+    readonly amount: number,
+    readonly memo: ArrayBuffer
+  ) {}
 }

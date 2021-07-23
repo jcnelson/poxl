@@ -99,7 +99,7 @@
 ;; send-many and send-many-memo interface
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define-public (send-many (recipients (list 200 { to: principal, amount: uint, memo: (buff 34) })))
+(define-public (send-many (recipients (list 200 { to: principal, amount: uint, memo: (optional (buff 34)) })))
   (fold check-err
     (map send-citycoin recipients)
     (ok true)
@@ -112,11 +112,11 @@
   )
 )
 
-(define-private (send-citycoin (recipient { to: principal, amount: uint, memo: (buff 34) }))
+(define-private (send-citycoin (recipient { to: principal, amount: uint, memo: (optional (buff 34)) }))
   (send-citycoin-with-memo (get amount recipient) (get to recipient) (get memo recipient))
 )
 
-(define-private (send-citycoin-with-memo (amount uint) (to principal) (memo (buff 34)))
+(define-private (send-citycoin-with-memo (amount uint) (to principal) (memo (optional (buff 34))))
   (let
     (
       (transferOk (try! (transfer amount tx-sender to memo)))

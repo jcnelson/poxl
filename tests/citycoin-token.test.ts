@@ -1,7 +1,6 @@
-import { describe, assertEquals, types } from "../deps.ts";
+import { describe, assertEquals, types, Account } from "../deps.ts";
 import { it } from "../src/testutil.ts";
-
-import { TokenClient } from "../src/token-client.ts";
+import { TokenClient, SendManyRecord } from "../src/token-client.ts";
 
 describe("[CityCoin Token]", () => {
   describe("SIP-010:", () => {
@@ -256,6 +255,93 @@ describe("[CityCoin Token]", () => {
         recipient.address,
         "citycoins"
       );
+    });
+  });
+  describe("send-many()", () => {
+    it("succeeds with correct five ft_transfer_events with memo supplied", (chain, accounts, clients) => {
+      // arrange
+      const from = accounts.get("wallet_1")!;
+
+      const recipients: Array<Account> = [
+        accounts.get("wallet_2")!,
+        accounts.get("wallet_3")!,
+        accounts.get("wallet_4")!,
+        accounts.get("wallet_5")!,
+        accounts.get("wallet_6")!,
+      ];
+      const amounts: Array<number> = [100, 200, 300, 400, 500];
+      const memos: Array<ArrayBuffer> = [
+        new TextEncoder().encode("MiamiCoin is the first CityCoin"),
+        new TextEncoder().encode("The Capitol of Capital"),
+        new TextEncoder().encode("Support your favorite cities"),
+        new TextEncoder().encode("Revolutionizing Civic Engagement"),
+        new TextEncoder().encode("Built on Stacks Secured by Bitcoin"),
+      ];
+
+      const sendManyRecords: SendManyRecord[] = [];
+
+      recipients.forEach((recipient, recipientIdx) => {
+        let record = new SendManyRecord(
+          recipient,
+          amounts[recipientIdx],
+          memos[recipientIdx]
+        );
+        sendManyRecords.push(record);
+      });
+
+      const amountTotal = sendManyRecords.reduce(
+        (sum, record) => sum + record.amount,
+        0
+      );
+
+      // act
+
+      chain.mineBlock([clients.token.ftMint(amountTotal, from)]);
+
+      const block = chain.mineBlock([
+        clients.token.sendMany(sendManyRecords, from),
+      ]);
+
+      console.info(block);
+
+      // assert
+
+      assertEquals(block.receipts.length, 1);
+      block.receipts[0].result.expectOk();
+
+      const receipt = block.receipts[0];
+      assertEquals(receipt.events.length, sendManyRecords.length * 2);
+
+      sendManyRecords.forEach((sendManyTx: SendManyRecord, sendManyIdx) => {
+        let expectedEvent;
+        // even = print memo
+        // odd = transfer citycoin
+        if (sendManyIdx % 2 == 0) {
+          let expectedEvent = {
+            type: "contract_event",
+            contract_event: {
+              contract_identifier: clients.token.getContractAddress(),
+              topic: "print",
+              value: types.some(types.buff(sendManyTx.memo)),
+            },
+          };
+          assertEquals(receipt.events[sendManyIdx], expectedEvent);
+        } else {
+          receipt.events.expectFungibleTokenTransferEvent(
+            sendManyTx.amount,
+            from.address,
+            sendManyTx.to.address,
+            "citycoins"
+          );
+        }
+      });
+      // assertEquals(receipt.events[0], expectedEvent);
+      // receipt.events.expectFungibleTokenTransferEvent(
+      //   amount,
+      //   from.address,
+      //   to.address,
+      //   "citycoins"
+      // );
     });
   });
 });
