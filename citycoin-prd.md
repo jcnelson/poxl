@@ -12,9 +12,7 @@ April 2021
   - [Table of Contents](#table-of-contents)
   - [General Information](#general-information)
     - [Summary](#summary)
-    - [Objective, Vision and Goals](#objective-vision-and-goals)
     - [Purpose and Scope](#purpose-and-scope)
-    - [Stakeholder Identification](#stakeholder-identification)
     - [Market Assessment and Target Demographics](#market-assessment-and-target-demographics)
   - [Core Functionality](#core-functionality)
     - [Mining](#mining)
@@ -31,7 +29,6 @@ April 2021
 
 ## General Information
 
-
 ### Summary
 
 A CityCoin leverages similar properties of the [Proof of Transfer (PoX) consensus mechanism](https://docs.stacks.co/understand-stacks/proof-of-transfer) of the Stacks blockchain, programmed through a smart contract in Clarity. Anyone can mine a CityCoin, program a CityCoin via smart contracts, and even earn BTC from the respective Citycoin's protocol as it gets more usage.
@@ -42,11 +39,9 @@ A CityCoin will not be premined or have an initial coin offering (ICO), but inst
 
 When miners submit a mining transaction to the smart contract, 30% of the STX spent will be sent to the designated city's wallet which the will control. The remaining 70% of the submitted STX will be distributed to the CityCoin holders who lock ("Stack") their CityCoins in support of the initiative.
 
-
 ### Purpose and Scope
 
-
-CityCoins is designed to empower communities of stakeholders to support and build for their favorite cities in a permissionless environment. You can also think of CityCoins as a bedrock protocol for an open source city stack. Since CityCoins are programmable they can be used as fuel to build apps specific to each city. Earnings are generated for the city the more the protocol is used. 
+CityCoins is designed to empower communities of stakeholders to support and build for their favorite cities in a permissionless environment. You can also think of CityCoins as a bedrock protocol for an open source city stack. Since CityCoins are programmable they can be used as fuel to build apps specific to each city. Earnings are generated for the city the more the protocol is used.
 
 Starting with the city of Miami, the community plans to fairly launch a CityCoin that can be "mined" by spending Stacks tokens, as well as locked ("Stacked") to generate yield in Stacks tokens, which can further be Stacked to earn BTC.
 
@@ -55,7 +50,6 @@ As miners compete to mint new CityCoins, a portion of the Stacks tokens that min
 There are no time restrictions for city leaders to take control of the funds, nor any usage restrictions for city leaders to decide how the funds should be spent.
 
 This enables a global market in which participants, technical and non-technial alike, can show support for a city.
-
 
 ### Market Assessment and Target Demographics
 
