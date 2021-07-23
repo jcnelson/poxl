@@ -347,7 +347,7 @@
       }
       {
         ustx: amountUstx,
-        lowValue: (+ minerLowVal u1),
+        lowValue: (if (> minerLowVal u0) (+ minerLowVal u1) u0),
         highValue: (+ minerLowVal amountUstx),
         winner: false
       }
@@ -397,6 +397,28 @@
     (asserts! (and (>= winningValue (get lowValue minerStats)) (<= winningValue (get highValue minerStats)))
       (err ERR_MINER_DID_NOT_WIN))
     (try! (set-mining-reward-claimed userId minerBlockHeight))
+    (ok true)
+  )
+)
+
+(define-public (test (minerBlockHeight uint))
+  (let
+    (
+      (user tx-sender)
+      (stacksHeight block-height)
+      (maturityHeight (+ (var-get tokenRewardMaturity) minerBlockHeight))
+      (userId (unwrap! (get-user-id user) (err ERR_USER_ID_NOT_FOUND)))
+      (blockStats (unwrap! (get-mining-stats-at-block minerBlockHeight) (err ERR_NO_MINERS_AT_BLOCK)))
+      (minerStats (unwrap! (get-miner-at-block minerBlockHeight userId) (err ERR_USER_DID_NOT_MINE_IN_BLOCK)))
+      (isMature (asserts! (> stacksHeight maturityHeight) (err ERR_CLAIMED_BEFORE_MATURITY)))
+      (vrfSample (unwrap! (contract-call? .citycoin-vrf get-random-uint-at-block maturityHeight) (err ERR_NO_VRF_SEED_FOUND)))
+      (commitTotal (get-last-high-value-at-block minerBlockHeight))
+      (winningValue (mod vrfSample commitTotal))
+    )
+    (print vrfSample)
+    (print winningValue)
+    (print minerStats)
+    (print (and (>= winningValue (get lowValue minerStats)) (<= winningValue (get highValue minerStats))))
     (ok true)
   )
 )
