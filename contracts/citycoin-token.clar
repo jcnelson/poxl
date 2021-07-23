@@ -95,26 +95,33 @@
   )
 )
 
-;; send-many interface
-(define-private (send-citycoins (recipient { amount: uint, to: principal }))
-  (let
-    (
-      (transferOk (try! (transfer (get amount recipient) tx-sender (get to recipient) none)))
-    )
-    (ok transferOk)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; send-many and send-many-memo interface
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define-public (send-many (recipients (list 200 { to: principal, amount: uint, memo: (buff 34) })))
+  (fold check-err
+    (map send-citycoin recipients)
+    (ok true)
   )
 )
 
 (define-private (check-err (result (response bool uint)) (prior (response bool uint)))
   (match prior ok-value result
-               err-value (err err-value))
-)
-
-(define-public (send-many (recipients (list 200 { amount: uint, to: principal })))
-  (fold check-err
-    (map send-citycoins recipients)
-    (ok true)
+               err-value (err err-value)
   )
 )
 
-;; TODO: add send-many-memo support
+(define-private (send-citycoin (recipient { to: principal, amount: uint, memo: (buff 34) }))
+  (send-citycoin-with-memo (get amount recipient) (get to recipient) (get memo recipient))
+)
+
+(define-private (send-citycoin-with-memo (amount uint) (to principal) (memo (buff 34)))
+  (let
+    (
+      (transferOk (try! (contract-call? .citycoin-token transfer amount tx-sender to)))
+    )
+    (print memo)
+    (ok transferOk)
+  )
+)
