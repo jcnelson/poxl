@@ -258,7 +258,7 @@ describe("[CityCoin Token]", () => {
     });
   });
   describe("send-many()", () => {
-    it("succeeds with correct five ft_transfer_events with memo supplied", (chain, accounts, clients) => {
+    it("succeeds with five ft_transfer_events and five print memo events with memo supplied", (chain, accounts, clients) => {
       // arrange
       const from = accounts.get("wallet_1")!;
 
@@ -302,46 +302,75 @@ describe("[CityCoin Token]", () => {
         clients.token.sendMany(sendManyRecords, from),
       ]);
 
-      console.info(block);
-
       // assert
 
       assertEquals(block.receipts.length, 1);
       block.receipts[0].result.expectOk();
 
       const receipt = block.receipts[0];
-      assertEquals(receipt.events.length, sendManyRecords.length * 2);
 
-      sendManyRecords.forEach((sendManyTx: SendManyRecord, sendManyIdx) => {
-        let expectedEvent;
-        // even = print memo
-        // odd = transfer citycoin
-        if (sendManyIdx % 2 == 0) {
-          let expectedEvent = {
-            type: "contract_event",
-            contract_event: {
-              contract_identifier: clients.token.getContractAddress(),
-              topic: "print",
-              value: types.some(types.buff(sendManyTx.memo)),
-            },
-          };
-          assertEquals(receipt.events[sendManyIdx], expectedEvent);
+      let sendManyIdx = 0;
+
+      receipt.events.forEach((event, n) => {
+        if (event.type == "contract_event") {
+          receipt.events.expectPrintEvent(
+            clients.token.getContractAddress(),
+            types.some(types.buff(sendManyRecords[sendManyIdx].memo))
+          );
         } else {
           receipt.events.expectFungibleTokenTransferEvent(
-            sendManyTx.amount,
+            sendManyRecords[sendManyIdx].amount,
             from.address,
-            sendManyTx.to.address,
+            sendManyRecords[sendManyIdx].to.address,
             "citycoins"
           );
         }
+
+        if (!(n % 2 == 0)) {
+          sendManyIdx++;
+        }
       });
-      // assertEquals(receipt.events[0], expectedEvent);
-      // receipt.events.expectFungibleTokenTransferEvent(
-      //   amount,
-      //   from.address,
-      //   to.address,
-      //   "citycoins"
-      // );
+
+      assertEquals(receipt.events.length, sendManyRecords.length * 2);
     });
   });
 });
+
+// expectPrintEvent()
+
+declare global {
+  interface Array<T> {
+    expectPrintEvent(contract_identifier: string, value: string): Object;
+  }
+}
+
+Array.prototype.expectPrintEvent = function (
+  contract_identifier: string,
+  value: string
+) {
+  for (let event of this) {
+    try {
+      let e: any = {};
+      e["contract_identifier"] =
+        event.contract_event.contract_identifier.expectPrincipal(
+          contract_identifier
+        );
+
+      if (event.contract_event.topic.endsWith("print")) {
+        e["topic"] = event.contract_event.topic;
+      } else {
+        continue;
+      }
+
+      if (event.contract_event.value.endsWith(value)) {
+        e["value"] = event.contract_event.value;
+      } else {
+        continue;
+      }
+      return e;
+    } catch (error) {
+      continue;
+    }
+  }
+  throw new Error(`Unable to retrieve expected PrintEvent`);
+};
