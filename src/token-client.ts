@@ -139,6 +139,6 @@ export class SendManyRecord {
   constructor(
     readonly to: Account,
     readonly amount: number,
-    readonly memo: ArrayBuffer
+    readonly memo?: ArrayBuffer | undefined
   ) {}
 }
