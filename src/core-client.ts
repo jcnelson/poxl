@@ -126,4 +126,13 @@ export class CoreClient extends Client {
       sender.address
     );
   }
+
+  claimStackingReward(targetCycle: number, sender: Account): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "claim-stacking-reward",
+      [types.uint(targetCycle)],
+      sender.address
+    );
+  }
 }

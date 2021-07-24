@@ -1074,4 +1074,319 @@ describe("[CityCoin Core]", () => {
       );
     });
   });
+
+  describe("claim-stacking-reward()", () => {
+    it("throws ERR_STACKING_NOT_AVAILABLE when stacking is not yet available", (chain, accounts, clients) => {
+      // arrange
+      const stacker = accounts.get("wallet_1")!;
+      const targetCycle = 1;
+
+      // act
+      const receipt = chain.mineBlock([
+        clients.core.claimStackingReward(targetCycle, stacker),
+      ]).receipts[0];
+
+      // assert
+      receipt.result
+        .expectErr()
+        .expectUint(CoreClient.ErrCode.ERR_STACKING_NOT_AVAILABLE);
+    });
+
+    it("throws ERR_USER_ID_NOT_FOUND when called by unknown user", (chain, accounts, clients) => {
+      // arrange
+      const stacker = accounts.get("wallet_1")!;
+      const otherUser = accounts.get("wallet_2")!;
+      const targetCycle = 1;
+      const setupBlock = chain.mineBlock([
+        clients.core.unsafeSetActivationThreshold(1),
+        clients.core.registerUser(otherUser),
+      ]);
+      chain.mineEmptyBlockUntil(
+        setupBlock.height + CoreClient.ACTIVATION_DELAY - 1
+      );
+
+      // act
+      const receipt = chain.mineBlock([
+        clients.core.claimStackingReward(targetCycle, stacker),
+      ]).receipts[0];
+
+      // assert
+      receipt.result
+        .expectErr()
+        .expectUint(CoreClient.ErrCode.ERR_USER_ID_NOT_FOUND);
+    });
+
+    it("throws ERR_REWARD_CYCLE_NOT_COMPLETED when reward cycle is not completed", (chain, accounts, clients) => {
+      // arrange
+      const stacker = accounts.get("wallet_1")!;
+      const targetCycle = 1;
+      const setupBlock = chain.mineBlock([
+        clients.core.unsafeSetActivationThreshold(1),
+        clients.core.registerUser(stacker),
+      ]);
+      chain.mineEmptyBlockUntil(
+        setupBlock.height + CoreClient.ACTIVATION_DELAY - 1
+      );
+
+      // act
+      const receipt = chain.mineBlock([
+        clients.core.claimStackingReward(targetCycle, stacker),
+      ]).receipts[0];
+
+      // assert
+      receipt.result
+        .expectErr()
+        .expectUint(CoreClient.ErrCode.ERR_REWARD_CYCLE_NOT_COMPLETED);
+    });
+
+    it("throws ERR_NOTHING_TO_REDEEM when stacker didn't stack at all", (chain, accounts, clients) => {
+      // arrange
+      const stacker = accounts.get("wallet_1")!;
+      const targetCycle = 1;
+      const setupBlock = chain.mineBlock([
+        clients.core.unsafeSetActivationThreshold(1),
+        clients.core.registerUser(stacker),
+      ]);
+      chain.mineEmptyBlockUntil(
+        setupBlock.height +
+          CoreClient.ACTIVATION_DELAY +
+          CoreClient.REWARD_CYCLE_LENGTH * 2 -
+          1
+      );
+
+      // act
+      const receipt = chain.mineBlock([
+        clients.core.claimStackingReward(targetCycle, stacker),
+      ]).receipts[0];
+
+      // assert
+      receipt.result
+        .expectErr()
+        .expectUint(CoreClient.ErrCode.ERR_NOTHING_TO_REDEEM);
+    });
+
+    it("throws ERR_NOTHING_TO_REDEEM when stacker stacked in a cycle but miners did not mine", (chain, accounts, clients) => {
+      // arrange
+      const stacker = accounts.get("wallet_1")!;
+      const targetCycle = 1;
+      const amount = 200;
+      const setupBlock = chain.mineBlock([
+        clients.core.unsafeSetActivationThreshold(1),
+        clients.core.registerUser(stacker),
+        clients.token.ftMint(amount, stacker),
+      ]);
+      chain.mineEmptyBlockUntil(
+        setupBlock.height + CoreClient.ACTIVATION_DELAY + 1
+      );
+      chain.mineBlock([clients.core.stackTokens(amount, 4, stacker)]);
+      chain.mineEmptyBlock(CoreClient.REWARD_CYCLE_LENGTH * 2);
+
+      // act
+      const receipt = chain.mineBlock([
+        clients.core.claimStackingReward(targetCycle, stacker),
+      ]).receipts[0];
+
+      // assert
+      receipt.result
+        .expectErr()
+        .expectUint(CoreClient.ErrCode.ERR_NOTHING_TO_REDEEM);
+    });
+
+    it("throws ERR_NOTHING_TO_REDEEM while trying to claim reward 2nd time", (chain, accounts, clients) => {
+      // arrange
+      const stacker = accounts.get("wallet_1")!;
+      const targetCycle = 1;
+      const amount = 200;
+      const setupBlock = chain.mineBlock([
+        clients.core.unsafeSetActivationThreshold(1),
+        clients.core.registerUser(stacker),
+        clients.token.ftMint(amount, stacker),
+      ]);
+      chain.mineEmptyBlockUntil(
+        setupBlock.height + CoreClient.ACTIVATION_DELAY + 1
+      );
+      chain.mineBlock([clients.core.stackTokens(amount, 1, stacker)]);
+      chain.mineEmptyBlock(CoreClient.REWARD_CYCLE_LENGTH * 2);
+
+      // act
+      const receipt = chain.mineBlock([
+        clients.core.claimStackingReward(targetCycle, stacker),
+        clients.core.claimStackingReward(targetCycle, stacker),
+      ]).receipts[1];
+
+      // assert
+      receipt.result
+        .expectErr()
+        .expectUint(CoreClient.ErrCode.ERR_NOTHING_TO_REDEEM);
+    });
+
+    it("succeeds and cause stx_transfer and ft_transfer events", (chain, accounts, clients) => {
+      // arrange
+      const miner = accounts.get("wallet_1")!;
+      const amountUstx = 1000;
+      const stacker = accounts.get("wallet_2")!;
+      const targetCycle = 1;
+      const amountTokens = 200;
+      const setupBlock = chain.mineBlock([
+        clients.core.unsafeSetActivationThreshold(1),
+        clients.core.registerUser(stacker),
+        clients.token.ftMint(amountTokens, stacker),
+      ]);
+      chain.mineEmptyBlockUntil(
+        setupBlock.height + CoreClient.ACTIVATION_DELAY + 1
+      );
+      chain.mineBlock([clients.core.stackTokens(amountTokens, 1, stacker)]);
+      chain.mineEmptyBlock(CoreClient.REWARD_CYCLE_LENGTH);
+      chain.mineBlock([clients.core.mineTokens(amountUstx, miner)]);
+      chain.mineEmptyBlock(CoreClient.REWARD_CYCLE_LENGTH);
+
+      // act
+      const receipt = chain.mineBlock([
+        clients.core.claimStackingReward(targetCycle, stacker),
+      ]).receipts[0];
+
+      // assert
+      receipt.result.expectOk().expectBool(true);
+      assertEquals(receipt.events.length, 2);
+
+      receipt.events.expectFungibleTokenTransferEvent(
+        amountTokens,
+        clients.core.getContractAddress(),
+        stacker.address,
+        "citycoins"
+      );
+
+      receipt.events.expectSTXTransferEvent(
+        amountUstx * 0.7,
+        clients.core.getContractAddress(),
+        stacker.address
+      );
+    });
+
+    it("succeeds and cause only ft_transfer event when there was no STX reward (ie. due to no miners)", (chain, accounts, clients) => {
+      // arrange
+      const stacker = accounts.get("wallet_1")!;
+      const amountTokens = 20;
+      const targetCycle = 1;
+      const setupBlock = chain.mineBlock([
+        clients.core.unsafeSetActivationThreshold(1),
+        clients.core.registerUser(stacker),
+        clients.token.ftMint(amountTokens, stacker),
+      ]);
+      chain.mineEmptyBlockUntil(
+        setupBlock.height + CoreClient.ACTIVATION_DELAY + 1
+      );
+      chain.mineBlock([clients.core.stackTokens(amountTokens, 1, stacker)]);
+      chain.mineEmptyBlock(CoreClient.REWARD_CYCLE_LENGTH * 2);
+
+      // act
+      const receipt = chain.mineBlock([
+        clients.core.claimStackingReward(targetCycle, stacker),
+      ]).receipts[0];
+
+      // assert
+      receipt.result.expectOk().expectBool(true);
+
+      assertEquals(receipt.events.length, 1);
+
+      receipt.events.expectFungibleTokenTransferEvent(
+        amountTokens,
+        clients.core.getContractAddress(),
+        stacker.address,
+        "citycoins"
+      );
+    });
+
+    it("succeeds and release tokens only for last cycle in locked period", (chain, accounts, clients) => {
+      // arrange
+      const stacker = accounts.get("wallet_2")!;
+      const userId = 1;
+      class StackingRecord {
+        constructor(
+          readonly stackInCycle: number,
+          readonly lockPeriod: number,
+          readonly amountTokens: number
+        ) {}
+      }
+
+      const stackingRecords: StackingRecord[] = [
+        new StackingRecord(1, 4, 20),
+        new StackingRecord(3, 8, 432),
+        new StackingRecord(7, 3, 10),
+        new StackingRecord(8, 2, 15),
+        new StackingRecord(9, 5, 123),
+      ];
+
+      const totalAmountTokens = stackingRecords.reduce(
+        (sum, record) => sum + record.amountTokens,
+        0
+      );
+      const maxCycle = Math.max.apply(
+        Math,
+        stackingRecords.map((record) => {
+          return record.stackInCycle + 1 + record.lockPeriod;
+        })
+      );
+
+      const block = chain.mineBlock([
+        clients.core.unsafeSetActivationThreshold(1),
+        clients.core.registerUser(stacker),
+        clients.token.ftMint(totalAmountTokens, stacker),
+      ]);
+      const activationBlockHeight =
+        block.height + CoreClient.ACTIVATION_DELAY - 1;
+      chain.mineEmptyBlockUntil(activationBlockHeight);
+
+      stackingRecords.forEach((record) => {
+        // move chain tip to the beginning of specific cycle
+        chain.mineEmptyBlockUntil(
+          activationBlockHeight +
+            record.stackInCycle * CoreClient.REWARD_CYCLE_LENGTH
+        );
+
+        chain.mineBlock([
+          clients.core.stackTokens(
+            record.amountTokens,
+            record.lockPeriod,
+            stacker
+          ),
+        ]);
+      });
+
+      chain.mineEmptyBlockUntil(
+        CoreClient.REWARD_CYCLE_LENGTH * (maxCycle + 1)
+      );
+
+      // act + assert
+      for (let rewardCycle = 0; rewardCycle <= maxCycle; rewardCycle++) {
+        let toReturn = 0;
+
+        stackingRecords.forEach((record) => {
+          let lastCycle = record.stackInCycle + record.lockPeriod;
+
+          if (rewardCycle == lastCycle) {
+            toReturn += record.amountTokens;
+          }
+        });
+
+        const receipt = chain.mineBlock([
+          clients.core.claimStackingReward(rewardCycle, stacker),
+        ]).receipts[0];
+
+        if (toReturn === 0) {
+          receipt.result.expectErr();
+        } else {
+          receipt.result.expectOk().expectBool(true);
+          assertEquals(receipt.events.length, 1);
+
+          receipt.events.expectFungibleTokenTransferEvent(
+            toReturn,
+            clients.core.getContractAddress(),
+            stacker.address,
+            "citycoins"
+          );
+        }
+      }
+    });
+  });
 });

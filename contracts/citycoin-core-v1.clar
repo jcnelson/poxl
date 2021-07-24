@@ -553,8 +553,8 @@
   (let
     (
       ;; TODO: find and remove all unwrap-panic
-      (rewardCycleStats (unwrap-panic (get-stacking-stats-at-cycle targetCycle)))
-      (stackerAtCycle (unwrap-panic (get-stacker-at-cycle targetCycle userId)))
+      (rewardCycleStats (get-stacking-stats-at-cycle-or-default targetCycle))
+      (stackerAtCycle (get-stacker-at-cycle-or-default targetCycle userId))
       (totalUstxThisCycle (get amountUstx rewardCycleStats))
       (totalStackedThisCycle (get amountToken rewardCycleStats))
       (userStackedThisCycle (get amountStacked stackerAtCycle))
