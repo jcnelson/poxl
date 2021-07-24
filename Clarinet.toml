@@ -9,9 +9,13 @@ depends_on = []
 path = "contracts/clarinet/citycoin-token.clar"
 depends_on = ["sip-010-trait"]
 
+[contracts.citycoin-core-trait]
+path = "contracts/clarinet/citycoin-core-trait.clar"
+depends_on = []
+
 [contracts.citycoin-core-v1]
 path = "contracts/clarinet/citycoin-core-v1.clar"
-depends_on = ["citycoin-token", "citycoin-vrf"]
+depends_on = ["citycoin-token", "citycoin-vrf", "citycoin-core-trait"]
 
 # contracts listed below are used only in testing
 
