@@ -460,7 +460,7 @@ describe("[CityCoin Core]", () => {
         .expectUint(CoreClient.ErrCode.ERR_CANNOT_STACK);
     });
 
-    it("throws ERR_INSUFFICIENT_BALANCE while trying to stack with amount tokens > user balance", (chain, accounts, clients) => {
+    it("throws ERR_FT_INSUFFICIENT_BALANCE while trying to stack with amount tokens > user balance", (chain, accounts, clients) => {
       // arrange
       const stacker = accounts.get("wallet_2")!;
       const amountTokens = 20;
@@ -482,7 +482,7 @@ describe("[CityCoin Core]", () => {
       // assert
       receipt.result
         .expectErr()
-        .expectUint(CoreClient.ErrCode.ERR_INSUFFICIENT_BALANCE);
+        .expectUint(CoreClient.ErrCode.ERR_FT_INSUFFICIENT_BALANCE);
     });
 
     it("succeeds and cause one ft_transfer_event to core contract", (chain, accounts, clients) => {

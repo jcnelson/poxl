@@ -2,6 +2,7 @@ import { Account, ReadOnlyFn, Tx, types } from "../deps.ts";
 import { Client } from "./client.ts";
 
 enum ErrCode {
+  ERR_FT_INSUFFICIENT_BALANCE = 1,
   ERR_UNAUTHORIZED = 1000,
   ERR_USER_ALREADY_REGISTERED,
   ERR_USER_NOT_FOUND,
