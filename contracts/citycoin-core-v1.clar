@@ -789,3 +789,8 @@
 (define-private (is-authorized-owner)
   (is-eq contract-caller CONTRACT_OWNER)
 )
+
+;; check if contract caller is auth contract
+(define-private (is-authorized-auth)
+  (is-eq contract-caller .citycoin-auth)
+)
