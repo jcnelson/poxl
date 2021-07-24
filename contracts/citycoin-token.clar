@@ -1,95 +1,126 @@
-;;;;;;;;;;;;;;;;;;;;; SIP 010 ;;;;;;;;;;;;;;;;;;;;;;
-;; testnet: (impl-trait 'STR8P3RD1EHA8AA37ERSSSZSWKS9T2GYQFGXNA4C.sip-010-trait-ft-standard.sip-010-trait)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; CITYCOIN TOKEN CONTRACT
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; CONTRACT OWNER
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define-constant CONTRACT_OWNER tx-sender)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ERROR CODES
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define-constant ERR_UNAUTHORIZED u2000)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SIP-010 DEFINITION
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (impl-trait 'SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.sip-010-trait-ft-standard.sip-010-trait)
+;; testnet: (impl-trait 'STR8P3RD1EHA8AA37ERSSSZSWKS9T2GYQFGXNA4C.sip-010-trait-ft-standard.sip-010-trait)
 
-(define-constant ERR-UNAUTHORIZED u3)
-
-;; set constant for contract owner, used for updating token-uri
-(define-constant CONTRACT-OWNER tx-sender)
-
-;; define initial token URI
-(define-data-var token-uri (optional (string-utf8 256)) (some u"https://cdn.citycoins.co/metadata/citycoin.json"))
-
-(define-map trusted-callers
-    principal
-    bool
-)
-
-;; set token URI to new value, only accessible by CONTRACT-OWNER
-(define-public (set-token-uri (new-uri (optional (string-utf8 256))))
-    (begin
-        (asserts! (is-eq tx-sender CONTRACT-OWNER) (err ERR-UNAUTHORIZED))
-        (ok (var-set token-uri new-uri))
-    )
-)
-
-;; The fungible token that can be Stacked.
 (define-fungible-token citycoins)
 
-;; SIP-010 functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SIP-010 FUNCTIONS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (define-public (transfer (amount uint) (from principal) (to principal) (memo (optional (buff 34))))
-    (begin
-        (asserts! (is-eq from tx-sender)
-            (err ERR-UNAUTHORIZED))
-
-        (if (is-some memo)
-            (print memo)
-            none
-        )
-
-        (ft-transfer? citycoins amount from to)
+  (begin
+    (asserts! (is-eq from tx-sender) (err ERR_UNAUTHORIZED))
+    (if (is-some memo)
+      (print memo)
+      none
     )
+    (ft-transfer? citycoins amount from to)
+  )
 )
 
 (define-read-only (get-name)
-    (ok "citycoins"))
+  (ok "citycoins")
+)
 
 (define-read-only (get-symbol)
-    (ok "CYCN"))
+  (ok "CYCN")
+)
 
 (define-read-only (get-decimals)
-    (ok u0))
+  (ok u0)
+)
 
 (define-read-only (get-balance (user principal))
-    (ok (ft-get-balance citycoins user)))
+  (ok (ft-get-balance citycoins user))
+)
 
 (define-read-only (get-total-supply)
-    (ok (ft-get-supply citycoins)))
+  (ok (ft-get-supply citycoins))
+)
 
 (define-read-only (get-token-uri)
-    (ok (var-get token-uri)))
+  (ok (var-get tokenUri))
+)
 
-;;---------------------------------------
-;; Other functionality
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; UTILITIES
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define-data-var tokenUri (optional (string-utf8 256)) (some u"https://cdn.citycoins.co/metadata/citycoin.json"))
+(define-data-var trustedCaller principal .citycoin-core-v1)
+
+;; set token URI to new value, only accessible by CITYCOIN CORE
+(define-public (set-token-uri (newUri (optional (string-utf8 256))))
+  (begin
+    (asserts! (is-eq contract-caller (var-get trustedCaller)) (err ERR_UNAUTHORIZED))
+    (ok (var-set tokenUri newUri))
+  )
+)
+
+;; mint new tokens, only accessible by CITYCOIN CORE
 (define-public (mint (amount uint) (recipient principal))
   (begin
-    (asserts! (is-trusted-caller contract-caller) (err ERR-UNAUTHORIZED))
+    (asserts! (is-eq contract-caller (var-get trustedCaller)) (err ERR_UNAUTHORIZED))
     (ft-mint? citycoins amount recipient)
   )
 )
 
-(define-read-only (is-trusted-caller (caller principal))
-    (default-to false (map-get? trusted-callers caller))
+;; burn tokens, only accessible by CITYCOIN CORE
+(define-public (burn (amount uint) (recipient principal))
+  (begin
+    (asserts! (is-eq contract-caller (var-get trustedCaller)) (err ERR_UNAUTHORIZED))
+    (ft-burn? citycoins amount recipient)
+  )
 )
 
-(define-public (add-trusted-caller (caller principal))
-    (begin
-        (asserts! (is-eq contract-caller CONTRACT-OWNER) (err ERR-UNAUTHORIZED))
-        (map-set trusted-callers caller true)
-        (ok true)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SEND-MANY
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define-public (send-many (recipients (list 200 { to: principal, amount: uint, memo: (optional (buff 34)) })))
+  (fold check-err
+    (map send-citycoin recipients)
+    (ok true)
+  )
+)
+
+(define-private (check-err (result (response bool uint)) (prior (response bool uint)))
+  (match prior ok-value result
+               err-value (err err-value)
+  )
+)
+
+(define-private (send-citycoin (recipient { to: principal, amount: uint, memo: (optional (buff 34)) }))
+  (send-citycoin-with-memo (get amount recipient) (get to recipient) (get memo recipient))
+)
+
+(define-private (send-citycoin-with-memo (amount uint) (to principal) (memo (optional (buff 34))))
+  (let
+    (
+      (transferOk (try! (transfer amount tx-sender to memo)))
     )
+    (ok transferOk)
+  )
 )
-
-(define-public (remove-trusted-caller (caller principal))
-    (begin
-        (asserts! (is-eq contract-caller CONTRACT-OWNER) (err ERR-UNAUTHORIZED))
-        (map-set trusted-callers caller false)
-        (ok true)
-    )
-)
-
-;;---------------------------------------
-;; Contract initialization
-
-;; add main contract to list of trusted callers
-(map-set trusted-callers .citycoin-logic-v1 true)

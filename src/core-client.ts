@@ -2,48 +2,40 @@ import { Account, ReadOnlyFn, Tx, types } from "../deps.ts";
 import { Client } from "./client.ts";
 
 enum ErrCode {
+  ERR_FT_INSUFFICIENT_BALANCE = 1,
   ERR_UNAUTHORIZED = 1000,
-  ERR_CONTRACT_ALREADY_EXISTS,
-  ERR_CONTRACT_DOES_NOT_EXIST,
-  ERR_VOTE_HAS_ENDED,
-  ERR_VOTE_STILL_IN_PROGRESS,
-  ERR_ALREADY_VOTED,
-  ERR_PROPOSAL_DOES_NOT_EXIST,
-  ERR_PROPOSAL_ALREADY_CLOSED,
-  ERR_NOTHING_TO_VOTE_ON,
-  ERR_CANT_VOTE_ON_OLD_PROPOSAL,
-}
-
-enum ContractState {
-  STATE_DEFINED = 0,
-  STATE_STARTED,
-  STATE_LOCKED_IN,
-  STATE_ACTIVE,
-  STATE_FAILED,
-}
-
-interface ProposalTuple {
-  contractAddress: string;
-  startBH: number;
-  endBH: number;
-  voters: number;
-  votes: number;
-  isOpen: boolean;
+  ERR_USER_ALREADY_REGISTERED,
+  ERR_USER_NOT_FOUND,
+  ERR_USER_ID_NOT_FOUND,
+  ERR_ACTIVATION_THRESHOLD_REACHED,
+  ERR_CONTRACT_NOT_ACTIVATED,
+  ERR_USER_ALREADY_MINED,
+  ERR_INSUFFICIENT_COMMITMENT,
+  ERR_INSUFFICIENT_BALANCE,
+  ERR_USER_DID_NOT_MINE_IN_BLOCK,
+  ERR_CLAIMED_BEFORE_MATURITY,
+  ERR_NO_MINERS_AT_BLOCK,
+  ERR_REWARD_ALREADY_CLAIMED,
+  ERR_MINER_DID_NOT_WIN,
+  ERR_NO_VRF_SEED_FOUND,
+  ERR_STACKING_NOT_AVAILABLE,
+  ERR_CANNOT_STACK,
+  ERR_REWARD_CYCLE_NOT_COMPLETED,
+  ERR_NOTHING_TO_REDEEM,
 }
 
 export class CoreClient extends Client {
   static readonly ErrCode = ErrCode;
-  static readonly ContractState = ContractState;
-  static readonly DEFAULT_VOTING_PERIOD = 200;
+  static readonly ACTIVATION_DELAY = 150;
+  static readonly TOKEN_HALVING_BLOCKS = 210000;
+  static readonly REWARD_CYCLE_LENGTH = 2100;
+  static readonly SPLIT_CITY_PCT = 0.3;
+  static readonly TOKEN_REWARD_MATURITY = 100;
+  static readonly BONUS_PERIOD_LENGTH = 10000;
 
-  unsafeSetCityWallet(newCityWallet: Account): Tx {
-    return Tx.contractCall(
-      this.contractName,
-      "unsafe-set-city-wallet",
-      [types.principal(newCityWallet.address)],
-      this.deployer.address
-    );
-  }
+  //////////////////////////////////////////////////
+  // CITY WALLET MANAGEMENT
+  //////////////////////////////////////////////////
 
   setCityWallet(newCityWallet: Account, sender: Account): Tx {
     return Tx.contractCall(
@@ -58,59 +50,154 @@ export class CoreClient extends Client {
     return this.callReadOnlyFn("get-city-wallet");
   }
 
-  proposeContract(name: string, contractAddress: string, sender: Account): Tx {
+  //////////////////////////////////////////////////
+  // REGISTRATION
+  //////////////////////////////////////////////////
+
+  getActivationBlock(): ReadOnlyFn {
+    return this.callReadOnlyFn("get-activation-block");
+  }
+
+  getActivationDelay(): ReadOnlyFn {
+    return this.callReadOnlyFn("get-activation-delay");
+  }
+
+  getActivationStatus(): ReadOnlyFn {
+    return this.callReadOnlyFn("get-activation-status");
+  }
+
+  getActivationThreshold(): ReadOnlyFn {
+    return this.callReadOnlyFn("get-activation-threshold");
+  }
+
+  registerUser(sender: Account, memo: string | undefined = undefined): Tx {
     return Tx.contractCall(
       this.contractName,
-      "propose-contract",
-      [types.ascii(name), types.principal(contractAddress)],
-      sender.address
-    );
-  }
-
-  getContract(contractAddress: string): ReadOnlyFn {
-    return this.callReadOnlyFn("get-contract", [
-      types.principal(contractAddress),
-    ]);
-  }
-
-  getProposal(id: number): ReadOnlyFn {
-    return this.callReadOnlyFn("get-proposal", [types.uint(id)]);
-  }
-
-  vote(proposalId: number | undefined, sender: Account): Tx {
-    return Tx.contractCall(
-      this.contractName,
-      "vote",
+      "register-user",
       [
-        typeof proposalId === "undefined"
+        typeof memo == "undefined"
           ? types.none()
-          : types.some(types.uint(proposalId)),
+          : types.some(types.utf8(memo)),
       ],
       sender.address
     );
   }
 
-  closeProposal(id: number, sender: Account) {
+  getRegisteredUsersNonce(): ReadOnlyFn {
+    return this.callReadOnlyFn("get-registered-users-nonce");
+  }
+
+  getUserId(user: Account): ReadOnlyFn {
+    return this.callReadOnlyFn("get-user-id", [types.principal(user.address)]);
+  }
+
+  getUser(userId: number): ReadOnlyFn {
+    return this.callReadOnlyFn("get-user", [types.uint(userId)]);
+  }
+
+  //////////////////////////////////////////////////
+  // MINING CONFIGURATION
+  //////////////////////////////////////////////////
+
+  //////////////////////////////////////////////////
+  // MINING ACTIONS
+  //////////////////////////////////////////////////
+
+  mineTokens(
+    amountUstx: number,
+    miner: Account,
+    memo: ArrayBuffer | undefined = undefined
+  ): Tx {
     return Tx.contractCall(
       this.contractName,
-      "close-proposal",
-      [types.uint(id)],
+      "mine-tokens",
+      [
+        types.uint(amountUstx),
+        typeof memo == "undefined"
+          ? types.none()
+          : types.some(types.buff(memo)),
+      ],
+      miner.address
+    );
+  }
+
+  //////////////////////////////////////////////////
+  // MINING REWARD CLAIM ACTIONS
+  //////////////////////////////////////////////////
+
+  claimMiningReward(minerBlockHeight: number, sender: Account): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "claim-mining-reward",
+      [types.uint(minerBlockHeight)],
       sender.address
     );
   }
 
-  getActiveContract(name: string): ReadOnlyFn {
-    return this.callReadOnlyFn("get-active-contract", [types.ascii(name)]);
+  //////////////////////////////////////////////////
+  // STACKING CONFIGURATION
+  //////////////////////////////////////////////////
+
+  getStackerAtCycleOrDefault(rewardCycle: number, userId: number): ReadOnlyFn {
+    return this.callReadOnlyFn("get-stacker-at-cycle-or-default", [
+      types.uint(rewardCycle),
+      types.uint(userId),
+    ]);
   }
 
-  createProposalTuple(data: ProposalTuple): object {
-    return {
-      address: data.contractAddress,
-      startBH: types.uint(data.startBH),
-      endBH: types.uint(data.endBH),
-      voters: types.uint(data.voters),
-      votes: types.uint(data.votes),
-      isOpen: types.bool(data.isOpen),
-    };
+  //////////////////////////////////////////////////
+  // STACKING ACTIONS
+  //////////////////////////////////////////////////
+
+  stackTokens(amountTokens: number, lockPeriod: number, stacker: Account): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "stack-tokens",
+      [types.uint(amountTokens), types.uint(lockPeriod)],
+      stacker.address
+    );
+  }
+
+  //////////////////////////////////////////////////
+  // STACKING REWARD CLAIMS
+  //////////////////////////////////////////////////
+
+  claimStackingReward(targetCycle: number, sender: Account): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "claim-stacking-reward",
+      [types.uint(targetCycle)],
+      sender.address
+    );
+  }
+
+  //////////////////////////////////////////////////
+  // TOKEN CONFIGURATION
+  //////////////////////////////////////////////////
+
+  //////////////////////////////////////////////////
+  // UTILITIES
+  //////////////////////////////////////////////////
+
+  //////////////////////////////////////////////////
+  // TESTING ONLY
+  //////////////////////////////////////////////////
+
+  unsafeSetCityWallet(newCityWallet: Account): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "test-unsafe-set-city-wallet",
+      [types.principal(newCityWallet.address)],
+      this.deployer.address
+    );
+  }
+
+  unsafeSetActivationThreshold(newThreshold: number): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "test-set-activation-threshold",
+      [types.uint(newThreshold)],
+      this.deployer.address
+    );
   }
 }

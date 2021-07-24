@@ -1,5 +1,4 @@
 import { Account, Chain, Tx, it } from "../deps.ts";
-import { CityCoinClient } from "./logic-client.ts";
 import { TokenClient } from "./token-client.ts";
 import { CoreClient } from "./core-client.ts";
 import { AuthClient } from "./auth-client.ts";
@@ -7,7 +6,6 @@ import { AuthClient } from "./auth-client.ts";
 class Accounts extends Map<string, Account> {}
 
 interface Clients {
-  citycoin: CityCoinClient;
   token: TokenClient;
   core: CoreClient;
   auth: AuthClient;
@@ -41,10 +39,9 @@ function _it(
 
     deployer = accounts.get("deployer")!;
     clients = {
-      citycoin: new CityCoinClient("citycoin-logic-v1", chain, deployer),
       token: new TokenClient("citycoin-token", chain, deployer),
-      core: new CoreClient("citycoin-core", chain, deployer),
       auth: new AuthClient("citycoin-auth", chain, deployer),
+      core: new CoreClient("citycoin-core-v1", chain, deployer),
     };
 
     await fn(chain, accounts, clients);
