@@ -143,8 +143,6 @@
       (threshold (var-get activationThreshold))
     )
 
-    ;; (asserts! (not (var-get initialized)) (err ERR_UNAUTHORIZED))
-
     (asserts! (is-none (map-get? UserIds tx-sender))
       (err ERR_USER_ALREADY_REGISTERED))
 
@@ -402,28 +400,6 @@
   )
 )
 
-(define-public (test (minerBlockHeight uint))
-  (let
-    (
-      (user tx-sender)
-      (stacksHeight block-height)
-      (maturityHeight (+ (var-get tokenRewardMaturity) minerBlockHeight))
-      (userId (unwrap! (get-user-id user) (err ERR_USER_ID_NOT_FOUND)))
-      (blockStats (unwrap! (get-mining-stats-at-block minerBlockHeight) (err ERR_NO_MINERS_AT_BLOCK)))
-      (minerStats (unwrap! (get-miner-at-block minerBlockHeight userId) (err ERR_USER_DID_NOT_MINE_IN_BLOCK)))
-      (isMature (asserts! (> stacksHeight maturityHeight) (err ERR_CLAIMED_BEFORE_MATURITY)))
-      (vrfSample (unwrap! (contract-call? .citycoin-vrf get-random-uint-at-block maturityHeight) (err ERR_NO_VRF_SEED_FOUND)))
-      (commitTotal (get-last-high-value-at-block minerBlockHeight))
-      (winningValue (mod vrfSample commitTotal))
-    )
-    (print vrfSample)
-    (print winningValue)
-    (print minerStats)
-    (print (and (>= winningValue (get lowValue minerStats)) (<= winningValue (get highValue minerStats))))
-    (ok true)
-  )
-)
-
 (define-private (set-mining-reward-claimed (userId uint) (minerBlockHeight uint))
   (let
     (
@@ -453,8 +429,6 @@
         winner: true
       }
     )
-    ;; (merge blockStats { rewardClaimed: true })
-    ;; (merge minerStats { winner: true })
     (try! (mint-coinbase user minerBlockHeight))
     (ok true)
   )
@@ -553,7 +527,6 @@
 (define-private (get-entitled-stacking-reward (userId uint) (targetCycle uint) (stacksHeight uint))
   (let
     (
-      ;; TODO: find and remove all unwrap-panic
       (rewardCycleStats (get-stacking-stats-at-cycle-or-default targetCycle))
       (stackerAtCycle (get-stacker-at-cycle-or-default targetCycle userId))
       (totalUstxThisCycle (get amountUstx rewardCycleStats))
@@ -603,8 +576,6 @@
     (asserts! (and (> lockPeriod u0) (<= lockPeriod MAX_REWARD_CYCLES))
       (err ERR_CANNOT_STACK))
     (asserts! (> amountTokens u0) (err ERR_CANNOT_STACK))
-    (asserts! (<= amountTokens (unwrap-panic (contract-call? .citycoin-token get-balance user)))
-      (err ERR_INSUFFICIENT_BALANCE))
     (try! (contract-call? .citycoin-token transfer amountTokens tx-sender (as-contract tx-sender) none))
     (match (fold stack-tokens-closure REWARD_CYCLE_INDEXES (ok commitment))
       okValue (ok true)
@@ -641,8 +612,8 @@
         (if (and (>= targetCycle firstCycle) (< targetCycle lastCycle))
           (begin
             (if (is-eq targetCycle (- lastCycle u1))
-              (try! (set-tokens-stacked stackerId targetCycle amountToken amountToken))
-              (try! (set-tokens-stacked stackerId targetCycle amountToken u0))
+              (set-tokens-stacked stackerId targetCycle amountToken amountToken)
+              (set-tokens-stacked stackerId targetCycle amountToken u0)
             )
             true
           )
@@ -678,9 +649,6 @@
         toReturn: (+ toReturn (get toReturn stackerAtCycle))
       }
     )
-    ;; TODO: remove and evaluate indeterminate response issue
-    (asserts! true (err u0))
-    (ok true)
   )
 )
 
