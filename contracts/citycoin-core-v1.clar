@@ -274,6 +274,16 @@
     (map-get? MinersAtBlockHighValue stacksHeight))
 )
 
+;; At a given Stacks block height:
+;; - what is the userId of miner who won this block
+(define-map BlockWinnerIds
+  uint
+  uint
+)
+
+(define-read-only (get-block-winner-id (stacksHeight uint))
+  (map-get? BlockWinnerIds stacksHeight)
+)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MINING ACTIONS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -428,6 +438,10 @@
         highValue: (get highValue minerStats),
         winner: true
       }
+    )
+    (map-set BlockWinnerIds
+      minerBlockHeight
+      userId
     )
     (try! (mint-coinbase user minerBlockHeight))
     (ok true)
