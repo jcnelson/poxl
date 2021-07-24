@@ -96,7 +96,7 @@
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; send-many and send-many-memo interface
+;; SEND-MANY
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define-public (send-many (recipients (list 200 { to: principal, amount: uint, memo: (optional (buff 34)) })))

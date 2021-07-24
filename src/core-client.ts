@@ -33,23 +33,9 @@ export class CoreClient extends Client {
   static readonly TOKEN_REWARD_MATURITY = 100;
   static readonly BONUS_PERIOD_LENGTH = 10000;
 
-  unsafeSetCityWallet(newCityWallet: Account): Tx {
-    return Tx.contractCall(
-      this.contractName,
-      "test-unsafe-set-city-wallet",
-      [types.principal(newCityWallet.address)],
-      this.deployer.address
-    );
-  }
-
-  unsafeSetActivationThreshold(newThreshold: number): Tx {
-    return Tx.contractCall(
-      this.contractName,
-      "test-set-activation-threshold",
-      [types.uint(newThreshold)],
-      this.deployer.address
-    );
-  }
+  //////////////////////////////////////////////////
+  // CITY WALLET MANAGEMENT
+  //////////////////////////////////////////////////
 
   setCityWallet(newCityWallet: Account, sender: Account): Tx {
     return Tx.contractCall(
@@ -64,8 +50,24 @@ export class CoreClient extends Client {
     return this.callReadOnlyFn("get-city-wallet");
   }
 
+  //////////////////////////////////////////////////
+  // REGISTRATION
+  //////////////////////////////////////////////////
+
   getActivationBlock(): ReadOnlyFn {
     return this.callReadOnlyFn("get-activation-block");
+  }
+
+  getActivationDelay(): ReadOnlyFn {
+    return this.callReadOnlyFn("get-activation-delay");
+  }
+
+  getActivationStatus(): ReadOnlyFn {
+    return this.callReadOnlyFn("get-activation-status");
+  }
+
+  getActivationThreshold(): ReadOnlyFn {
+    return this.callReadOnlyFn("get-activation-threshold");
   }
 
   registerUser(sender: Account, memo: string | undefined = undefined): Tx {
@@ -81,9 +83,25 @@ export class CoreClient extends Client {
     );
   }
 
+  getRegisteredUsersNonce(): ReadOnlyFn {
+    return this.callReadOnlyFn("get-registered-users-nonce");
+  }
+
   getUserId(user: Account): ReadOnlyFn {
     return this.callReadOnlyFn("get-user-id", [types.principal(user.address)]);
   }
+
+  getUser(userId: number): ReadOnlyFn {
+    return this.callReadOnlyFn("get-user", [types.uint(userId)]);
+  }
+
+  //////////////////////////////////////////////////
+  // MINING CONFIGURATION
+  //////////////////////////////////////////////////
+
+  //////////////////////////////////////////////////
+  // MINING ACTIONS
+  //////////////////////////////////////////////////
 
   mineTokens(
     amountUstx: number,
@@ -103,21 +121,9 @@ export class CoreClient extends Client {
     );
   }
 
-  stackTokens(amountTokens: number, lockPeriod: number, stacker: Account): Tx {
-    return Tx.contractCall(
-      this.contractName,
-      "stack-tokens",
-      [types.uint(amountTokens), types.uint(lockPeriod)],
-      stacker.address
-    );
-  }
-
-  getStackerAtCycleOrDefault(rewardCycle: number, userId: number): ReadOnlyFn {
-    return this.callReadOnlyFn("get-stacker-at-cycle-or-default", [
-      types.uint(rewardCycle),
-      types.uint(userId),
-    ]);
-  }
+  //////////////////////////////////////////////////
+  // MINING REWARD CLAIM ACTIONS
+  //////////////////////////////////////////////////
 
   claimMiningReward(minerBlockHeight: number, sender: Account): Tx {
     return Tx.contractCall(
@@ -128,12 +134,70 @@ export class CoreClient extends Client {
     );
   }
 
+  //////////////////////////////////////////////////
+  // STACKING CONFIGURATION
+  //////////////////////////////////////////////////
+
+  getStackerAtCycleOrDefault(rewardCycle: number, userId: number): ReadOnlyFn {
+    return this.callReadOnlyFn("get-stacker-at-cycle-or-default", [
+      types.uint(rewardCycle),
+      types.uint(userId),
+    ]);
+  }
+
+  //////////////////////////////////////////////////
+  // STACKING ACTIONS
+  //////////////////////////////////////////////////
+
+  stackTokens(amountTokens: number, lockPeriod: number, stacker: Account): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "stack-tokens",
+      [types.uint(amountTokens), types.uint(lockPeriod)],
+      stacker.address
+    );
+  }
+
+  //////////////////////////////////////////////////
+  // STACKING REWARD CLAIMS
+  //////////////////////////////////////////////////
+
   claimStackingReward(targetCycle: number, sender: Account): Tx {
     return Tx.contractCall(
       this.contractName,
       "claim-stacking-reward",
       [types.uint(targetCycle)],
       sender.address
+    );
+  }
+
+  //////////////////////////////////////////////////
+  // TOKEN CONFIGURATION
+  //////////////////////////////////////////////////
+
+  //////////////////////////////////////////////////
+  // UTILITIES
+  //////////////////////////////////////////////////
+
+  //////////////////////////////////////////////////
+  // TESTING ONLY
+  //////////////////////////////////////////////////
+
+  unsafeSetCityWallet(newCityWallet: Account): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "test-unsafe-set-city-wallet",
+      [types.principal(newCityWallet.address)],
+      this.deployer.address
+    );
+  }
+
+  unsafeSetActivationThreshold(newThreshold: number): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "test-set-activation-threshold",
+      [types.uint(newThreshold)],
+      this.deployer.address
     );
   }
 }

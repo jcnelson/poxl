@@ -8,31 +8,10 @@ enum ErrCode {
 export class TokenClient extends Client {
   static readonly ErrCode = ErrCode;
 
-  /**
-   * Mints token to make testing easier.
-   *
-   * @param amount
-   * @param recipient
-   */
-  ftMint(amount: number, recipient: Account): Tx {
-    return Tx.contractCall(
-      this.contractName,
-      "test-mint",
-      [types.uint(amount), types.principal(recipient.address)],
-      this.deployer.address
-    );
-  }
+  //////////////////////////////////////////////////
+  // SIP-010 FUNCTIONS
+  //////////////////////////////////////////////////
 
-  setTrustedCaller(newTrustedCaller: Account): Tx {
-    return Tx.contractCall(
-      this.contractName,
-      "test-set-trusted-caller",
-      [types.principal(newTrustedCaller.address)],
-      this.deployer.address
-    );
-  }
-
-  // SIP-010 functions
   transfer(
     amount: number,
     from: Account,
@@ -85,6 +64,10 @@ export class TokenClient extends Client {
     return this.callReadOnlyFn("get-token-uri");
   }
 
+  //////////////////////////////////////////////////
+  // UTILITIES
+  //////////////////////////////////////////////////
+
   setTokenUri(sender: Account, newUri?: string | undefined): Tx {
     let newUriVal: string;
 
@@ -111,7 +94,38 @@ export class TokenClient extends Client {
     );
   }
 
-  // send many
+  //////////////////////////////////////////////////
+  // TESTING ONLY
+  //////////////////////////////////////////////////
+
+  /**
+   * Mints token to make testing easier.
+   *
+   * @param amount
+   * @param recipient
+   */
+  ftMint(amount: number, recipient: Account): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "test-mint",
+      [types.uint(amount), types.principal(recipient.address)],
+      this.deployer.address
+    );
+  }
+
+  setTrustedCaller(newTrustedCaller: Account): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "test-set-trusted-caller",
+      [types.principal(newTrustedCaller.address)],
+      this.deployer.address
+    );
+  }
+
+  //////////////////////////////////////////////////
+  // SEND-MANY
+  //////////////////////////////////////////////////
+
   sendMany(recipients: Array<SendManyRecord>, sender: Account): Tx {
     return Tx.contractCall(
       this.contractName,
