@@ -157,7 +157,16 @@
     (get-or-create-user-id tx-sender)
 
     (if (is-eq newId threshold)
-      (try! (activate-contract block-height))
+      (let 
+        (
+          (activationBlockVal (+ block-height (var-get activationDelay)))
+        )
+        (var-set activationReached true)
+        (var-set activationBlock activationBlockVal)
+        (try! (contract-call? .citycoin-token activate-token activationBlockVal))
+        (try! (set-coinbase-thresholds))
+        (ok true)
+      )
       (ok true)
     )
   )
@@ -779,19 +788,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UTILITIES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(define-private (activate-contract (stacksHeight uint))
-  (let 
-    (
-      (activationBlockVal (+ stacksHeight (var-get activationDelay)))
-    )
-    (var-set activationReached true)
-    (var-set activationBlock activationBlockVal)
-    (try! (contract-call? .citycoin-token activate-token activationBlockVal))
-    (try! (set-coinbase-thresholds))
-    (ok true)
-  )
-)
 
 (define-data-var shutdownBlock uint u0)
 
