@@ -17,8 +17,8 @@
 
 (define-public (test-activate-contract)
   (begin
-    (var-set cityWallet 'STFCVYY1RJDNJHST7RRTPACYHVJQDJ7R1DWTQHQA)
-    (var-set activationThreshold u1)
+    ;; (var-set cityWallet 'STFCVYY1RJDNJHST7RRTPACYHVJQDJ7R1DWTQHQA)
+    (var-set activationThreshold u2)
     (ok true)
   )
 )

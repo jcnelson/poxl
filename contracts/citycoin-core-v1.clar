@@ -383,6 +383,7 @@
 ;; calls function to claim mining reward in active logic contract
 (define-public (claim-mining-reward (minerBlockHeight uint))
   (begin
+    (asserts! (or (is-eq (var-get shutdownHeight) u0) (< minerBlockHeight (var-get shutdownHeight))) (err ERR_CLAIM_IN_WRONG_CONTRACT))
     (try! (claim-mining-reward-at-block tx-sender block-height minerBlockHeight))
     (ok true)
   )
@@ -402,7 +403,6 @@
       (commitTotal (get-last-high-value-at-block minerBlockHeight))
       (winningValue (mod vrfSample commitTotal))
     )
-    (asserts! (or (is-eq (var-get shutdownHeight) u0) (< minerBlockHeight (var-get shutdownHeight))) (err ERR_CLAIM_IN_WRONG_CONTRACT))
     (asserts! (not (get rewardClaimed blockStats)) (err ERR_REWARD_ALREADY_CLAIMED))
     (asserts! (and (>= winningValue (get lowValue minerStats)) (<= winningValue (get highValue minerStats)))
       (err ERR_MINER_DID_NOT_WIN))
@@ -680,6 +680,10 @@
 ;; calls function to claim stacking reward in active logic contract
 (define-public (claim-stacking-reward (targetCycle uint))
   (begin
+    (asserts! (or
+      (is-eq (var-get shutdownHeight) u0)
+      (< targetCycle (+ u1 (unwrap! (get-reward-cycle (var-get shutdownHeight)) (err ERR_STACKING_NOT_AVAILABLE)))))
+      (err ERR_CLAIM_IN_WRONG_CONTRACT))
     (try! (claim-stacking-reward-at-cycle tx-sender block-height targetCycle))
     (ok true)
   )
@@ -693,9 +697,7 @@
       (entitledUstx (get-entitled-stacking-reward userId targetCycle stacksHeight))
       (stackerAtCycle (get-stacker-at-cycle-or-default targetCycle userId))
       (toReturn (get toReturn stackerAtCycle))
-      (lastBlockInCycle (+ (get-first-stacks-block-in-reward-cycle) (var-get rewardCycleLength)))
     )
-    (asserts! (or (is-eq (var-get shutdownHeight) u0) (< lastBlockInCycle (var-get shutdownHeight))) (err ERR_CLAIM_IN_WRONG_CONTRACT))
     (asserts! (> currentCycle targetCycle) (err ERR_REWARD_CYCLE_NOT_COMPLETED))
     (asserts! (or (> toReturn u0) (> entitledUstx u0)) (err ERR_NOTHING_TO_REDEEM))
     ;; disable ability to claim again
