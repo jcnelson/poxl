@@ -14,3 +14,6 @@
 )
 
 ;; TODO: simulate setup of multiple miners
+(define-public (test-multiple-miners)
+  (ok true)
+)
