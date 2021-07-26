@@ -79,6 +79,10 @@
   )
 )
 
+(define-public (test)
+  (ok true)
+)
+
 ;; mint new tokens, only accessible by CITYCOIN CORE
 (define-public (mint (amount uint) (recipient principal))
   (begin
