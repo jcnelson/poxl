@@ -176,6 +176,48 @@ describe("[CityCoin Token]", () => {
         result.expectOk().expectSome().expectUtf8(tokenUri);
       });
     });
+
+    describe("burn()", () => {
+      it("throws ERR_UNAUTHORIZED when called by non trusted callers", (chain, accounts, clients) => {
+        // arrange
+        const wallet = accounts.get("wallet_1")!;
+        const amount = 500;
+
+        // act
+        const receipt = chain.mineBlock([clients.token.burn(200, wallet)])
+          .receipts[0];
+
+        // assert
+        receipt.result
+          .expectErr()
+          .expectUint(TokenClient.ErrCode.ERR_UNAUTHORIZED);
+      });
+
+      it("succeeds when called by trusted caller and burns tokens", (chain, accounts, clients) => {
+        // arrange
+        const wallet = accounts.get("wallet_1")!;
+        const amount = 300;
+        chain.mineBlock([
+          clients.token.ftMint(amount, wallet),
+          clients.token.setTrustedCaller(wallet),
+        ]);
+
+        // act
+        const receipt = chain.mineBlock([clients.token.burn(amount, wallet)])
+          .receipts[0];
+
+        // assert
+        receipt.result.expectOk().expectBool(true);
+
+        assertEquals(receipt.events.length, 1);
+
+        receipt.events.expectFungibleTokenBurnEvent(
+          amount,
+          wallet.address,
+          "citycoins"
+        );
+      });
+    });
   });
 
   describe("UTILITIES", () => {
