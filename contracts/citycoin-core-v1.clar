@@ -157,16 +157,7 @@
     (get-or-create-user-id tx-sender)
 
     (if (is-eq newId threshold)
-      (let 
-        (
-          (activationBlockVal (+ block-height (var-get activationDelay)))
-        )
-        (var-set activationReached true)
-        (var-set activationBlock activationBlockVal)
-        (try! (contract-call? .citycoin-token activate-token activationBlockVal))
-        (try! (set-coinbase-thresholds))
-        (ok true)
-      )
+      (try! (activate-contract block-height))
       (ok true)
     )
   )
@@ -584,6 +575,7 @@
         last: (+ targetCycle lockPeriod)
       })
     )
+    (asserts! (get-activation-status) (err ERR_CONTRACT_NOT_ACTIVATED))
     (asserts! (and (> lockPeriod u0) (<= lockPeriod MAX_REWARD_CYCLES))
       (err ERR_CANNOT_STACK))
     (asserts! (> amountTokens u0) (err ERR_CANNOT_STACK))
@@ -787,6 +779,39 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UTILITIES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define-private (activate-contract (stacksHeight uint))
+  (let 
+    (
+      (activationBlockVal (+ stacksHeight (var-get activationDelay)))
+    )
+    (var-set activationReached true)
+    (var-set activationBlock activationBlockVal)
+    (try! (contract-call? .citycoin-token activate-token activationBlockVal))
+    (try! (set-coinbase-thresholds))
+    (ok true)
+  )
+)
+
+(define-data-var shutdownBlock uint u0)
+
+;; stop mining and stacking operations
+;; in preparation for a core upgrade
+(define-public (shutdown-contract (stacksHeight uint))
+  (begin
+    ;; AUTH: update current active contract in auth
+    ;; AUTH: update trusted caller in token
+
+    ;; only allow shutodwn request from AUTH
+    (asserts! (is-authorized-city) (err ERR_UNAUTHORIZED))
+    
+    ;; set variables to disable mining/stacking in CORE
+    (var-set activationReached false)
+    (var-set shutdownBlock stacksHeight)
+    
+    (ok true)
+  )
+)
 
 ;; check if contract caller is city wallet
 (define-private (is-authorized-city)
