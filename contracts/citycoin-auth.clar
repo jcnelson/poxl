@@ -1,6 +1,15 @@
 (define-constant CONTRACT_OWNER tx-sender)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; TRAIT DEFINITIONS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(use-trait coreTrait .citycoin-core-trait.citycoin-core)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ERRORS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (define-constant ERR_UNKNOWN_JOB u6000)
 (define-constant ERR_UNAUTHORIZED u6001)
 (define-constant ERR_JOB_IS_ACTIVE u6002)
@@ -264,7 +273,38 @@
   )
 )
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; CITY WALLET MANAGEMENT
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; initial value for city wallet
+(define-data-var cityWallet principal 'STFCVYY1RJDNJHST7RRTPACYHVJQDJ7R1DWTQHQA)
+
+;; returns set city wallet principal
+(define-read-only (get-city-wallet)
+  (ok (var-get cityWallet))
+)
+ 
+;; protected function to update city wallet variable
+(define-public (set-city-wallet (coreContract <coreTrait>) (newCityWallet principal))
+  (begin
+    (asserts! (is-authorized-city) (err ERR_UNAUTHORIZED))
+    ;; TODO: allow call via approved job
+    (var-set cityWallet newCityWallet)
+    (try! (contract-call? coreContract set-city-wallet newCityWallet))
+    (ok true)
+  )
+)
+
+;; check if contract caller is city wallet
+(define-private (is-authorized-city)
+  (is-eq contract-caller (var-get cityWallet))
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CONTRACT INITIALIZATION
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (map-insert Approvers 'ST1J4G6RR643BCG8G8SR6M2D9Z9KXT2NJDRK3FBTK true)
 (map-insert Approvers 'ST20ATRN26N9P05V2F1RHFRV24X8C8M3W54E427B2 true)
 (map-insert Approvers 'ST21HMSJATHZ888PD0S0SSTWP4J61TCRJYEVQ0STB true)

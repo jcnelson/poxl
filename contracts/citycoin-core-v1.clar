@@ -34,23 +34,34 @@
 (define-constant ERR_CANNOT_STACK u1016)
 (define-constant ERR_REWARD_CYCLE_NOT_COMPLETED u1017)
 (define-constant ERR_NOTHING_TO_REDEEM u1018)
+(define-constant ERR_UNABLE_TO_FIND_CITY_WALLET u1019)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CITY WALLET MANAGEMENT
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; initial value for city wallet
-(define-data-var cityWallet principal 'STFCVYY1RJDNJHST7RRTPACYHVJQDJ7R1DWTQHQA)
+;; initial value for city wallet, set to this contract until updated
+(define-data-var cityWallet principal .citycoin-core)
 
 ;; returns set city wallet principal
 (define-read-only (get-city-wallet)
   (var-get cityWallet)
 )
+
+(define-private (set-city-wallet-init)
+  (let
+    (
+      (newCityWallet (unwrap! (contract-call? .citycoin-auth get-city-wallet) (err ERR_UNABLE_TO_FIND_CITY_WALLET)))
+    )
+    (var-set cityWallet newCityWallet)
+    (ok true)
+  )
+)
  
 ;; protected function to update city wallet variable
 (define-public (set-city-wallet (newCityWallet principal))
   (begin
-    (asserts! (is-authorized-city) (err ERR_UNAUTHORIZED))
+    (asserts! (is-eq contract-caller .citycoin-auth) (err ERR_UNAUTHORIZED))
     (ok (var-set cityWallet newCityWallet))
   )
 )
@@ -165,6 +176,7 @@
         (var-set activationBlock activationBlockVal)
         (try! (contract-call? .citycoin-token activate-token activationBlockVal))
         (try! (set-coinbase-thresholds))
+        (try! (set-city-wallet-init))
         (ok true)
       )
       (ok true)
@@ -805,6 +817,8 @@
     (var-set activationReached false)
     (var-set shutdownBlock stacksHeight)
     
+    ;; unlock all stacked tokens in CORE
+
     (ok true)
   )
 )
