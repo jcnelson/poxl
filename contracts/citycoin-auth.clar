@@ -274,6 +274,54 @@
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; CORE CONTRACT MANAGEMENT
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; initial value for active logic contract
+;; set to deployer address at startup to prevent circular dependency of citycoin-core on citycoin-auth
+(define-data-var activeContract principal CONTRACT_OWNER)
+
+;; check if contract caller is active core contract
+(define-private (is-authorized-core)
+  (begin
+    (asserts! (is-eq contract-caller (get-active-contract)) (err ERR_UNAUTHORIZED))
+    (ok true)
+  )
+)
+
+;; returns active contract
+(define-read-only (get-active-contract)
+  (var-get activeContract)
+)
+
+;; store logic contract information
+(define-map CityCoinContracts
+  principal
+  {
+    state: uint,
+    startHeight: uint,
+    endHeight: uint,
+    active: bool
+  }
+)
+
+;; returns logic contract information
+(define-read-only (get-contract (address principal))
+  (map-get? CityCoinContracts address)
+)
+
+;; set initial value for logic contract
+(map-set CityCoinContracts
+  .citycoin-core-v1
+  {
+    state: u0,
+    startHeight: u0,
+    endHeight: u0,
+    active: false 
+  })
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CITY WALLET MANAGEMENT
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
