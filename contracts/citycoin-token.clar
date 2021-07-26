@@ -11,6 +11,12 @@
 (define-constant CONTRACT_OWNER tx-sender)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; TRAIT DEFINITIONS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(use-trait coreTrait .citycoin-core-trait.citycoin-core)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ERROR CODES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -120,17 +126,29 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define-data-var tokenUri (optional (string-utf8 256)) (some u"https://cdn.citycoins.co/metadata/citycoin.json"))
-(define-data-var trustedCaller principal .citycoin-core-v1)
+(define-data-var trustedCaller principal .citycoin-auth)
 
-;; set token URI to new value, only accessible by CITYCOIN CORE
+;; set trustedCaller to a new value, only accessible by CityCoin Auth
+(define-public (set-trusted-caller (targetContract principal))
+  (let
+    (
+      (coreContract (try! (contract-call? .citycoin-auth get-core-contract-info targetContract)))
+    )
+    (asserts! (is-authorized-auth) (err ERR_UNAUTHORIZED))
+    (var-set trustedCaller targetContract)
+    (ok true)
+  )
+)
+
+;; set token URI to new value, only accessible by CityCoin Auth
 (define-public (set-token-uri (newUri (optional (string-utf8 256))))
   (begin
-    (asserts! (is-eq contract-caller (var-get trustedCaller)) (err ERR_UNAUTHORIZED))
+    (asserts! (is-authorized-auth) (err ERR_UNAUTHORIZED))
     (ok (var-set tokenUri newUri))
   )
 )
 
-;; mint new tokens, only accessible by CITYCOIN CORE
+;; mint new tokens, only accessible by a CityCoin Core contract
 (define-public (mint (amount uint) (recipient principal))
   (begin
     (asserts! (is-eq contract-caller (var-get trustedCaller)) (err ERR_UNAUTHORIZED))
@@ -138,12 +156,17 @@
   )
 )
 
-;; burn tokens, only accessible by CITYCOIN CORE
+;; burn tokens, only accessible by a CityCoin Core contract
 (define-public (burn (amount uint) (recipient principal))
   (begin
     (asserts! (is-eq contract-caller (var-get trustedCaller)) (err ERR_UNAUTHORIZED))
     (ft-burn? citycoins amount recipient)
   )
+)
+
+;; checks if caller is CityCoin Auth contract
+(define-private (is-authorized-auth)
+  (is-eq contract-caller .citycoin-auth)
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

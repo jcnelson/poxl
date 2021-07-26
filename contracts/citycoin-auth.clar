@@ -18,6 +18,12 @@
 (define-constant ERR_JOB_IS_EXECUTED u6005)
 (define-constant ERR_JOB_IS_NOT_APPROVED u6006)
 (define-constant ERR_ARGUMENT_ALREADY_EXISTS u6007)
+(define-constant ERR_NO_ACTIVE_CORE_CONTRACT u6008)
+(define-constant ERR_CORE_CONTRACT_NOT_FOUND u6009)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; JOBS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define-constant REQUIRED_APPROVALS u2)
 
@@ -31,7 +37,7 @@
     target: principal,
     approvals: uint,
     isActive: bool,
-    isExecuted: bool,
+    isExecuted: bool
   }
 )
 
@@ -89,7 +95,7 @@
         target: target,
         approvals: u0,
         isActive: false,
-        isExecuted: false,
+        isExecuted: false
       }
     )
     (var-set lastJobId newJobId)
@@ -274,52 +280,92 @@
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; CORE CONTRACT MANAGEMENT
+;; CONTRACT MANAGEMENT
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; initial value for active logic contract
+;; initial value for active core contract
 ;; set to deployer address at startup to prevent circular dependency of citycoin-core on citycoin-auth
-(define-data-var activeContract principal CONTRACT_OWNER)
+(define-data-var activeCoreContract principal CONTRACT_OWNER)
+(define-data-var initialized bool false)
 
-;; check if contract caller is active core contract
-(define-private (is-authorized-core)
+;; core contract states
+(define-constant STATE_DEPLOYED u0)
+(define-constant STATE_ACTIVE u1)
+(define-constant STATE_INACTIVE u1)
+
+;; core contract map
+(define-map CityCoinCoreContracts
+  principal
+  {
+    state: uint, 
+    startHeight: uint,
+    endHeight: uint
+  }
+)
+
+;; getter for active core contract
+(define-read-only (get-active-core-contract)
   (begin
-    (asserts! (is-eq contract-caller (get-active-contract)) (err ERR_UNAUTHORIZED))
+    (asserts! (not (is-eq (var-get activeCoreContract) CONTRACT_OWNER)) (err ERR_NO_ACTIVE_CORE_CONTRACT))
+    (ok (var-get activeCoreContract))
+  )
+)
+
+;; getter for core contract map
+(define-read-only (get-core-contract-info (targetContract principal))
+  (let
+    (
+      (coreContract (unwrap! (map-get? CityCoinCoreContracts targetContract) (err ERR_CORE_CONTRACT_NOT_FOUND)))
+    )
+    (ok coreContract)
+  )
+)
+
+;; one-time function to initialize contracts after all contracts are deployed
+;; - check that deployer is calling this function
+;; - check this contract is not activated already (one-time use)
+;; - set initial map value for core contract v1
+;; - set cityWallet in core contract
+;; - set intialized true
+(define-public (initialize-contracts (coreContract <coreTrait>))
+  (begin
+    (asserts! (is-eq contract-caller CONTRACT_OWNER) (err ERR_UNAUTHORIZED))
+    (asserts! (not (var-get initialized)) (err ERR_UNAUTHORIZED))
+    (map-set CityCoinCoreContracts
+      .citycoin-core-v1
+      {
+        state: STATE_DEPLOYED,
+        startHeight: u0,
+        endHeight: u0
+      })
+    (try! (contract-call? coreContract set-city-wallet (var-get cityWallet)))
+    (var-set initialized true)
     (ok true)
   )
 )
 
-;; returns active contract
-(define-read-only (get-active-contract)
-  (var-get activeContract)
+;; function to activate core contract through registration
+;; - check that target is in core contract map
+;; - check that caller is core contract
+;; - set active in core contract map
+;; - set as activeCoreContract
+(define-public (activate-core-contract (targetContract principal) (startHeight uint))
+  (let
+    (
+      (coreContract (unwrap! (map-get? CityCoinCoreContracts targetContract) (err ERR_CORE_CONTRACT_NOT_FOUND)))
+    )
+    (asserts! (is-eq contract-caller targetContract) (err ERR_UNAUTHORIZED))
+    (map-set CityCoinCoreContracts
+      targetContract
+      {
+        state: STATE_ACTIVE,
+        startHeight: startHeight,
+        endHeight: u0
+      })
+    (var-set activeCoreContract targetContract)
+    (ok true)
+  )
 )
-
-;; store logic contract information
-(define-map CityCoinContracts
-  principal
-  {
-    state: uint,
-    startHeight: uint,
-    endHeight: uint,
-    active: bool
-  }
-)
-
-;; returns logic contract information
-(define-read-only (get-contract (address principal))
-  (map-get? CityCoinContracts address)
-)
-
-;; set initial value for logic contract
-(map-set CityCoinContracts
-  .citycoin-core-v1
-  {
-    state: u0,
-    startHeight: u0,
-    endHeight: u0,
-    active: false 
-  })
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CITY WALLET MANAGEMENT
@@ -328,18 +374,24 @@
 ;; initial value for city wallet
 (define-data-var cityWallet principal 'STFCVYY1RJDNJHST7RRTPACYHVJQDJ7R1DWTQHQA)
 
-;; returns set city wallet principal
+;; returns city wallet principal
 (define-read-only (get-city-wallet)
   (ok (var-get cityWallet))
 )
  
 ;; protected function to update city wallet variable
-(define-public (set-city-wallet (coreContract <coreTrait>) (newCityWallet principal))
-  (begin
+(define-public (set-city-wallet (targetContract <coreTrait>) (targetContractAddress principal) (newCityWallet principal))
+  (let
+    (
+      (coreContract (unwrap! (map-get? CityCoinCoreContracts targetContractAddress) (err ERR_CORE_CONTRACT_NOT_FOUND)))
+      (coreContractAddress (contract-of targetContract))
+    )
     (asserts! (is-authorized-city) (err ERR_UNAUTHORIZED))
     ;; TODO: allow call via approved job
+    (asserts! (is-eq coreContractAddress targetContractAddress) (err ERR_UNAUTHORIZED))
+    (asserts! (is-eq coreContractAddress (var-get activeCoreContract)) (err ERR_UNAUTHORIZED))
     (var-set cityWallet newCityWallet)
-    (try! (contract-call? coreContract set-city-wallet newCityWallet))
+    (try! (contract-call? targetContract set-city-wallet newCityWallet))
     (ok true)
   )
 )

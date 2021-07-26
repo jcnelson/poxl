@@ -35,6 +35,7 @@
 (define-constant ERR_REWARD_CYCLE_NOT_COMPLETED u1017)
 (define-constant ERR_NOTHING_TO_REDEEM u1018)
 (define-constant ERR_UNABLE_TO_FIND_CITY_WALLET u1019)
+(define-constant ERR_CLAIM_IN_WRONG_CONTRACT u1020)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CITY WALLET MANAGEMENT
@@ -47,21 +48,11 @@
 (define-read-only (get-city-wallet)
   (var-get cityWallet)
 )
-
-(define-private (set-city-wallet-init)
-  (let
-    (
-      (newCityWallet (unwrap! (contract-call? .citycoin-auth get-city-wallet) (err ERR_UNABLE_TO_FIND_CITY_WALLET)))
-    )
-    (var-set cityWallet newCityWallet)
-    (ok true)
-  )
-)
  
 ;; protected function to update city wallet variable
 (define-public (set-city-wallet (newCityWallet principal))
   (begin
-    (asserts! (is-eq contract-caller .citycoin-auth) (err ERR_UNAUTHORIZED))
+    (asserts! (is-authorized-auth) (err ERR_UNAUTHORIZED))
     (ok (var-set cityWallet newCityWallet))
   )
 )
@@ -168,15 +159,15 @@
     (get-or-create-user-id tx-sender)
 
     (if (is-eq newId threshold)
-      (let 
+      (let
         (
           (activationBlockVal (+ block-height (var-get activationDelay)))
         )
-        (var-set activationReached true)
-        (var-set activationBlock activationBlockVal)
+        (try! (contract-call? .citycoin-auth activate-core-contract (as-contract tx-sender) activationBlockVal))
         (try! (contract-call? .citycoin-token activate-token activationBlockVal))
         (try! (set-coinbase-thresholds))
-        (try! (set-city-wallet-init))
+        (var-set activationReached true)
+        (var-set activationBlock activationBlockVal)
         (ok true)
       )
       (ok true)
@@ -411,6 +402,7 @@
       (commitTotal (get-last-high-value-at-block minerBlockHeight))
       (winningValue (mod vrfSample commitTotal))
     )
+    (asserts! (or (is-eq (var-get shutdownHeight) u0) (< minerBlockHeight (var-get shutdownHeight))) (err ERR_CLAIM_IN_WRONG_CONTRACT))
     (asserts! (not (get rewardClaimed blockStats)) (err ERR_REWARD_ALREADY_CLAIMED))
     (asserts! (and (>= winningValue (get lowValue minerStats)) (<= winningValue (get highValue minerStats)))
       (err ERR_MINER_DID_NOT_WIN))
@@ -532,6 +524,11 @@
   (is-some
     (get amountToken (map-get? StackingStatsAtCycle rewardCycle))
   )
+)
+
+;; get the first Stacks block height for a given reward cycle.
+(define-read-only (get-first-stacks-block-in-reward-cycle (rewardCycle uint))
+  (+ (var-get activationBlock) (* (var-get rewardCycleLength) rewardCycle))
 )
 
 ;; getter for get-entitled-stacking-reward that specifies block height
@@ -696,7 +693,9 @@
       (entitledUstx (get-entitled-stacking-reward userId targetCycle stacksHeight))
       (stackerAtCycle (get-stacker-at-cycle-or-default targetCycle userId))
       (toReturn (get toReturn stackerAtCycle))
+      (lastBlockInCycle (+ (get-first-stacks-block-in-reward-cycle) (var-get rewardCycleLength)))
     )
+    (asserts! (or (is-eq (var-get shutdownHeight) u0) (< lastBlockInCycle (var-get shutdownHeight))) (err ERR_CLAIM_IN_WRONG_CONTRACT))
     (asserts! (> currentCycle targetCycle) (err ERR_REWARD_CYCLE_NOT_COMPLETED))
     (asserts! (or (> toReturn u0) (> entitledUstx u0)) (err ERR_NOTHING_TO_REDEEM))
     ;; disable ability to claim again
@@ -728,7 +727,7 @@
 ;; TOKEN CONFIGURATION
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; store block height at each halving, set by register-user in core contract 
+;; store block height at each halving, set by register-user in core contract
 (define-data-var coinbaseThreshold1 uint u0)
 (define-data-var coinbaseThreshold2 uint u0)
 (define-data-var coinbaseThreshold3 uint u0)
@@ -801,23 +800,20 @@
 ;; UTILITIES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define-data-var shutdownBlock uint u0)
+(define-data-var shutdownHeight uint u0)
 
 ;; stop mining and stacking operations
 ;; in preparation for a core upgrade
 (define-public (shutdown-contract (stacksHeight uint))
   (begin
-    ;; AUTH: update current active contract in auth
-    ;; AUTH: update trusted caller in token
-
-    ;; only allow shutodwn request from AUTH
-    (asserts! (is-authorized-city) (err ERR_UNAUTHORIZED))
+    ;; only allow shutdown request from AUTH
+    (asserts! (is-authorized-auth) (err ERR_UNAUTHORIZED))
     
     ;; set variables to disable mining/stacking in CORE
     (var-set activationReached false)
-    (var-set shutdownBlock stacksHeight)
+    (var-set shutdownHeight stacksHeight)
     
-    ;; unlock all stacked tokens in CORE
+    ;; TODO: unlock all stacked tokens in this contract
 
     (ok true)
   )
@@ -831,4 +827,9 @@
 ;; check if contract caller is contract owner
 (define-private (is-authorized-owner)
   (is-eq contract-caller CONTRACT_OWNER)
+)
+
+;; checks if caller is CityCoin Auth contract
+(define-private (is-authorized-auth)
+  (is-eq contract-caller .citycoin-auth)
 )
