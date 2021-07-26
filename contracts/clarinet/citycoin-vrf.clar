@@ -1,3 +1,29 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; CITYCOIN VRF CONTRACT
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; VRF
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Read the on-chain VRF and turn the lower 16 bytes into a uint, in order to sample the set of miners and determine
+;; which one may claim the token batch for the given block height.
+(define-read-only (get-random-uint-at-block (stacksBlock uint))
+  (let (
+    (vrf-lower-uint-opt
+      (match (get-block-info? vrf-seed stacksBlock)
+        vrf-seed (some (buff-to-uint-le (lower-16-le vrf-seed)))
+        none))
+  )
+  vrf-lower-uint-opt)
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; UTILITIES
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ;; lookup table for converting 1-byte buffers to uints via index-of
 (define-constant BUFF_TO_BYTE (list 
     0x00 0x01 0x02 0x03 0x04 0x05 0x06 0x07 0x08 0x09 0x0a 0x0b 0x0c 0x0d 0x0e 0x0f
@@ -62,45 +88,4 @@
     acc: (unwrap-panic (as-max-len? (concat acc byte) u16)),
     data: data
   })
-)
-
-;; Read the on-chain VRF and turn the lower 16 bytes into a uint, in order to sample the set of miners and determine
-;; which one may claim the token batch for the given block height.
-(define-read-only (get-random-uint-at-block (stacks-block uint))
-  (let (
-    (vrf-lower-uint-opt
-      (match (get-block-info? vrf-seed stacks-block)
-        vrf-seed (some (buff-to-uint-le (lower-16-le vrf-seed)))
-        none))
-  )
-  vrf-lower-uint-opt)
-)
-
-;;
-;; LIFECYCLE TRAIT FUNCTIONS
-;;
-(impl-trait .citycoin-lifecycle-trait.lifecycle-trait)
-
-(define-constant CONTRACT_VERSION "0.0.1")
-(define-data-var startupBH (optional uint) none)
-(define-data-var shutdownBH (optional uint) none)
-(define-data-var state uint u0)
-
-(define-read-only (get-contract-info)
-    (ok {
-        version: CONTRACT_VERSION,
-        startupBH: (var-get startupBH),
-        shutdownBH: (var-get shutdownBH),
-        state: (var-get state)
-    })
-)
-
-(define-public (startup (height (optional uint)))
-    ;; not implemented
-    (ok (var-set startupBH height))
-)
-
-(define-public (shutdown (height (optional uint)))
-    ;; not implemented
-    (ok (var-set shutdownBH height))
 )
