@@ -34,6 +34,7 @@ Several commands are available to help with testing via `npm`:
 - to run all tests:
   `npm test`, `npm run test`, `npm run clarinet:test`
 - to run individual tests:
+  `npm run test:auth`
   `npm run test:core`
   `npm run test:token`
 - to run specific clarinet functions
