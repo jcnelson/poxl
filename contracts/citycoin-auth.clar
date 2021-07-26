@@ -352,7 +352,7 @@
 ;; - check that caller is core contract
 ;; - set active in core contract map
 ;; - set as activeCoreContract
-(define-public (activate-core-contract (targetContract principal) (startHeight uint))
+(define-public (activate-core-contract (targetContract principal) (stacksHeight uint))
   (let
     (
       (coreContract (unwrap! (map-get? CityCoinCoreContracts targetContract) (err ERR_CORE_CONTRACT_NOT_FOUND)))
@@ -362,10 +362,40 @@
       targetContract
       {
         state: STATE_ACTIVE,
-        startHeight: startHeight,
+        startHeight: stacksHeight,
         endHeight: u0
       })
     (var-set activeCoreContract targetContract)
+    (ok true)
+  )
+)
+
+(define-public (upgrade-core-contract (oldContract <coreTrait>) (newContract <coreTrait>) (stacksHeight uint))
+  (let
+    (
+      (oldContractAddress (contract-of oldContract))
+      (oldContractMap (unwrap! (map-get? CityCoinCoreContracts oldContractAddress) (err ERR_CORE_CONTRACT_NOT_FOUND)))
+      (newContractAddress (contract-of newContract))
+    )
+    (asserts! (is-authorized-city) (err ERR_UNAUTHORIZED))
+    ;; TODO: allow call via approved job
+    (map-set CityCoinCoreContracts
+      oldContractAddress
+      {
+        state: STATE_INACTIVE,
+        startHeight: (get startHeight oldContractMap),
+        endHeight: stacksHeight
+      })
+    (map-set CityCoinCoreContracts
+      newContractAddress
+      {
+        state: STATE_DEPLOYED,
+        startHeight: u0,
+        endHeight: u0
+      })
+    (var-set activeCoreContract newContractAddress)
+    (try! (contract-call? oldContract shutdown-contract stacksHeight))
+    (try! (contract-call? newContract set-city-wallet (var-get cityWallet)))
     (ok true)
   )
 )
