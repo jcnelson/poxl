@@ -15,6 +15,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define-constant ERR_UNAUTHORIZED u2000)
+(define-constant ERR_TOKEN_NOT_ACTIVATED u2001)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SIP-010 DEFINITION
@@ -62,6 +63,54 @@
 
 (define-read-only (get-token-uri)
   (ok (var-get tokenUri))
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; TOKEN CONFIGURATION
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; how many blocks until the next halving occurs
+(define-constant TOKEN_HALVING_BLOCKS u210000)
+
+;; store block height at each halving, set by register-user in core contract 
+(define-data-var coinbaseThreshold1 uint u0)
+(define-data-var coinbaseThreshold2 uint u0)
+(define-data-var coinbaseThreshold3 uint u0)
+(define-data-var coinbaseThreshold4 uint u0)
+(define-data-var coinbaseThreshold5 uint u0)
+
+;; once activated, thresholds cannot be updated again
+(define-data-var tokenActivated bool false)
+
+;; one-time function to activate the token
+(define-public (activate-token (stacksHeight uint))
+  (begin
+    (asserts! (is-eq contract-caller (var-get trustedCaller)) (err ERR_UNAUTHORIZED))
+    (var-set tokenActivated true)
+    (var-set coinbaseThreshold1 (+ stacksHeight TOKEN_HALVING_BLOCKS))
+    (var-set coinbaseThreshold2 (+ stacksHeight (* u2 TOKEN_HALVING_BLOCKS)))
+    (var-set coinbaseThreshold3 (+ stacksHeight (* u3 TOKEN_HALVING_BLOCKS)))
+    (var-set coinbaseThreshold4 (+ stacksHeight (* u4 TOKEN_HALVING_BLOCKS)))
+    (var-set coinbaseThreshold5 (+ stacksHeight (* u5 TOKEN_HALVING_BLOCKS)))
+    (ok true)
+  )
+)
+
+;; return coinbase thresholds if token activated
+(define-read-only (get-coinbase-thresholds)
+  (let
+    (
+      (activated (var-get tokenActivated))
+    )
+    (asserts! activated (err ERR_TOKEN_NOT_ACTIVATED))
+    (ok {
+      coinbaseThreshold1: (var-get coinbaseThreshold1),
+      coinbaseThreshold2: (var-get coinbaseThreshold2),
+      coinbaseThreshold3: (var-get coinbaseThreshold3),
+      coinbaseThreshold4: (var-get coinbaseThreshold4),
+      coinbaseThreshold5: (var-get coinbaseThreshold5)
+    })
+  )
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -163,11 +163,8 @@
         )
         (var-set activationReached true)
         (var-set activationBlock activationBlockVal)
-        (var-set coinbaseThreshold1 (+ activationBlockVal TOKEN_HALVING_BLOCKS))
-        (var-set coinbaseThreshold2 (+ activationBlockVal (* u2 TOKEN_HALVING_BLOCKS)))
-        (var-set coinbaseThreshold3 (+ activationBlockVal (* u3 TOKEN_HALVING_BLOCKS)))
-        (var-set coinbaseThreshold4 (+ activationBlockVal (* u4 TOKEN_HALVING_BLOCKS)))
-        (var-set coinbaseThreshold5 (+ activationBlockVal (* u5 TOKEN_HALVING_BLOCKS)))
+        (try! (contract-call? .citycoin-token activate-token activationBlockVal))
+        (try! (set-coinbase-thresholds))
         (ok true)
       )
       (ok true)
@@ -718,15 +715,26 @@
 ;; TOKEN CONFIGURATION
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; how many blocks until the next halving occurs
-(define-constant TOKEN_HALVING_BLOCKS u210000)
-
-;; store block height at each halving, set by register-user    
+;; store block height at each halving, set by register-user in core contract 
 (define-data-var coinbaseThreshold1 uint u0)
 (define-data-var coinbaseThreshold2 uint u0)
 (define-data-var coinbaseThreshold3 uint u0)
 (define-data-var coinbaseThreshold4 uint u0)
 (define-data-var coinbaseThreshold5 uint u0)
+
+(define-private (set-coinbase-thresholds)
+  (let
+    (
+      (coinbaseAmounts (try! (contract-call? .citycoin-token get-coinbase-thresholds)))
+    )
+    (var-set coinbaseThreshold1 (get coinbaseThreshold1 coinbaseAmounts))
+    (var-set coinbaseThreshold2 (get coinbaseThreshold2 coinbaseAmounts))
+    (var-set coinbaseThreshold3 (get coinbaseThreshold3 coinbaseAmounts))
+    (var-set coinbaseThreshold4 (get coinbaseThreshold4 coinbaseAmounts))
+    (var-set coinbaseThreshold5 (get coinbaseThreshold5 coinbaseAmounts))
+    (ok true)
+  )
+)
 
 ;; return coinbase thresholds if contract activated
 (define-read-only (get-coinbase-thresholds)
