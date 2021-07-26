@@ -328,11 +328,14 @@
 ;; - set cityWallet in core contract
 ;; - set intialized true
 (define-public (initialize-contracts (coreContract <coreTrait>))
-  (begin
+  (let
+    (
+      (coreContractAddress (contract-of coreContract))
+    )
     (asserts! (is-eq contract-caller CONTRACT_OWNER) (err ERR_UNAUTHORIZED))
     (asserts! (not (var-get initialized)) (err ERR_UNAUTHORIZED))
     (map-set CityCoinCoreContracts
-      .citycoin-core-v1
+      coreContractAddress
       {
         state: STATE_DEPLOYED,
         startHeight: u0,

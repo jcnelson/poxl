@@ -90,9 +90,12 @@
 (define-data-var tokenActivated bool false)
 
 ;; one-time function to activate the token
-(define-public (activate-token (stacksHeight uint))
-  (begin
-    (asserts! (is-eq contract-caller (var-get trustedCaller)) (err ERR_UNAUTHORIZED))
+(define-public (activate-token (coreContract principal) (stacksHeight uint))
+  (let
+    (
+      (coreContractMap (try! (contract-call? .citycoin-auth get-core-contract-info coreContract)))
+    )
+    ;; TODO: assert contract is active from map
     (asserts! (not (var-get tokenActivated)) (err ERR_TOKEN_ALREADY_ACTIVATED))
     (var-set tokenActivated true)
     (var-set coinbaseThreshold1 (+ stacksHeight TOKEN_HALVING_BLOCKS))
@@ -129,13 +132,14 @@
 (define-data-var trustedCaller principal .citycoin-auth)
 
 ;; set trustedCaller to a new value, only accessible by CityCoin Auth
-(define-public (set-trusted-caller (targetContract principal))
+(define-public (set-trusted-caller (targetContract <coreTrait>))
   (let
     (
-      (coreContract (try! (contract-call? .citycoin-auth get-core-contract-info targetContract)))
+      (targetContractAddress (contract-of targetContract))
+      (coreContract (try! (contract-call? .citycoin-auth get-core-contract-info targetContractAddress)))
     )
     (asserts! (is-authorized-auth) (err ERR_UNAUTHORIZED))
-    (var-set trustedCaller targetContract)
+    (var-set trustedCaller targetContractAddress)
     (ok true)
   )
 )
@@ -149,9 +153,12 @@
 )
 
 ;; mint new tokens, only accessible by a CityCoin Core contract
-(define-public (mint (amount uint) (recipient principal))
-  (begin
-    (asserts! (is-eq contract-caller (var-get trustedCaller)) (err ERR_UNAUTHORIZED))
+(define-public (mint (requestor principal) (amount uint) (recipient principal))
+  (let
+    (
+      (coreContract (try! (contract-call? .citycoin-auth get-core-contract-info requestor)))
+    )
+    ;; (asserts! (is-eq contract-caller (var-get trustedCaller)) (err ERR_UNAUTHORIZED))
     (ft-mint? citycoins amount recipient)
   )
 )
