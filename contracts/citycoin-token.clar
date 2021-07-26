@@ -16,6 +16,7 @@
 
 (define-constant ERR_UNAUTHORIZED u2000)
 (define-constant ERR_TOKEN_NOT_ACTIVATED u2001)
+(define-constant ERR_TOKEN_ALREADY_ACTIVATED u2002)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SIP-010 DEFINITION
@@ -86,6 +87,7 @@
 (define-public (activate-token (stacksHeight uint))
   (begin
     (asserts! (is-eq contract-caller (var-get trustedCaller)) (err ERR_UNAUTHORIZED))
+    (asserts! (not (var-get tokenActivated)) (err ERR_TOKEN_ALREADY_ACTIVATED))
     (var-set tokenActivated true)
     (var-set coinbaseThreshold1 (+ stacksHeight TOKEN_HALVING_BLOCKS))
     (var-set coinbaseThreshold2 (+ stacksHeight (* u2 TOKEN_HALVING_BLOCKS)))

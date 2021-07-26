@@ -178,6 +178,35 @@ describe("[CityCoin Token]", () => {
     });
   });
 
+  describe("TOKEN CONFIGURATION", () => {
+    describe("activate-token()", () => {
+      it("fails with ERR_UNAUTHORIZED if called by an unapproved sender", (chain, accounts, clients) => {
+        const wallet_2 = accounts.get("wallet_2")!;
+        const block = chain.mineBlock([
+          clients.token.activateToken(wallet_2, 10),
+        ]);
+        const receipt = block.receipts[0];
+        receipt.result
+          .expectErr()
+          .expectUint(TokenClient.ErrCode.ERR_UNAUTHORIZED);
+      });
+      /*
+      TODO: should this be tested from core instead, since its the approved caller?
+      it("fails with ERR_TOKEN_ALREADY_ACTIVATED if called after token is activated", (chain, accounts, clients) => {
+        const wallet_2 = accounts.get("wallet_2")!;
+        chain.mineBlock([clients.token.setTokenActivation()]);
+        const block = chain.mineBlock([
+          clients.token.activateToken(wallet_2, 10),
+        ]);
+        const receipt = block.receipts[0];
+        receipt.result
+          .expectErr()
+          .expectUint(TokenClient.ErrCode.ERR_TOKEN_ALREADY_ACTIVATED);
+      });
+      */
+    });
+  });
+
   describe("UTILITIES", () => {
     describe("set-token-uri()", () => {
       it("fails with ERR_UNAUTHORIZED when called by someone who is not core contract", (chain, accounts, clients) => {
