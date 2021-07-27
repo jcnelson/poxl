@@ -298,8 +298,8 @@
   )
 )
 
-(define-public (mine-many (data (list 200 {shift: uint, ustx: uint})))
-  (match (fold mine-single data (ok { userId: (get-or-create-user-id tx-sender), toStackers: u0, toCity: u0 }))
+(define-public (mine-many (amounts (list 200 uint)))
+  (match (fold mine-single amounts (ok { userId: (get-or-create-user-id tx-sender), toStackers: u0, toCity: u0, stacksHeight: block-height }))
     okReturn 
     (begin
       (asserts! (>= (stx-get-balance tx-sender) (+ (get toStackers okReturn) (get toCity okReturn))) (err ERR_INSUFFICIENT_BALANCE))
@@ -315,12 +315,13 @@
 )
 
 (define-private (mine-single 
-  (data { shift: uint, ustx: uint }) 
+  (amountUstx uint) 
   (return (response 
     { 
       userId: uint,
       toStackers: uint,
-      toCity: uint
+      toCity: uint,
+      stacksHeight: uint
     }
     uint
   )))
@@ -328,8 +329,7 @@
   (match return okReturn
     (let
       (
-        (stacksHeight (+ block-height (get shift data)))
-        (amountUstx (get ustx data))
+        (stacksHeight (get stacksHeight okReturn))
         (rewardCycle (default-to u0 (get-reward-cycle stacksHeight)))
         (stackingActive (stacking-active-at-cycle rewardCycle))
         (toCity
@@ -346,7 +346,8 @@
       (ok (merge okReturn 
         {
           toStackers: (+ (get toStackers okReturn) toStackers),
-          toCity: (+ (get toCity okReturn) toCity)
+          toCity: (+ (get toCity okReturn) toCity),
+          stacksHeight: (+ stacksHeight u1)
         }
       ))
     )
