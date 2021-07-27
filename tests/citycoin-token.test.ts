@@ -25,11 +25,6 @@ describe("[CityCoin Token]", () => {
           "citycoins"
         );
       });
-    });
-  });
-});
-
-/*
 
       it("succeeds with memo supplied", (chain, accounts, clients) => {
         const from = accounts.get("wallet_1")!;
@@ -112,6 +107,12 @@ describe("[CityCoin Token]", () => {
           .expectUint(TokenClient.ErrCode.ERR_UNAUTHORIZED);
       });
     });
+  });
+});
+
+/*
+
+      
 
     describe("get-name()", () => {
       it("returns 'citycoins'", (chain, accounts, clients) => {
