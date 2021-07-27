@@ -25,6 +25,11 @@ describe("[CityCoin Token]", () => {
           "citycoins"
         );
       });
+    });
+  });
+});
+
+/*
 
       it("succeeds with memo supplied", (chain, accounts, clients) => {
         const from = accounts.get("wallet_1")!;
