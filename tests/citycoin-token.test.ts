@@ -107,12 +107,6 @@ describe("[CityCoin Token]", () => {
           .expectUint(TokenClient.ErrCode.ERR_UNAUTHORIZED);
       });
     });
-  });
-});
-
-/*
-
-      
 
     describe("get-name()", () => {
       it("returns 'citycoins'", (chain, accounts, clients) => {
@@ -172,6 +166,14 @@ describe("[CityCoin Token]", () => {
         result.expectOk().expectUint(100);
       });
     });
+  });
+});
+
+/*
+
+      
+
+    
 
     describe("get-token-uri()", () => {
       it("returns correct uri", (chain, accounts, clients) => {
