@@ -94,8 +94,9 @@
   (let
     (
       (coreContractMap (try! (contract-call? .citycoin-auth get-core-contract-info coreContract)))
+      (statusActive u1)
     )
-    ;; TODO: assert contract is active from map
+    (asserts! (is-eq (get state coreContractMap) statusActive) (err ERR_UNAUTHORIZED))
     (asserts! (not (var-get tokenActivated)) (err ERR_TOKEN_ALREADY_ACTIVATED))
     (var-set tokenActivated true)
     (var-set coinbaseThreshold1 (+ stacksHeight TOKEN_HALVING_BLOCKS))
@@ -158,15 +159,18 @@
     (
       (coreContract (try! (contract-call? .citycoin-auth get-core-contract-info requestor)))
     )
-    ;; (asserts! (is-eq contract-caller (var-get trustedCaller)) (err ERR_UNAUTHORIZED))
+    (asserts! (is-eq contract-caller requestor) (err ERR_UNAUTHORIZED))
     (ft-mint? citycoins amount recipient)
   )
 )
 
 ;; burn tokens, only accessible by a CityCoin Core contract
-(define-public (burn (amount uint) (recipient principal))
-  (begin
-    (asserts! (is-eq contract-caller (var-get trustedCaller)) (err ERR_UNAUTHORIZED))
+(define-public (burn (requestor principal) (amount uint) (recipient principal))
+  (let
+    (
+      (coreContract (try! (contract-call? .citycoin-auth get-core-contract-info requestor)))
+    )
+    (asserts! (is-eq contract-caller requestor) (err ERR_UNAUTHORIZED))
     (ft-burn? citycoins amount recipient)
   )
 )

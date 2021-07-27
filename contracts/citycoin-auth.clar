@@ -284,14 +284,15 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; initial value for active core contract
-;; set to deployer address at startup to prevent circular dependency of citycoin-core on citycoin-auth
+;; set to deployer address at startup to prevent
+;; circular dependency of citycoin-core on citycoin-auth
 (define-data-var activeCoreContract principal CONTRACT_OWNER)
 (define-data-var initialized bool false)
 
 ;; core contract states
 (define-constant STATE_DEPLOYED u0)
 (define-constant STATE_ACTIVE u1)
-(define-constant STATE_INACTIVE u1)
+(define-constant STATE_INACTIVE u2)
 
 ;; core contract map
 (define-map CityCoinCoreContracts
