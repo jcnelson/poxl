@@ -31,7 +31,7 @@ jobs:
       - name: "Execute test suite"
         uses: docker://hirosystems/clarinet:latest
         with:
-          args: test ./tests/citycoin-core.test.ts
+          args: test ./tests/citycoin-core-v1.test.ts
       #- name: "Upload code coverage"
       #  uses: codecov/codecov-action@v2
       #  with:
