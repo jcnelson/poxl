@@ -680,10 +680,6 @@
 ;; calls function to claim stacking reward in active logic contract
 (define-public (claim-stacking-reward (targetCycle uint))
   (begin
-    (asserts! (or
-      (is-eq (var-get shutdownHeight) u0)
-      (< targetCycle (+ u1 (unwrap! (get-reward-cycle (var-get shutdownHeight)) (err ERR_STACKING_NOT_AVAILABLE)))))
-      (err ERR_CLAIM_IN_WRONG_CONTRACT))
     (try! (claim-stacking-reward-at-cycle tx-sender block-height targetCycle))
     (ok true)
   )

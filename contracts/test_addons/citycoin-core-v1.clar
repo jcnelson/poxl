@@ -24,10 +24,12 @@
 )
 
 (define-public (test-shutdown-contract (stacksHeight uint))
-  ;; set variables to disable mining/stacking in CORE
-  (var-set activationReached false)
-  (var-set shutdownHeight stacksHeight)
-  ;; set variable to allow for all stacking claims
-  (var-set isShutdown true)
-  (ok true)
+  (begin
+    ;; set variables to disable mining/stacking in CORE
+    (var-set activationReached false)
+    (var-set shutdownHeight stacksHeight)
+    ;; set variable to allow for all stacking claims
+    (var-set isShutdown true)
+    (ok true)
+  )
 )
