@@ -300,7 +300,7 @@ describe("[CityCoin Token]", () => {
       });
     });
   });
-    */
+    
   describe("SEND-MANY", () => {
     describe("send-many()", () => {
       it("succeeds with five ft_transfer_events and five print memo events with memo supplied", (chain, accounts, clients) => {
@@ -527,6 +527,7 @@ describe("[CityCoin Token]", () => {
       });
     });
   });
+  */
 });
 
 //////////////////////////////////////////////////
