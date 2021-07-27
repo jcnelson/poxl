@@ -200,4 +200,22 @@ export class CoreClient extends Client {
       this.deployer.address
     );
   }
+
+  testInitializeCore(coreContract: string): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "test-initialize-core",
+      [types.principal(coreContract)],
+      this.deployer.address
+    );
+  }
+
+  testMint(amount: number, recipient: Account, sender: Account): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "test-mint",
+      [types.uint(amount), types.principal(recipient.address)],
+      sender.address
+    );
+  }
 }

@@ -42,7 +42,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; initial value for city wallet, set to this contract until updated
-(define-data-var cityWallet principal .citycoin-core)
+(define-data-var cityWallet principal .citycoin-core-v1)
 
 ;; returns set city wallet principal
 (define-read-only (get-city-wallet)

@@ -9,9 +9,20 @@ describe("[CityCoin Core]", () => {
 
   describe("CITY WALLET MANAGEMENT", () => {
     describe("get-city-wallet()", () => {
-      it("returns current city wallet variable", (chain, accounts, clients) => {
+      it("returns current city wallet variable as contract address before initialization", (chain, accounts, clients) => {
+        // arrange
+        const result = clients.core.getCityWallet().result;
+
+        // assert
+        result.expectPrincipal(clients.core.getContractAddress());
+      });
+      it("returns current city wallet variable as city wallet address after initialization", (chain, accounts, clients) => {
         // arrange
         const cityWallet = accounts.get("city_wallet")!;
+        chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
+        ]);
+
         const result = clients.core.getCityWallet().result;
 
         // assert
@@ -34,6 +45,8 @@ describe("[CityCoin Core]", () => {
           .expectUint(CoreClient.ErrCode.ERR_UNAUTHORIZED);
       });
 
+      // TODO: move to auth contract
+      /*
       it("successfully change city walled when called by current city wallet", (chain, accounts, clients) => {
         // arrange
         const cityWallet = accounts.get("city_wallet")!;
@@ -51,6 +64,7 @@ describe("[CityCoin Core]", () => {
           .getCityWallet()
           .result.expectPrincipal(newCityWallet.address);
       });
+      */
     });
   });
 
@@ -73,6 +87,7 @@ describe("[CityCoin Core]", () => {
         // arrange
         const user = accounts.get("wallet_4")!;
         const block = chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
           clients.core.unsafeSetActivationThreshold(1),
           clients.core.registerUser(user),
         ]);
@@ -149,6 +164,7 @@ describe("[CityCoin Core]", () => {
         const user1 = accounts.get("wallet_4")!;
         const user2 = accounts.get("wallet_5")!;
         chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
           clients.core.unsafeSetActivationThreshold(1),
           clients.core.registerUser(user1),
         ]);
@@ -198,6 +214,7 @@ describe("[CityCoin Core]", () => {
         const miner = accounts.get("wallet_2")!;
         const amountUstx = 0;
         chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
           clients.core.unsafeSetActivationThreshold(1),
           clients.core.registerUser(miner),
         ]);
@@ -218,6 +235,7 @@ describe("[CityCoin Core]", () => {
         const miner = accounts.get("wallet_2")!;
         const amountUstx = miner.balance + 1;
         chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
           clients.core.unsafeSetActivationThreshold(1),
           clients.core.registerUser(miner),
         ]);
@@ -238,6 +256,7 @@ describe("[CityCoin Core]", () => {
         const miner = accounts.get("wallet_2")!;
         const amountUstx = 200;
         chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
           clients.core.unsafeSetActivationThreshold(1),
           clients.core.registerUser(miner),
         ]);
@@ -259,6 +278,7 @@ describe("[CityCoin Core]", () => {
         const miner = accounts.get("wallet_2")!;
         const amountUstx = 200;
         const block = chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
           clients.core.unsafeSetCityWallet(cityWallet),
           clients.core.unsafeSetActivationThreshold(1),
           clients.core.registerUser(miner),
@@ -289,6 +309,7 @@ describe("[CityCoin Core]", () => {
         const amountUstx = 200;
         const amountTokens = 500;
         const block = chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
           clients.core.unsafeSetCityWallet(cityWallet),
           clients.token.ftMint(amountTokens, miner),
           clients.core.unsafeSetActivationThreshold(1),
@@ -332,6 +353,7 @@ describe("[CityCoin Core]", () => {
         const amountUstx = 200;
         const memo = new TextEncoder().encode("hello world");
         const block = chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
           clients.core.unsafeSetActivationThreshold(1),
           clients.core.registerUser(miner),
         ]);
@@ -368,6 +390,7 @@ describe("[CityCoin Core]", () => {
         const amountUstx = 200;
         const memo = new TextEncoder().encode("hello world");
         const block = chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
           clients.core.unsafeSetActivationThreshold(1),
           clients.core.registerUser(miner),
         ]);
@@ -433,6 +456,7 @@ describe("[CityCoin Core]", () => {
         const miner = accounts.get("wallet_2")!;
         const amount = 2000;
         const setupBlock = chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
           clients.core.unsafeSetActivationThreshold(1),
           clients.core.registerUser(miner),
         ]);
@@ -461,6 +485,7 @@ describe("[CityCoin Core]", () => {
         const miner = accounts.get("wallet_2")!;
         const amount = 2000;
         const setupBlock = chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
           clients.core.unsafeSetActivationThreshold(1),
           clients.core.registerUser(miner),
         ]);
@@ -487,6 +512,7 @@ describe("[CityCoin Core]", () => {
         const miner = accounts.get("wallet_2")!;
         const amount = 2000;
         const setupBlock = chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
           clients.core.unsafeSetActivationThreshold(1),
           clients.core.registerUser(miner),
         ]);
@@ -516,6 +542,7 @@ describe("[CityCoin Core]", () => {
         const otherMiner = accounts.get("wallet_3")!;
         const amount = 2;
         const setupBlock = chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
           clients.core.unsafeSetActivationThreshold(1),
           clients.core.registerUser(miner),
         ]);
@@ -546,6 +573,7 @@ describe("[CityCoin Core]", () => {
         const miner = accounts.get("wallet_2")!;
         const amount = 2;
         const setupBlock = chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
           clients.core.unsafeSetActivationThreshold(1),
           clients.core.registerUser(miner),
         ]);
@@ -579,6 +607,7 @@ describe("[CityCoin Core]", () => {
         const miner = accounts.get("wallet_2")!;
         const amount = 2;
         const setupBlock = chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
           clients.core.unsafeSetActivationThreshold(1),
           clients.core.registerUser(miner),
         ]);
@@ -614,6 +643,7 @@ describe("[CityCoin Core]", () => {
         const miner = accounts.get("wallet_2")!;
         const amount = 2;
         const setupBlock = chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
           clients.core.unsafeSetActivationThreshold(1),
           clients.core.registerUser(miner),
         ]);
@@ -649,6 +679,7 @@ describe("[CityCoin Core]", () => {
         const miner = accounts.get("wallet_2")!;
         const amount = 2;
         const setupBlock = chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
           clients.core.unsafeSetActivationThreshold(1),
           clients.core.registerUser(miner),
         ]);
@@ -684,6 +715,7 @@ describe("[CityCoin Core]", () => {
         const miner = accounts.get("wallet_2")!;
         const amount = 2;
         const setupBlock = chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
           clients.core.unsafeSetActivationThreshold(1),
           clients.core.registerUser(miner),
         ]);
@@ -719,6 +751,7 @@ describe("[CityCoin Core]", () => {
         const miner = accounts.get("wallet_2")!;
         const amount = 2;
         const setupBlock = chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
           clients.core.unsafeSetActivationThreshold(1),
           clients.core.registerUser(miner),
         ]);
@@ -787,6 +820,7 @@ describe("[CityCoin Core]", () => {
         const amountTokens = 200;
         const lockPeriod = 0;
         const block = chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
           clients.core.unsafeSetActivationThreshold(1),
           clients.core.registerUser(stacker),
           clients.token.ftMint(amountTokens, stacker),
@@ -812,6 +846,7 @@ describe("[CityCoin Core]", () => {
         const amountTokens = 200;
         const lockPeriod = 33;
         const block = chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
           clients.core.unsafeSetActivationThreshold(1),
           clients.core.registerUser(stacker),
           clients.token.ftMint(amountTokens, stacker),
@@ -837,6 +872,7 @@ describe("[CityCoin Core]", () => {
         const amountTokens = 0;
         const lockPeriod = 5;
         const block = chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
           clients.core.unsafeSetActivationThreshold(1),
           clients.core.registerUser(stacker),
           clients.token.ftMint(amountTokens, stacker),
@@ -862,6 +898,7 @@ describe("[CityCoin Core]", () => {
         const amountTokens = 20;
         const lockPeriod = 5;
         const block = chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
           clients.core.unsafeSetActivationThreshold(1),
           clients.core.registerUser(stacker),
           clients.token.ftMint(amountTokens, stacker),
@@ -887,6 +924,7 @@ describe("[CityCoin Core]", () => {
         const amountTokens = 20;
         const lockPeriod = 5;
         const block = chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
           clients.core.unsafeSetActivationThreshold(1),
           clients.core.registerUser(stacker),
           clients.token.ftMint(amountTokens, stacker),
@@ -918,6 +956,7 @@ describe("[CityCoin Core]", () => {
         const amountTokens = 20;
         const lockPeriod = 5;
         const block = chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
           clients.core.unsafeSetActivationThreshold(1),
           clients.core.registerUser(stacker),
           clients.token.ftMint(amountTokens * 3, stacker),
@@ -958,6 +997,7 @@ describe("[CityCoin Core]", () => {
         const amountTokens = 20;
         const lockPeriod = 1;
         const block = chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
           clients.core.unsafeSetActivationThreshold(1),
           clients.core.registerUser(stacker),
           clients.token.ftMint(amountTokens, stacker),
@@ -991,6 +1031,7 @@ describe("[CityCoin Core]", () => {
         const amountTokens = 20;
         const lockPeriod = 8;
         const block = chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
           clients.core.unsafeSetActivationThreshold(1),
           clients.core.registerUser(stacker),
           clients.token.ftMint(amountTokens, stacker),
@@ -1052,6 +1093,7 @@ describe("[CityCoin Core]", () => {
         );
 
         const block = chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
           clients.core.unsafeSetActivationThreshold(1),
           clients.core.registerUser(stacker),
           clients.token.ftMint(totalAmountTokens, stacker),
@@ -1145,6 +1187,7 @@ describe("[CityCoin Core]", () => {
         const otherUser = accounts.get("wallet_2")!;
         const targetCycle = 1;
         const setupBlock = chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
           clients.core.unsafeSetActivationThreshold(1),
           clients.core.registerUser(otherUser),
         ]);
@@ -1168,6 +1211,7 @@ describe("[CityCoin Core]", () => {
         const stacker = accounts.get("wallet_1")!;
         const targetCycle = 1;
         const setupBlock = chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
           clients.core.unsafeSetActivationThreshold(1),
           clients.core.registerUser(stacker),
         ]);
@@ -1191,6 +1235,7 @@ describe("[CityCoin Core]", () => {
         const stacker = accounts.get("wallet_1")!;
         const targetCycle = 1;
         const setupBlock = chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
           clients.core.unsafeSetActivationThreshold(1),
           clients.core.registerUser(stacker),
         ]);
@@ -1218,6 +1263,7 @@ describe("[CityCoin Core]", () => {
         const targetCycle = 1;
         const amount = 200;
         const setupBlock = chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
           clients.core.unsafeSetActivationThreshold(1),
           clients.core.registerUser(stacker),
           clients.token.ftMint(amount, stacker),
@@ -1245,6 +1291,7 @@ describe("[CityCoin Core]", () => {
         const targetCycle = 1;
         const amount = 200;
         const setupBlock = chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
           clients.core.unsafeSetActivationThreshold(1),
           clients.core.registerUser(stacker),
           clients.token.ftMint(amount, stacker),
@@ -1275,6 +1322,7 @@ describe("[CityCoin Core]", () => {
         const targetCycle = 1;
         const amountTokens = 200;
         const setupBlock = chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
           clients.core.unsafeSetActivationThreshold(1),
           clients.core.registerUser(stacker),
           clients.token.ftMint(amountTokens, stacker),
@@ -1316,6 +1364,7 @@ describe("[CityCoin Core]", () => {
         const amountTokens = 20;
         const targetCycle = 1;
         const setupBlock = chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
           clients.core.unsafeSetActivationThreshold(1),
           clients.core.registerUser(stacker),
           clients.token.ftMint(amountTokens, stacker),
@@ -1376,6 +1425,7 @@ describe("[CityCoin Core]", () => {
         );
 
         const block = chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
           clients.core.unsafeSetActivationThreshold(1),
           clients.core.registerUser(stacker),
           clients.token.ftMint(totalAmountTokens, stacker),

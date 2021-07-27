@@ -177,7 +177,8 @@ describe("[CityCoin Token]", () => {
       });
     });
   });
-
+  /*
+  // TODO: should this be tested from CORE instead, since its the approved caller?
   describe("TOKEN CONFIGURATION", () => {
     describe("activate-token()", () => {
       it("fails with ERR_UNAUTHORIZED if called by an unapproved sender", (chain, accounts, clients) => {
@@ -190,8 +191,8 @@ describe("[CityCoin Token]", () => {
           .expectErr()
           .expectUint(TokenClient.ErrCode.ERR_UNAUTHORIZED);
       });
-      /*
-      TODO: should this be tested from core instead, since its the approved caller?
+      
+      
       it("fails with ERR_TOKEN_ALREADY_ACTIVATED if called after token is activated", (chain, accounts, clients) => {
         const wallet_2 = accounts.get("wallet_2")!;
         chain.mineBlock([clients.token.setTokenActivation()]);
@@ -203,11 +204,14 @@ describe("[CityCoin Token]", () => {
           .expectErr()
           .expectUint(TokenClient.ErrCode.ERR_TOKEN_ALREADY_ACTIVATED);
       });
-      */
+      
     });
   });
+  */
 
   describe("UTILITIES", () => {
+    /*
+    // TODO: should this be tested from AUTH instead, since its the approved caller?
     describe("set-token-uri()", () => {
       it("fails with ERR_UNAUTHORIZED when called by someone who is not core contract", (chain, accounts, clients) => {
         const wallet_2 = accounts.get("wallet_2")!;
@@ -251,19 +255,25 @@ describe("[CityCoin Token]", () => {
         result.expectOk().expectSome().expectUtf8(newUri);
       });
     });
+    */
 
     describe("mint()", () => {
-      it("fails with ERR_UNAUTHORIZED when called by someone who is not a trusted caller", (chain, accounts, clients) => {
+      it("fails with ERR_CORE_CONTRACT_NOT_FOUND when called by someone who is not a trusted caller", (chain, accounts, clients) => {
         const wallet_2 = accounts.get("wallet_2")!;
         let block = chain.mineBlock([
-          clients.token.mint(200, wallet_2, wallet_2),
+          clients.token.mint(
+            clients.core.getContractAddress(),
+            200,
+            wallet_2,
+            wallet_2
+          ),
         ]);
 
         let receipt = block.receipts[0];
 
         receipt.result
           .expectErr()
-          .expectUint(TokenClient.ErrCode.ERR_UNAUTHORIZED);
+          .expectUint(TokenClient.ErrCode.ERR_CORE_CONTRACT_NOT_FOUND);
       });
 
       it("succeeds when called by trusted caller and mints requested amount of tokens", (chain, accounts, clients) => {
@@ -271,10 +281,12 @@ describe("[CityCoin Token]", () => {
         const amount = 200;
         const recipient = accounts.get("wallet_3")!;
 
-        chain.mineBlock([clients.token.setTrustedCaller(wallet_2)]);
+        chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
+        ]);
 
         let block = chain.mineBlock([
-          clients.token.mint(amount, recipient, wallet_2),
+          clients.core.testMint(amount, recipient, wallet_2),
         ]);
 
         let receipt = block.receipts[0];

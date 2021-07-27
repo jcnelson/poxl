@@ -5,6 +5,7 @@ enum ErrCode {
   ERR_UNAUTHORIZED = 2000,
   ERR_TOKEN_NOT_ACTIVATED,
   ERR_TOKEN_ALREADY_ACTIVATED,
+  ERR_CORE_CONTRACT_NOT_FOUND = 6009,
 }
 
 export class TokenClient extends Client {
@@ -100,11 +101,20 @@ export class TokenClient extends Client {
     );
   }
 
-  mint(amount: number, recipient: Account, sender: Account): Tx {
+  mint(
+    requestor: string,
+    amount: number,
+    recipient: Account,
+    sender: Account
+  ): Tx {
     return Tx.contractCall(
       this.contractName,
       "mint",
-      [types.uint(amount), types.principal(recipient.address)],
+      [
+        types.principal(requestor),
+        types.uint(amount),
+        types.principal(recipient.address),
+      ],
       sender.address
     );
   }
