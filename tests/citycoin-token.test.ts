@@ -166,14 +166,6 @@ describe("[CityCoin Token]", () => {
         result.expectOk().expectUint(100);
       });
     });
-  });
-});
-
-/*
-
-      
-
-    
 
     describe("get-token-uri()", () => {
       it("returns correct uri", (chain, accounts, clients) => {
