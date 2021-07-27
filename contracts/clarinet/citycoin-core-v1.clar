@@ -298,6 +298,62 @@
   )
 )
 
+(define-public (mine-many (data (list 200 {shift: uint, ustx: uint})))
+  (match (fold mine-single data (ok { userId: (get-or-create-user-id tx-sender), toStackers: u0, toCity: u0 }))
+    okReturn 
+    (begin
+      (asserts! (>= (stx-get-balance tx-sender) (+ (get toStackers okReturn) (get toCity okReturn))) (err ERR_INSUFFICIENT_BALANCE))
+      (if (> (get toStackers okReturn ) u0)
+        (try! (stx-transfer? (get toStackers okReturn ) tx-sender (as-contract tx-sender)))
+        false
+      )
+      (try! (stx-transfer? (get toCity okReturn) tx-sender (var-get cityWallet)))
+      (ok true)
+    )
+    errReturn (err errReturn)
+  )
+)
+
+(define-private (mine-single 
+  (data { shift: uint, ustx: uint }) 
+  (return (response 
+    { 
+      userId: uint,
+      toStackers: uint,
+      toCity: uint
+    }
+    uint
+  )))
+
+  (match return okReturn
+    (let
+      (
+        (stacksHeight (+ block-height (get shift data)))
+        (amountUstx (get ustx data))
+        (rewardCycle (default-to u0 (get-reward-cycle stacksHeight)))
+        (stackingActive (stacking-active-at-cycle rewardCycle))
+        (toCity
+          (if stackingActive
+            (/ (* SPLIT_CITY_PCT amountUstx) u100)
+            amountUstx
+          )
+        )
+        (toStackers (- amountUstx toCity))
+      )
+      (asserts! (not (has-mined-at-block stacksHeight (get userId okReturn))) (err ERR_USER_ALREADY_MINED))
+      (asserts! (> amountUstx u0) (err ERR_INSUFFICIENT_COMMITMENT))
+      (try! (set-tokens-mined (get userId okReturn) stacksHeight amountUstx toStackers toCity))
+      (ok (merge okReturn 
+        {
+          toStackers: (+ (get toStackers okReturn) toStackers),
+          toCity: (+ (get toCity okReturn) toCity)
+        }
+      ))
+    )
+    errReturn (err errReturn)
+  ) 
+)
+
 (define-private (mine-tokens-at-block (userId uint) (stacksHeight uint) (amountUstx uint) (memo (optional (buff 34))))
   (let
     (
@@ -365,12 +421,15 @@
       stacksHeight
       (+ minerLowVal amountUstx)
     )
-    (map-set StackingStatsAtCycle
-      rewardCycle
-      {
-        amountUstx: (+ (get amountUstx rewardCycleStats) toStackers),
-        amountToken: (get amountToken rewardCycleStats)
-      }
+    (if (> toStackers u0)
+      (map-set StackingStatsAtCycle
+        rewardCycle
+        {
+          amountUstx: (+ (get amountUstx rewardCycleStats) toStackers),
+          amountToken: (get amountToken rewardCycleStats)
+        }
+      )
+      false
     )
     (ok true)
   )
