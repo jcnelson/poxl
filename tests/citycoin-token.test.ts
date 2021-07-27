@@ -207,10 +207,10 @@ describe("[CityCoin Token]", () => {
       
     });
   });
-  */
+
 
   describe("UTILITIES", () => {
-    /*
+
     // TODO: should this be tested from AUTH instead, since its the approved caller?
     describe("set-token-uri()", () => {
       it("fails with ERR_UNAUTHORIZED when called by someone who is not core contract", (chain, accounts, clients) => {
@@ -255,7 +255,7 @@ describe("[CityCoin Token]", () => {
         result.expectOk().expectSome().expectUtf8(newUri);
       });
     });
-    */
+
 
     describe("mint()", () => {
       it("fails with ERR_CORE_CONTRACT_NOT_FOUND when called by someone who is not a trusted caller", (chain, accounts, clients) => {
@@ -300,7 +300,7 @@ describe("[CityCoin Token]", () => {
       });
     });
   });
-
+    */
   describe("SEND-MANY", () => {
     describe("send-many()", () => {
       it("succeeds with five ft_transfer_events and five print memo events with memo supplied", (chain, accounts, clients) => {
