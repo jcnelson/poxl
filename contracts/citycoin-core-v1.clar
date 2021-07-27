@@ -814,14 +814,11 @@
   (begin
     ;; only allow shutdown request from AUTH
     (asserts! (is-authorized-auth) (err ERR_UNAUTHORIZED))
-    
     ;; set variables to disable mining/stacking in CORE
     (var-set activationReached false)
     (var-set shutdownHeight stacksHeight)
+    ;; set variable to allow for all stacking claims
     (var-set isShutdown true)
-
-    ;; TODO: unlock all stacked tokens in this contract
-
     (ok true)
   )
 )
