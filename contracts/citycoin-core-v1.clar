@@ -673,6 +673,68 @@
   )
 )
 
+;; the code below will likely result in too much being returned to the user
+;; e.g. if they stacked for 4 cycles
+;; cycle 1 - (some {amountStacked: u200000, toReturn: u0})
+;; cycle 2 - (some {amountStacked: u200000, toReturn: u0})
+;; cycle 3 - (some {amountStacked: u200000, toReturn: u0})
+;; cycle 4 - (some {amountStacked: u200000, toReturn: u200000})
+;; setting toReturn to amountStacked means u200000*4 would be returned?
+
+;; another idea, loop through all cycles and total toReturn
+;; set that value as unlocked in cycle related to shutdownHeight
+;; always call function with shutdownHeight block height instead of current
+
+(define-private (unstack-tokens)
+  (let
+    (
+      (userId (get-or-create-user-id tx-sender))
+      (currentCycle (unwrap! (get-reward-cycle block-height) (err ERR_STACKING_NOT_AVAILABLE)))
+      (commitment {
+        stackerId: userId,
+        amount: u0,
+        first: currentCycle,
+        last: currentCycle
+      })
+    )
+    (match (fold unstack-tokens-closure REWARD_CYCLE_INDEXES (ok commitment))
+      okValue (ok true)
+      errValue (err errValue)
+    )
+  )
+)
+
+(define-private (unstack-tokens-closure (rewardCycleIdx uint)
+  (commitmentResponse (response 
+    {
+      stackerId: uint,
+      amount: uint,
+      first: uint,
+      last: uint
+    }
+    uint
+  )))
+
+  (match commitmentResponse
+    commitment
+    (let
+      (
+        (stackerId (get stackerId commitment))
+        (amountToken (get amount commitment))
+        (firstCycle (get first commitment))
+        (lastCycle (get last commitment))
+        (targetCycle (+ firstCycle rewardCycleIdx))
+        (stackerAtCycle (get-stacker-at-cycle-or-default targetCycle stackerId))
+        (amountStacked (get amountStacked stackerAtCycle))
+        (toReturn (get toReturn stackerAtCycle))
+      )
+      (set-tokens-stacked stackerId targetCycle amountToken amountToken)
+      commitmentResponse
+    )
+    errValue commitmentResponse
+  )
+)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; STACKING REWARD CLAIMS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
