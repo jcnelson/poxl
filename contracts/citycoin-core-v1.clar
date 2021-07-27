@@ -673,67 +673,49 @@
   )
 )
 
-;; the code below will likely result in too much being returned to the user
-;; e.g. if they stacked for 4 cycles
-;; cycle 1 - (some {amountStacked: u200000, toReturn: u0})
-;; cycle 2 - (some {amountStacked: u200000, toReturn: u0})
-;; cycle 3 - (some {amountStacked: u200000, toReturn: u0})
-;; cycle 4 - (some {amountStacked: u200000, toReturn: u200000})
-;; setting toReturn to amountStacked means u200000*4 would be returned?
+;; What if we modeled it after claim-stacking-reward?
 
-;; another idea, loop through all cycles and total toReturn
-;; set that value as unlocked in cycle related to shutdownHeight
-;; always call function with shutdownHeight block height instead of current
+;; claim-tokens-after-shutdown()
+  ;; FOR EACH REWARD CYCLE
+  ;; add total stacked through toReturn
+  ;; add total rewards through get-entitled-stacking-reward per cycle ?
+  ;; map-set stackedAmount to u0
+  ;; map-set toReturn to u0
+  ;; transfer totalToReturn back to user
+  ;; stx-transfer totalEntitledStx back to user
 
 (define-private (unstack-tokens)
   (let
     (
       (userId (get-or-create-user-id tx-sender))
       (currentCycle (unwrap! (get-reward-cycle block-height) (err ERR_STACKING_NOT_AVAILABLE)))
-      (commitment {
-        stackerId: userId,
-        amount: u0,
-        first: currentCycle,
-        last: currentCycle
-      })
+      ;; (totalToReturn (fold unstack-tokens-closure REWARD_CYCLE_INDEXES u0))
     )
-    (match (fold unstack-tokens-closure REWARD_CYCLE_INDEXES (ok commitment))
-      okValue (ok true)
-      errValue (err errValue)
-    )
+    (asserts! (or 
+      (not (is-eq (var-get shutdownHeight) u0))
+      (> block-height (var-get shutdownHeight)))
+      (err ERR_UNAUTHORIZED))
+    ;; (try! (as-contract (contract-call? .citycoin-token transfer toReturn tx-sender user none)))
+    ;; (try! (as-contract (stx-transfer? entitledUstx tx-sender user)))
+    (ok true)
   )
 )
 
-(define-private (unstack-tokens-closure (rewardCycleIdx uint)
-  (commitmentResponse (response 
-    {
-      stackerId: uint,
-      amount: uint,
-      first: uint,
-      last: uint
-    }
-    uint
-  )))
-
-  (match commitmentResponse
-    commitment
-    (let
-      (
-        (stackerId (get stackerId commitment))
-        (amountToken (get amount commitment))
-        (firstCycle (get first commitment))
-        (lastCycle (get last commitment))
-        (targetCycle (+ firstCycle rewardCycleIdx))
-        (stackerAtCycle (get-stacker-at-cycle-or-default targetCycle stackerId))
-        (amountStacked (get amountStacked stackerAtCycle))
-        (toReturn (get toReturn stackerAtCycle))
-      )
-      (set-tokens-stacked stackerId targetCycle amountToken amountToken)
-      commitmentResponse
+(define-private (unstack-tokens-closure (rewardCycleIdx uint))
+  (let
+    (
+      (stackerId (unwrap! (get-user-id tx-sender) (err ERR_USER_ID_NOT_FOUND)))
+      (stackerAtCycle (get-stacker-at-cycle-or-default rewardCycleIdx stackerId))
+      (amountStacked (get amountStacked stackerAtCycle))
+      (toReturn (get toReturn stackerAtCycle))
+      ;; (entitledUstx (get-entitled-stacking-reward userId targetCycle stacksHeight))
     )
-    errValue commitmentResponse
+    (set-tokens-stacked stackerId rewardCycleIdx u0 u0)
+    (ok toReturn)
   )
 )
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; STACKING REWARD CLAIMS
