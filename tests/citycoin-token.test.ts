@@ -258,7 +258,6 @@ describe("[CityCoin Token]", () => {
     */
 
     describe("mint()", () => {
-      /* TEST
       it("fails with ERR_CORE_CONTRACT_NOT_FOUND when called by someone who is not a trusted caller", (chain, accounts, clients) => {
         const wallet_2 = accounts.get("wallet_2")!;
         let block = chain.mineBlock([
@@ -276,7 +275,6 @@ describe("[CityCoin Token]", () => {
           .expectErr()
           .expectUint(TokenClient.ErrCode.ERR_CORE_CONTRACT_NOT_FOUND);
       });
-      */
 
       it("succeeds when called by trusted caller and mints requested amount of tokens", (chain, accounts, clients) => {
         const wallet_2 = accounts.get("wallet_2")!;
