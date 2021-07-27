@@ -179,6 +179,8 @@ describe("[CityCoin Token]", () => {
   });
 });
 
+/*
+
 //////////////////////////////////////////////////
 // expectPrintEvent()
 //////////////////////////////////////////////////
@@ -220,7 +222,7 @@ Array.prototype.expectPrintEvent = function (
   throw new Error(`Unable to retrieve expected PrintEvent`);
 };
 
-/*
+
   // TODO: should this be tested from CORE instead, since its the approved caller?
   describe("TOKEN CONFIGURATION", () => {
     describe("activate-token()", () => {
