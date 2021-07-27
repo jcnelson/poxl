@@ -720,4 +720,31 @@ describe("[CityCoin Auth]", () => {
         .expectUint(AuthClient.ErrCode.ERR_ARGUMENT_ALREADY_EXISTS);
     });
   });
+
+  describe("set-city-wallet()", () => {
+    it("successfully change city walled when called by current city wallet", (chain, accounts, clients) => {
+      // arrange
+      const cityWallet = accounts.get("city_wallet")!;
+      const newCityWallet = accounts.get("wallet_2")!;
+      chain.mineBlock([
+        clients.core.testInitializeCore(clients.core.getContractAddress()),
+        clients.auth.testSetActiveCoreContract(cityWallet),
+      ]);
+
+      // act
+      const receipt = chain.mineBlock([
+        clients.auth.setCityWallet(
+          clients.core.getContractAddress(),
+          newCityWallet,
+          cityWallet
+        ),
+      ]).receipts[0];
+
+      // assert
+      receipt.result.expectOk().expectBool(true);
+      clients.core
+        .getCityWallet()
+        .result.expectPrincipal(newCityWallet.address);
+    });
+  });
 });

@@ -118,4 +118,26 @@ export class AuthClient extends Client {
       types.uint(argumentId),
     ]);
   }
+
+  setCityWallet(
+    requestor: string,
+    newCityWallet: Account,
+    sender: Account
+  ): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "set-city-wallet",
+      [types.principal(requestor), types.principal(newCityWallet.address)],
+      sender.address
+    );
+  }
+
+  testSetActiveCoreContract(sender: Account): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "test-set-active-core-contract",
+      [],
+      sender.address
+    );
+  }
 }

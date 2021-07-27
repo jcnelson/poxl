@@ -415,15 +415,15 @@
 )
  
 ;; protected function to update city wallet variable
-(define-public (set-city-wallet (targetContract <coreTrait>) (targetContractAddress principal) (newCityWallet principal))
+(define-public (set-city-wallet (targetContract <coreTrait>) (newCityWallet principal))
   (let
     (
-      (coreContract (unwrap! (map-get? CityCoinCoreContracts targetContractAddress) (err ERR_CORE_CONTRACT_NOT_FOUND)))
       (coreContractAddress (contract-of targetContract))
+      (coreContract (unwrap! (map-get? CityCoinCoreContracts coreContractAddress) (err ERR_CORE_CONTRACT_NOT_FOUND)))
     )
     (asserts! (is-authorized-city) (err ERR_UNAUTHORIZED))
     ;; TODO: allow call via approved job
-    (asserts! (is-eq coreContractAddress targetContractAddress) (err ERR_UNAUTHORIZED))
+    ;; (asserts! (is-eq coreContractAddress targetContractAddress) (err ERR_UNAUTHORIZED))
     (asserts! (is-eq coreContractAddress (var-get activeCoreContract)) (err ERR_UNAUTHORIZED))
     (var-set cityWallet newCityWallet)
     (try! (contract-call? targetContract set-city-wallet newCityWallet))

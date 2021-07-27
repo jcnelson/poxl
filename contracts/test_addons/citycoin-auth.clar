@@ -22,3 +22,7 @@
     (ok true)
   )
 )
+
+(define-public (test-set-active-core-contract)
+  (ok (var-set activeCoreContract .citycoin-core-v1))
+)

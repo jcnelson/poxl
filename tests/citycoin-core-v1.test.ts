@@ -44,27 +44,6 @@ describe("[CityCoin Core]", () => {
           .expectErr()
           .expectUint(CoreClient.ErrCode.ERR_UNAUTHORIZED);
       });
-
-      // TODO: move to auth contract
-      /*
-      it("successfully change city walled when called by current city wallet", (chain, accounts, clients) => {
-        // arrange
-        const cityWallet = accounts.get("city_wallet")!;
-        const newCityWallet = accounts.get("wallet_2")!;
-        chain.mineBlock([clients.core.unsafeSetCityWallet(cityWallet)]);
-
-        // act
-        const receipt = chain.mineBlock([
-          clients.core.setCityWallet(newCityWallet, cityWallet),
-        ]).receipts[0];
-
-        // assert
-        receipt.result.expectOk().expectBool(true);
-        clients.core
-          .getCityWallet()
-          .result.expectPrincipal(newCityWallet.address);
-      });
-      */
     });
   });
 
