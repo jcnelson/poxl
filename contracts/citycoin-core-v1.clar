@@ -673,50 +673,6 @@
   )
 )
 
-;; What if we modeled it after claim-stacking-reward?
-
-;; claim-tokens-after-shutdown()
-  ;; FOR EACH REWARD CYCLE
-  ;; add total stacked through toReturn
-  ;; add total rewards through get-entitled-stacking-reward per cycle ?
-  ;; map-set stackedAmount to u0
-  ;; map-set toReturn to u0
-  ;; transfer totalToReturn back to user
-  ;; stx-transfer totalEntitledStx back to user
-
-(define-private (unstack-tokens)
-  (let
-    (
-      (userId (get-or-create-user-id tx-sender))
-      (currentCycle (unwrap! (get-reward-cycle block-height) (err ERR_STACKING_NOT_AVAILABLE)))
-      ;; (totalToReturn (fold unstack-tokens-closure REWARD_CYCLE_INDEXES u0))
-    )
-    (asserts! (or 
-      (not (is-eq (var-get shutdownHeight) u0))
-      (> block-height (var-get shutdownHeight)))
-      (err ERR_UNAUTHORIZED))
-    ;; (try! (as-contract (contract-call? .citycoin-token transfer toReturn tx-sender user none)))
-    ;; (try! (as-contract (stx-transfer? entitledUstx tx-sender user)))
-    (ok true)
-  )
-)
-
-(define-private (unstack-tokens-closure (rewardCycleIdx uint))
-  (let
-    (
-      (stackerId (unwrap! (get-user-id tx-sender) (err ERR_USER_ID_NOT_FOUND)))
-      (stackerAtCycle (get-stacker-at-cycle-or-default rewardCycleIdx stackerId))
-      (amountStacked (get amountStacked stackerAtCycle))
-      (toReturn (get toReturn stackerAtCycle))
-      ;; (entitledUstx (get-entitled-stacking-reward userId targetCycle stacksHeight))
-    )
-    (set-tokens-stacked stackerId rewardCycleIdx u0 u0)
-    (ok toReturn)
-  )
-)
-
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; STACKING REWARD CLAIMS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -742,7 +698,10 @@
       (stackerAtCycle (get-stacker-at-cycle-or-default targetCycle userId))
       (toReturn (get toReturn stackerAtCycle))
     )
-    (asserts! (> currentCycle targetCycle) (err ERR_REWARD_CYCLE_NOT_COMPLETED))
+    (asserts! (or
+      (is-eq true (var-get isShutdown))
+      (> currentCycle targetCycle))
+      (err ERR_REWARD_CYCLE_NOT_COMPLETED))
     (asserts! (or (> toReturn u0) (> entitledUstx u0)) (err ERR_NOTHING_TO_REDEEM))
     ;; disable ability to claim again
     (map-set StackerAtCycle
@@ -847,6 +806,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define-data-var shutdownHeight uint u0)
+(define-data-var isShutdown bool false)
 
 ;; stop mining and stacking operations
 ;; in preparation for a core upgrade
@@ -858,7 +818,8 @@
     ;; set variables to disable mining/stacking in CORE
     (var-set activationReached false)
     (var-set shutdownHeight stacksHeight)
-    
+    (var-set isShutdown true)
+
     ;; TODO: unlock all stacked tokens in this contract
 
     (ok true)
