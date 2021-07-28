@@ -75,7 +75,7 @@ export class TokenClient extends Client {
     return Tx.contractCall(
       this.contractName,
       "activate-token",
-      [types.uint(stacksHeight)],
+      [types.principal(sender.address), types.uint(stacksHeight)],
       sender.address
     );
   }

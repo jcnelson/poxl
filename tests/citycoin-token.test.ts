@@ -219,6 +219,21 @@ describe("[CityCoin Token]", () => {
     });
   });
 
+  describe("TOKEN CONFIGURATION", () => {
+    describe("activate-token()", () => {
+      it("fails with ERR_UNAUTHORIZED if called by an unapproved sender", (chain, accounts, clients) => {
+        const wallet_2 = accounts.get("wallet_2")!;
+        const block = chain.mineBlock([
+          clients.token.activateToken(wallet_2, 10),
+        ]);
+        const receipt = block.receipts[0];
+        receipt.result
+          .expectErr()
+          .expectUint(TokenClient.ErrCode.ERR_CORE_CONTRACT_NOT_FOUND);
+      });
+    });
+  });
+
   describe("SEND-MANY", () => {
     describe("send-many()", () => {
       it("succeeds with five ft_transfer_events and five print memo events with memo supplied", (chain, accounts, clients) => {
@@ -487,83 +502,3 @@ Array.prototype.expectPrintEvent = function (
   }
   throw new Error(`Unable to retrieve expected PrintEvent`);
 };
-
-/*
-  // TODO: should this be tested from CORE instead, since its the approved caller?
-  describe("TOKEN CONFIGURATION", () => {
-    describe("activate-token()", () => {
-      it("fails with ERR_UNAUTHORIZED if called by an unapproved sender", (chain, accounts, clients) => {
-        const wallet_2 = accounts.get("wallet_2")!;
-        const block = chain.mineBlock([
-          clients.token.activateToken(wallet_2, 10),
-        ]);
-        const receipt = block.receipts[0];
-        receipt.result
-          .expectErr()
-          .expectUint(TokenClient.ErrCode.ERR_UNAUTHORIZED);
-      });
-      
-      
-      it("fails with ERR_TOKEN_ALREADY_ACTIVATED if called after token is activated", (chain, accounts, clients) => {
-        const wallet_2 = accounts.get("wallet_2")!;
-        chain.mineBlock([clients.token.setTokenActivation()]);
-        const block = chain.mineBlock([
-          clients.token.activateToken(wallet_2, 10),
-        ]);
-        const receipt = block.receipts[0];
-        receipt.result
-          .expectErr()
-          .expectUint(TokenClient.ErrCode.ERR_TOKEN_ALREADY_ACTIVATED);
-      });
-      
-    });
-  });
-
-
-  describe("UTILITIES", () => {
-
-    // TODO: should this be tested from AUTH instead, since its the approved caller?
-    describe("set-token-uri()", () => {
-      it("fails with ERR_UNAUTHORIZED when called by someone who is not core contract", (chain, accounts, clients) => {
-        const wallet_2 = accounts.get("wallet_2")!;
-        const block = chain.mineBlock([
-          clients.token.setTokenUri(wallet_2, "http://something-something.com"),
-        ]);
-
-        const receipt = block.receipts[0];
-
-        receipt.result
-          .expectErr()
-          .expectUint(TokenClient.ErrCode.ERR_UNAUTHORIZED);
-      });
-
-      it("changes token uri to none if no new value is provided", (chain, accounts, clients) => {
-        const deployer = accounts.get("deployer")!;
-        chain.mineBlock([clients.token.setTrustedCaller(deployer)]);
-
-        const block = chain.mineBlock([clients.token.setTokenUri(deployer)]);
-
-        const receipt = block.receipts[0];
-        receipt.result.expectOk().expectBool(true);
-
-        const result = clients.token.getTokenUri().result;
-        result.expectOk().expectNone();
-      });
-
-      it("changes token uri to new value if provided", (chain, accounts, clients) => {
-        const deployer = accounts.get("deployer")!;
-        const newUri = "http://something-something.com";
-        chain.mineBlock([clients.token.setTrustedCaller(deployer)]);
-
-        const block = chain.mineBlock([
-          clients.token.setTokenUri(deployer, newUri),
-        ]);
-
-        const receipt = block.receipts[0];
-        receipt.result.expectOk().expectBool(true);
-
-        const result = clients.token.getTokenUri().result;
-        result.expectOk().expectSome().expectUtf8(newUri);
-      });
-    });
-*/
