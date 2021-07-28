@@ -45,7 +45,7 @@
 
 (define-public (test-mint (amount uint) (recipient principal))
   (begin
-    (try! (contract-call? .citycoin-token mint (as-contract tx-sender) amount recipient))
+    (as-contract (try! (contract-call? .citycoin-token mint amount recipient)))
     (ok true)
   )
 )

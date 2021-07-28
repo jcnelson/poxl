@@ -794,7 +794,7 @@
 
 ;; mint new tokens for claimant who won at given Stacks block height
 (define-private (mint-coinbase (recipient principal) (stacksHeight uint))
-  (contract-call? .citycoin-token mint (as-contract tx-sender) (get-coinbase-amount stacksHeight) recipient)
+  (as-contract (contract-call? .citycoin-token mint (get-coinbase-amount stacksHeight) recipient))
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -879,7 +879,7 @@
 
 (define-public (test-mint (amount uint) (recipient principal))
   (begin
-    (try! (contract-call? .citycoin-token mint (as-contract tx-sender) amount recipient))
+    (as-contract (try! (contract-call? .citycoin-token mint amount recipient)))
     (ok true)
   )
 )

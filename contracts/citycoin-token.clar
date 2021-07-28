@@ -154,12 +154,11 @@
 )
 
 ;; mint new tokens, only accessible by a CityCoin Core contract
-(define-public (mint (requestor principal) (amount uint) (recipient principal))
+(define-public (mint (amount uint) (recipient principal))
   (let
     (
-      (coreContract (try! (contract-call? .citycoin-auth get-core-contract-info requestor)))
+      (coreContract (try! (contract-call? .citycoin-auth get-core-contract-info contract-caller)))
     )
-    (asserts! (is-eq contract-caller requestor) (err ERR_UNAUTHORIZED))
     (ft-mint? citycoins amount recipient)
   )
 )
@@ -168,9 +167,8 @@
 (define-public (burn (requestor principal) (amount uint) (recipient principal))
   (let
     (
-      (coreContract (try! (contract-call? .citycoin-auth get-core-contract-info requestor)))
+      (coreContract (try! (contract-call? .citycoin-auth get-core-contract-info contract-caller)))
     )
-    (asserts! (is-eq contract-caller requestor) (err ERR_UNAUTHORIZED))
     (ft-burn? citycoins amount recipient)
   )
 )

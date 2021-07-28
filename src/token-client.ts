@@ -101,20 +101,11 @@ export class TokenClient extends Client {
     );
   }
 
-  mint(
-    requestor: string,
-    amount: number,
-    recipient: Account,
-    sender: Account
-  ): Tx {
+  mint(amount: number, recipient: Account, sender: Account): Tx {
     return Tx.contractCall(
       this.contractName,
       "mint",
-      [
-        types.principal(requestor),
-        types.uint(amount),
-        types.principal(recipient.address),
-      ],
+      [types.uint(amount), types.principal(recipient.address)],
       sender.address
     );
   }

@@ -180,12 +180,7 @@ describe("[CityCoin Token]", () => {
     it("fails with ERR_CORE_CONTRACT_NOT_FOUND when called by someone who is not a trusted caller", (chain, accounts, clients) => {
       const wallet_2 = accounts.get("wallet_2")!;
       let block = chain.mineBlock([
-        clients.token.mint(
-          clients.core.getContractAddress(),
-          200,
-          wallet_2,
-          wallet_2
-        ),
+        clients.token.mint(200, wallet_2, wallet_2),
       ]);
 
       let receipt = block.receipts[0];

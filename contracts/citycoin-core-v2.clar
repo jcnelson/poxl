@@ -164,7 +164,6 @@
           (activationBlockVal (+ block-height (var-get activationDelay)))
         )
         (try! (contract-call? .citycoin-auth activate-core-contract (as-contract tx-sender) activationBlockVal))
-        ;; (try! (contract-call? .citycoin-token activate-token (as-contract tx-sender) activationBlockVal))
         (try! (set-coinbase-thresholds))
         (var-set activationReached true)
         (var-set activationBlock activationBlockVal)
@@ -794,7 +793,7 @@
 
 ;; mint new tokens for claimant who won at given Stacks block height
 (define-private (mint-coinbase (recipient principal) (stacksHeight uint))
-  (contract-call? .citycoin-token mint (as-contract tx-sender) (get-coinbase-amount stacksHeight) recipient)
+  (as-contract (contract-call? .citycoin-token mint (get-coinbase-amount stacksHeight) recipient))
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
