@@ -173,6 +173,24 @@ export class AuthClient extends Client {
     );
   }
 
+  executeUpgradeCoreContractJob(
+    jobId: number,
+    oldContract: string,
+    newContract: string,
+    sender: Account
+  ): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "execute-upgrade-core-contract-job",
+      [
+        types.uint(jobId),
+        types.principal(oldContract),
+        types.principal(newContract),
+      ],
+      sender.address
+    );
+  }
+
   getCityWallet() {
     return this.callReadOnlyFn("get-city-wallet");
   }

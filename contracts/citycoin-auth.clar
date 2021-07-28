@@ -404,6 +404,39 @@
   )
 )
 
+(define-public (execute-upgrade-core-contract-job (jobId uint) (oldContract <coreTrait>) (newContract <coreTrait>))
+  (let
+    (
+      (oldContractArg (unwrap! (get-principal-value-by-name jobId "oldContract") (err ERR_UNKNOWN_ARGUMENT)))
+      (newContractArg (unwrap! (get-principal-value-by-name jobId "newContract") (err ERR_UNKNOWN_ARGUMENT)))
+      (oldContractAddress (contract-of oldContract))
+      (oldContractMap (unwrap! (map-get? CityCoinCoreContracts oldContractAddress) (err ERR_CORE_CONTRACT_NOT_FOUND)))
+      (newContractAddress (contract-of newContract))
+    )
+    (asserts! (is-approver contract-caller) (err ERR_UNAUTHORIZED))
+    (asserts! (and (is-eq oldContractArg oldContractAddress) (is-eq newContractArg newContractAddress)) (err ERR_UNAUTHORIZED))
+    (asserts! (not (is-eq oldContractAddress newContractAddress)) (err ERR_UNAUTHORIZED))
+    (map-set CityCoinCoreContracts
+      oldContractAddress
+      {
+        state: STATE_INACTIVE,
+        startHeight: (get startHeight oldContractMap),
+        endHeight: block-height
+      })
+    (map-set CityCoinCoreContracts
+      newContractAddress
+      {
+        state: STATE_DEPLOYED,
+        startHeight: u0,
+        endHeight: u0
+      })
+    (var-set activeCoreContract newContractAddress)
+    (try! (contract-call? oldContract shutdown-contract block-height))
+    (try! (contract-call? newContract set-city-wallet (var-get cityWallet)))
+    (as-contract (mark-job-as-executed jobId))
+  )
+)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CITY WALLET MANAGEMENT
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
