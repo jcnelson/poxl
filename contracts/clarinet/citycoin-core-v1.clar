@@ -304,7 +304,6 @@
     (match (fold mine-single amounts (ok { userId: (get-or-create-user-id tx-sender), toStackers: u0, toCity: u0, stacksHeight: block-height }))
       okReturn 
       (begin
-        (asserts! (> (+ (get toStackers okReturn) (get toCity okReturn)) u0) (err ERR_INSUFFICIENT_COMMITMENT))
         (asserts! (>= (stx-get-balance tx-sender) (+ (get toStackers okReturn) (get toCity okReturn))) (err ERR_INSUFFICIENT_BALANCE))
         (if (> (get toStackers okReturn ) u0)
           (try! (stx-transfer? (get toStackers okReturn ) tx-sender (as-contract tx-sender)))
