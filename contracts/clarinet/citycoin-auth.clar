@@ -88,7 +88,7 @@
     (
       (newJobId (+ (var-get lastJobId) u1))
     )
-    ;; TODO: security
+    (asserts! (is-approver tx-sender) (err ERR_UNAUTHORIZED))
     (map-set Jobs
       newJobId
       {
