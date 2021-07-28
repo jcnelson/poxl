@@ -25,11 +25,11 @@ jobs:
       - name: "Prepare contract files"
         run: ./scripts/clarinet-prepare.sh
       - name: "Check contract syntax"
-        uses: docker://ludovic/clarinet:latest
+        uses: docker://hirosystems/clarinet:latest
         with:
           args: check
       - name: "Execute test suite"
-        uses: docker://ludovic/clarinet:latest
+        uses: docker://hirosystems/clarinet:latest
         with:
           args: test --coverage
       - name: "Upload code coverage"

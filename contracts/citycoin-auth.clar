@@ -1,6 +1,16 @@
 (define-constant CONTRACT_OWNER tx-sender)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; TRAIT DEFINITIONS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(use-trait coreTrait .citycoin-core-trait.citycoin-core)
+(use-trait tokenTrait .citycoin-token-trait.citycoin-token)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ERRORS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (define-constant ERR_UNKNOWN_JOB u6000)
 (define-constant ERR_UNAUTHORIZED u6001)
 (define-constant ERR_JOB_IS_ACTIVE u6002)
@@ -9,8 +19,15 @@
 (define-constant ERR_JOB_IS_EXECUTED u6005)
 (define-constant ERR_JOB_IS_NOT_APPROVED u6006)
 (define-constant ERR_ARGUMENT_ALREADY_EXISTS u6007)
+(define-constant ERR_NO_ACTIVE_CORE_CONTRACT u6008)
+(define-constant ERR_CORE_CONTRACT_NOT_FOUND u6009)
+(define-constant ERR_UNKNOWN_ARGUMENT u6010)
 
-(define-constant REQUIRED_APPROVALS u2)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; JOB MANAGEMENT
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define-constant REQUIRED_APPROVALS u3)
 
 (define-data-var lastJobId uint u0)
 
@@ -22,7 +39,7 @@
     target: principal,
     approvals: uint,
     isActive: bool,
-    isExecuted: bool,
+    isExecuted: bool
   }
 )
 
@@ -71,7 +88,7 @@
     (
       (newJobId (+ (var-get lastJobId) u1))
     )
-    ;; TODO: security
+    (asserts! (is-approver tx-sender) (err ERR_UNAUTHORIZED))
     (map-set Jobs
       newJobId
       {
@@ -80,7 +97,7 @@
         target: target,
         approvals: u0,
         isActive: false,
-        isExecuted: false,
+        isExecuted: false
       }
     )
     (var-set lastJobId newJobId)
@@ -264,7 +281,229 @@
   )
 )
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; CONTRACT MANAGEMENT
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; initial value for active core contract
+;; set to deployer address at startup to prevent
+;; circular dependency of citycoin-core on citycoin-auth
+(define-data-var activeCoreContract principal CONTRACT_OWNER)
+(define-data-var initialized bool false)
+
+;; core contract states
+(define-constant STATE_DEPLOYED u0)
+(define-constant STATE_ACTIVE u1)
+(define-constant STATE_INACTIVE u2)
+
+;; core contract map
+(define-map CityCoinCoreContracts
+  principal
+  {
+    state: uint, 
+    startHeight: uint,
+    endHeight: uint
+  }
+)
+
+;; getter for active core contract
+(define-read-only (get-active-core-contract)
+  (begin
+    (asserts! (not (is-eq (var-get activeCoreContract) CONTRACT_OWNER)) (err ERR_NO_ACTIVE_CORE_CONTRACT))
+    (ok (var-get activeCoreContract))
+  )
+)
+
+;; getter for core contract map
+(define-read-only (get-core-contract-info (targetContract principal))
+  (let
+    (
+      (coreContract (unwrap! (map-get? CityCoinCoreContracts targetContract) (err ERR_CORE_CONTRACT_NOT_FOUND)))
+    )
+    (ok coreContract)
+  )
+)
+
+;; one-time function to initialize contracts after all contracts are deployed
+;; - check that deployer is calling this function
+;; - check this contract is not activated already (one-time use)
+;; - set initial map value for core contract v1
+;; - set cityWallet in core contract
+;; - set intialized true
+(define-public (initialize-contracts (coreContract <coreTrait>))
+  (let
+    (
+      (coreContractAddress (contract-of coreContract))
+    )
+    (asserts! (is-eq contract-caller CONTRACT_OWNER) (err ERR_UNAUTHORIZED))
+    (asserts! (not (var-get initialized)) (err ERR_UNAUTHORIZED))
+    (map-set CityCoinCoreContracts
+      coreContractAddress
+      {
+        state: STATE_DEPLOYED,
+        startHeight: u0,
+        endHeight: u0
+      })
+    (try! (contract-call? coreContract set-city-wallet (var-get cityWallet)))
+    (var-set initialized true)
+    (ok true)
+  )
+)
+
+;; function to activate core contract through registration
+;; - check that target is in core contract map
+;; - check that caller is core contract
+;; - set active in core contract map
+;; - set as activeCoreContract
+(define-public (activate-core-contract (targetContract principal) (stacksHeight uint))
+  (let
+    (
+      (coreContract (unwrap! (map-get? CityCoinCoreContracts targetContract) (err ERR_CORE_CONTRACT_NOT_FOUND)))
+    )
+    (asserts! (is-eq contract-caller targetContract) (err ERR_UNAUTHORIZED))
+    (map-set CityCoinCoreContracts
+      targetContract
+      {
+        state: STATE_ACTIVE,
+        startHeight: stacksHeight,
+        endHeight: u0
+      })
+    (var-set activeCoreContract targetContract)
+    (ok true)
+  )
+)
+
+(define-public (upgrade-core-contract (oldContract <coreTrait>) (newContract <coreTrait>))
+  (let
+    (
+      (oldContractAddress (contract-of oldContract))
+      (oldContractMap (unwrap! (map-get? CityCoinCoreContracts oldContractAddress) (err ERR_CORE_CONTRACT_NOT_FOUND)))
+      (newContractAddress (contract-of newContract))
+    )
+    (asserts! (not (is-eq oldContractAddress newContractAddress)) (err ERR_UNAUTHORIZED))
+    (asserts! (is-authorized-city) (err ERR_UNAUTHORIZED))
+    ;; TODO: allow call via approved job
+    (map-set CityCoinCoreContracts
+      oldContractAddress
+      {
+        state: STATE_INACTIVE,
+        startHeight: (get startHeight oldContractMap),
+        endHeight: block-height
+      })
+    (map-set CityCoinCoreContracts
+      newContractAddress
+      {
+        state: STATE_DEPLOYED,
+        startHeight: u0,
+        endHeight: u0
+      })
+    (var-set activeCoreContract newContractAddress)
+    (try! (contract-call? oldContract shutdown-contract block-height))
+    (try! (contract-call? newContract set-city-wallet (var-get cityWallet)))
+    (ok true)
+  )
+)
+
+(define-public (execute-upgrade-core-contract-job (jobId uint) (oldContract <coreTrait>) (newContract <coreTrait>))
+  (let
+    (
+      (oldContractArg (unwrap! (get-principal-value-by-name jobId "oldContract") (err ERR_UNKNOWN_ARGUMENT)))
+      (newContractArg (unwrap! (get-principal-value-by-name jobId "newContract") (err ERR_UNKNOWN_ARGUMENT)))
+      (oldContractAddress (contract-of oldContract))
+      (oldContractMap (unwrap! (map-get? CityCoinCoreContracts oldContractAddress) (err ERR_CORE_CONTRACT_NOT_FOUND)))
+      (newContractAddress (contract-of newContract))
+    )
+    (asserts! (is-approver contract-caller) (err ERR_UNAUTHORIZED))
+    (asserts! (and (is-eq oldContractArg oldContractAddress) (is-eq newContractArg newContractAddress)) (err ERR_UNAUTHORIZED))
+    (asserts! (not (is-eq oldContractAddress newContractAddress)) (err ERR_UNAUTHORIZED))
+    (map-set CityCoinCoreContracts
+      oldContractAddress
+      {
+        state: STATE_INACTIVE,
+        startHeight: (get startHeight oldContractMap),
+        endHeight: block-height
+      })
+    (map-set CityCoinCoreContracts
+      newContractAddress
+      {
+        state: STATE_DEPLOYED,
+        startHeight: u0,
+        endHeight: u0
+      })
+    (var-set activeCoreContract newContractAddress)
+    (try! (contract-call? oldContract shutdown-contract block-height))
+    (try! (contract-call? newContract set-city-wallet (var-get cityWallet)))
+    (as-contract (mark-job-as-executed jobId))
+  )
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; CITY WALLET MANAGEMENT
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; initial value for city wallet
+(define-data-var cityWallet principal 'STFCVYY1RJDNJHST7RRTPACYHVJQDJ7R1DWTQHQA)
+
+;; returns city wallet principal
+(define-read-only (get-city-wallet)
+  (ok (var-get cityWallet))
+)
+ 
+;; protected function to update city wallet variable
+(define-public (set-city-wallet (targetContract <coreTrait>) (newCityWallet principal))
+  (let
+    (
+      (coreContractAddress (contract-of targetContract))
+      (coreContract (unwrap! (map-get? CityCoinCoreContracts coreContractAddress) (err ERR_CORE_CONTRACT_NOT_FOUND)))
+    )
+    (asserts! (is-authorized-city) (err ERR_UNAUTHORIZED))
+    ;; TODO: allow call via approved job
+    (asserts! (is-eq coreContractAddress (var-get activeCoreContract)) (err ERR_UNAUTHORIZED))
+    (var-set cityWallet newCityWallet)
+    (try! (contract-call? targetContract set-city-wallet newCityWallet))
+    (ok true)
+  )
+)
+
+(define-public (execute-set-city-wallet-job (jobId uint) (targetContract <coreTrait>))
+  (let
+    (
+      (coreContractAddress (contract-of targetContract))
+      (coreContract (unwrap! (map-get? CityCoinCoreContracts coreContractAddress) (err ERR_CORE_CONTRACT_NOT_FOUND)))
+      (newCityWallet (unwrap! (get-principal-value-by-name jobId "newCityWallet") (err ERR_UNKNOWN_ARGUMENT)))
+    )
+    (asserts! (is-approver contract-caller) (err ERR_UNAUTHORIZED))
+    (asserts! (is-eq coreContractAddress (var-get activeCoreContract)) (err ERR_UNAUTHORIZED))
+    (var-set cityWallet newCityWallet)
+    (try! (contract-call? targetContract set-city-wallet newCityWallet))
+    (as-contract (mark-job-as-executed jobId))
+  )
+)
+
+;; check if contract caller is city wallet
+(define-private (is-authorized-city)
+  (is-eq contract-caller (var-get cityWallet))
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; TOKEN MANAGEMENT
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define-public (set-token-uri (targetContract <tokenTrait>) (newUri (optional (string-utf8 256))))
+  (begin
+    (asserts! (is-authorized-city) (err ERR_UNAUTHORIZED))
+    ;; TODO: allow call via approved job
+    (as-contract (try! (contract-call? targetContract set-token-uri newUri)))
+    (ok true)
+  )
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CONTRACT INITIALIZATION
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (map-insert Approvers 'ST1J4G6RR643BCG8G8SR6M2D9Z9KXT2NJDRK3FBTK true)
 (map-insert Approvers 'ST20ATRN26N9P05V2F1RHFRV24X8C8M3W54E427B2 true)
 (map-insert Approvers 'ST21HMSJATHZ888PD0S0SSTWP4J61TCRJYEVQ0STB true)
+(map-insert Approvers 'ST2QXSK64YQX3CQPC530K79XWQ98XFAM9W3XKEH3N true)
+(map-insert Approvers 'ST3DG3R65C9TTEEW5BC5XTSY0M1JM7NBE7GVWKTVJ true)

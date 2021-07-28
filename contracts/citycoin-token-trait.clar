@@ -1,37 +1,29 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; CITYCOIN CORE TRAIT
+;; CITYCOIN TOKEN TRAIT
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define-trait citycoin-core
+(define-trait citycoin-token
   (
 
-    (register-user ((optional (string-utf8 50)))
+    (activate-token (principal uint)
       (response bool uint)
     )
 
-    (mine-tokens (uint (optional (buff 34)))
+    (set-token-uri ((optional (string-utf8 256)))
       (response bool uint)
     )
 
-    (claim-mining-reward (uint)
+    (mint (uint principal)
       (response bool uint)
     )
 
-    (stack-tokens (uint uint)
+    (burn (uint principal)
       (response bool uint)
     )
 
-    (claim-stacking-reward (uint)
-      (response bool uint)
-    )
-
-    (set-city-wallet (principal)
-      (response bool uint)
-    )
-    
-    (shutdown-contract (uint)
+    (send-many ((list 200 { to: principal, amount: uint, memo: (optional (buff 34)) }))
       (response bool uint)
     )
 

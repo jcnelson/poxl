@@ -27,6 +27,7 @@ enum ErrCode {
 export class CoreClient extends Client {
   static readonly ErrCode = ErrCode;
   static readonly ACTIVATION_DELAY = 150;
+  static readonly ACTIVATION_THRESHOLD = 20;
   static readonly TOKEN_HALVING_BLOCKS = 210000;
   static readonly REWARD_CYCLE_LENGTH = 2100;
   static readonly SPLIT_CITY_PCT = 0.3;
@@ -98,6 +99,12 @@ export class CoreClient extends Client {
   //////////////////////////////////////////////////
   // MINING CONFIGURATION
   //////////////////////////////////////////////////
+
+  getBlockWinnerId(stacksHeight: number): ReadOnlyFn {
+    return this.callReadOnlyFn("get-block-winner-id", [
+      types.uint(stacksHeight),
+    ]);
+  }
 
   //////////////////////////////////////////////////
   // MINING ACTIONS
@@ -214,6 +221,33 @@ export class CoreClient extends Client {
       "test-set-activation-threshold",
       [types.uint(newThreshold)],
       this.deployer.address
+    );
+  }
+
+  testInitializeCore(coreContract: string): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "test-initialize-core",
+      [types.principal(coreContract)],
+      this.deployer.address
+    );
+  }
+
+  testMint(amount: number, recipient: Account, sender: Account): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "test-mint",
+      [types.uint(amount), types.principal(recipient.address)],
+      sender.address
+    );
+  }
+
+  testBurn(amount: number, recipient: Account, sender: Account): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "test-burn",
+      [types.uint(amount), types.principal(recipient.address)],
+      sender.address
     );
   }
 }

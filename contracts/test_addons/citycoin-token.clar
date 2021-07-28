@@ -7,6 +7,6 @@
   (ft-mint? citycoins amount recipient)
 )
 
-(define-public (test-set-trusted-caller (newTrustedCaller principal))
-  (ok (var-set trustedCaller newTrustedCaller))
+(define-public (test-set-token-activation)
+  (ok (var-set tokenActivated true))
 )

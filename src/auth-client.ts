@@ -1,19 +1,29 @@
 import { Account, Tx, types } from "../deps.ts";
 import { Client } from "./client.ts";
 
+enum ContractState {
+  STATE_DEPLOYED = 0,
+  STATE_ACTIVE,
+  STATE_INACTIVE,
+}
+
 enum ErrCode {
   ERR_UNKNOWN_JOB = 6000,
-  ERR_UNAUTHORIZED = 6001,
-  ERR_JOB_IS_ACTIVE = 6002,
-  ERR_JOB_IS_NOT_ACTIVE = 6003,
-  ERR_ALREADY_APPROVED = 6004,
-  ERR_JOB_IS_EXECUTED = 6005,
-  ERR_JOB_IS_NOT_APPROVED = 6006,
-  ERR_ARGUMENT_ALREADY_EXISTS = 6007,
+  ERR_UNAUTHORIZED,
+  ERR_JOB_IS_ACTIVE,
+  ERR_JOB_IS_NOT_ACTIVE,
+  ERR_ALREADY_APPROVED,
+  ERR_JOB_IS_EXECUTED,
+  ERR_JOB_IS_NOT_APPROVED,
+  ERR_ARGUMENT_ALREADY_EXISTS,
+  ERR_NO_ACTIVE_CORE_CONTRACT,
+  ERR_CORE_CONTRACT_NOT_FOUND,
 }
 
 export class AuthClient extends Client {
   static readonly ErrCode = ErrCode;
+  static readonly ContractState = ContractState;
+  static readonly REQUIRED_APPROVALS = 3;
 
   getLastJobId() {
     return this.callReadOnlyFn("get-last-job-id");
@@ -117,5 +127,125 @@ export class AuthClient extends Client {
       types.uint(jobId),
       types.uint(argumentId),
     ]);
+  }
+
+  getActiveCoreContract() {
+    return this.callReadOnlyFn("get-active-core-contract");
+  }
+
+  getCoreContractInfo(targetContract: string) {
+    return this.callReadOnlyFn("get-core-contract-info", [
+      types.principal(targetContract),
+    ]);
+  }
+
+  initializeContracts(targetContract: string, sender: Account): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "initialize-contracts",
+      [types.principal(targetContract)],
+      sender.address
+    );
+  }
+
+  activateCoreContract(
+    targetContract: string,
+    stacksHeight: number,
+    sender: Account
+  ): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "activate-core-contract",
+      [types.principal(targetContract), types.uint(stacksHeight)],
+      sender.address
+    );
+  }
+
+  upgradeCoreContract(
+    oldContract: string,
+    newContract: string,
+    sender: Account
+  ): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "upgrade-core-contract",
+      [types.principal(oldContract), types.principal(newContract)],
+      sender.address
+    );
+  }
+
+  executeUpgradeCoreContractJob(
+    jobId: number,
+    oldContract: string,
+    newContract: string,
+    sender: Account
+  ): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "execute-upgrade-core-contract-job",
+      [
+        types.uint(jobId),
+        types.principal(oldContract),
+        types.principal(newContract),
+      ],
+      sender.address
+    );
+  }
+
+  getCityWallet() {
+    return this.callReadOnlyFn("get-city-wallet");
+  }
+
+  setCityWallet(
+    requestor: string,
+    newCityWallet: Account,
+    sender: Account
+  ): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "set-city-wallet",
+      [types.principal(requestor), types.principal(newCityWallet.address)],
+      sender.address
+    );
+  }
+
+  setTokenUri(
+    sender: Account,
+    target: string,
+    newUri?: string | undefined
+  ): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "set-token-uri",
+      [
+        types.principal(target),
+        typeof newUri == "undefined"
+          ? types.none()
+          : types.some(types.utf8(newUri)),
+      ],
+      sender.address
+    );
+  }
+
+  executeSetCityWalletJob(
+    jobId: number,
+    targetContract: string,
+    sender: Account
+  ): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "execute-set-city-wallet-job",
+      [types.uint(jobId), types.principal(targetContract)],
+      sender.address
+    );
+  }
+
+  testSetActiveCoreContract(sender: Account): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "test-set-active-core-contract",
+      [],
+      sender.address
+    );
   }
 }

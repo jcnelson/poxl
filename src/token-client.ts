@@ -3,6 +3,9 @@ import { Client } from "./client.ts";
 
 enum ErrCode {
   ERR_UNAUTHORIZED = 2000,
+  ERR_TOKEN_NOT_ACTIVATED,
+  ERR_TOKEN_ALREADY_ACTIVATED,
+  ERR_CORE_CONTRACT_NOT_FOUND = 6009,
 }
 
 export class TokenClient extends Client {
@@ -74,6 +77,19 @@ export class TokenClient extends Client {
   }
 
   //////////////////////////////////////////////////
+  // TOKEN CONFIGURATION
+  //////////////////////////////////////////////////
+
+  activateToken(sender: Account, stacksHeight: number): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "activate-token",
+      [types.principal(sender.address), types.uint(stacksHeight)],
+      sender.address
+    );
+  }
+
+  //////////////////////////////////////////////////
   // UTILITIES
   //////////////////////////////////////////////////
 
@@ -127,6 +143,15 @@ export class TokenClient extends Client {
       this.contractName,
       "test-set-trusted-caller",
       [types.principal(newTrustedCaller.address)],
+      this.deployer.address
+    );
+  }
+
+  setTokenActivation(): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "test-set-token-activation",
+      [],
       this.deployer.address
     );
   }

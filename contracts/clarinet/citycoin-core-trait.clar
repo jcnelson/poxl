@@ -27,5 +27,13 @@
       (response bool uint)
     )
 
+    (set-city-wallet (principal)
+      (response bool uint)
+    )
+    
+    (shutdown-contract (uint)
+      (response bool uint)
+    )
+
   )
 )
