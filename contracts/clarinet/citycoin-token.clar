@@ -151,7 +151,7 @@
 )
 
 ;; burn tokens, only accessible by a CityCoin Core contract
-(define-public (burn (requestor principal) (amount uint) (recipient principal))
+(define-public (burn (amount uint) (recipient principal))
   (let
     (
       (coreContract (try! (contract-call? .citycoin-auth get-core-contract-info contract-caller)))

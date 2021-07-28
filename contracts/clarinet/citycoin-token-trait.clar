@@ -23,7 +23,7 @@
       (response bool uint)
     )
 
-    (send-many ((list 200 uint))
+    (send-many ((list 200 { to: principal, amount: uint, memo: (optional (buff 34)) }))
       (response bool uint)
     )
 

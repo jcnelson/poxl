@@ -15,7 +15,7 @@ depends_on = []
 
 [contracts.citycoin-auth]
 path = "contracts/clarinet/citycoin-auth.clar"
-depends_on = ["citycoin-core-trait"]
+depends_on = ["citycoin-core-trait", "citycoin-token-trait"]
 
 [contracts.citycoin-token]
 path = "contracts/clarinet/citycoin-token.clar"
