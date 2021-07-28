@@ -175,6 +175,49 @@ describe("[CityCoin Token]", () => {
         result.expectOk().expectSome().expectUtf8(tokenUri);
       });
     });
+
+    describe("burn()", () => {
+      it("throws ERR_CORE_CONTRACT_NOT_FOUND when called by someone who is not a trusted caller", (chain, accounts, clients) => {
+        // arrange
+        const wallet = accounts.get("wallet_1")!;
+        const amount = 500;
+
+        // act
+        const receipt = chain.mineBlock([clients.token.burn(200, wallet)])
+          .receipts[0];
+
+        // assert
+        receipt.result
+          .expectErr()
+          .expectUint(TokenClient.ErrCode.ERR_CORE_CONTRACT_NOT_FOUND);
+      });
+
+      it("succeeds when called by trusted caller and burns tokens", (chain, accounts, clients) => {
+        // arrange
+        const wallet = accounts.get("wallet_1")!;
+        const amount = 300;
+        chain.mineBlock([
+          clients.token.ftMint(amount, wallet),
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
+        ]);
+
+        // act
+        const receipt = chain.mineBlock([
+          clients.core.testBurn(amount, wallet, wallet),
+        ]).receipts[0];
+
+        // assert
+        receipt.result.expectOk().expectBool(true);
+
+        assertEquals(receipt.events.length, 1);
+
+        receipt.events.expectFungibleTokenBurnEvent(
+          amount,
+          wallet.address,
+          "citycoins"
+        );
+      });
+    });
   });
   describe("UTILITIES", () => {
     describe("mint()", () => {

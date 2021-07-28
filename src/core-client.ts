@@ -128,6 +128,22 @@ export class CoreClient extends Client {
     );
   }
 
+  mineMany(amounts: number[], miner: Account): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "mine-many",
+      [types.list(amounts.map((amount) => types.uint(amount)))],
+      miner.address
+    );
+  }
+
+  hasMinedAtBlock(stacksHeight: number, userId: number): ReadOnlyFn {
+    return this.callReadOnlyFn("has-mined-at-block", [
+      types.uint(stacksHeight),
+      types.uint(userId),
+    ]);
+  }
+
   //////////////////////////////////////////////////
   // MINING REWARD CLAIM ACTIONS
   //////////////////////////////////////////////////
@@ -221,6 +237,15 @@ export class CoreClient extends Client {
     return Tx.contractCall(
       this.contractName,
       "test-mint",
+      [types.uint(amount), types.principal(recipient.address)],
+      sender.address
+    );
+  }
+
+  testBurn(amount: number, recipient: Account, sender: Account): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "test-burn",
       [types.uint(amount), types.principal(recipient.address)],
       sender.address
     );

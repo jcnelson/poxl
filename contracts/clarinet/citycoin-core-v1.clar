@@ -298,6 +298,66 @@
   )
 )
 
+(define-public (mine-many (amounts (list 200 uint)))
+  (begin
+    (asserts! (> (len amounts) u0) (err ERR_INSUFFICIENT_COMMITMENT))
+    (match (fold mine-single amounts (ok { userId: (get-or-create-user-id tx-sender), toStackers: u0, toCity: u0, stacksHeight: block-height }))
+      okReturn 
+      (begin
+        (asserts! (>= (stx-get-balance tx-sender) (+ (get toStackers okReturn) (get toCity okReturn))) (err ERR_INSUFFICIENT_BALANCE))
+        (if (> (get toStackers okReturn ) u0)
+          (try! (stx-transfer? (get toStackers okReturn ) tx-sender (as-contract tx-sender)))
+          false
+        )
+        (try! (stx-transfer? (get toCity okReturn) tx-sender (var-get cityWallet)))
+        (ok true)
+      )
+      errReturn (err errReturn)
+    )
+  )
+)
+
+(define-private (mine-single 
+  (amountUstx uint) 
+  (return (response 
+    { 
+      userId: uint,
+      toStackers: uint,
+      toCity: uint,
+      stacksHeight: uint
+    }
+    uint
+  )))
+
+  (match return okReturn
+    (let
+      (
+        (stacksHeight (get stacksHeight okReturn))
+        (rewardCycle (default-to u0 (get-reward-cycle stacksHeight)))
+        (stackingActive (stacking-active-at-cycle rewardCycle))
+        (toCity
+          (if stackingActive
+            (/ (* SPLIT_CITY_PCT amountUstx) u100)
+            amountUstx
+          )
+        )
+        (toStackers (- amountUstx toCity))
+      )
+      (asserts! (not (has-mined-at-block stacksHeight (get userId okReturn))) (err ERR_USER_ALREADY_MINED))
+      (asserts! (> amountUstx u0) (err ERR_INSUFFICIENT_COMMITMENT))
+      (try! (set-tokens-mined (get userId okReturn) stacksHeight amountUstx toStackers toCity))
+      (ok (merge okReturn 
+        {
+          toStackers: (+ (get toStackers okReturn) toStackers),
+          toCity: (+ (get toCity okReturn) toCity),
+          stacksHeight: (+ stacksHeight u1)
+        }
+      ))
+    )
+    errReturn (err errReturn)
+  ) 
+)
+
 (define-private (mine-tokens-at-block (userId uint) (stacksHeight uint) (amountUstx uint) (memo (optional (buff 34))))
   (let
     (
@@ -365,12 +425,15 @@
       stacksHeight
       (+ minerLowVal amountUstx)
     )
-    (map-set StackingStatsAtCycle
-      rewardCycle
-      {
-        amountUstx: (+ (get amountUstx rewardCycleStats) toStackers),
-        amountToken: (get amountToken rewardCycleStats)
-      }
+    (if (> toStackers u0)
+      (map-set StackingStatsAtCycle
+        rewardCycle
+        {
+          amountUstx: (+ (get amountUstx rewardCycleStats) toStackers),
+          amountToken: (get amountToken rewardCycleStats)
+        }
+      )
+      false
     )
     (ok true)
   )
@@ -880,6 +943,13 @@
 (define-public (test-mint (amount uint) (recipient principal))
   (begin
     (as-contract (try! (contract-call? .citycoin-token mint amount recipient)))
+    (ok true)
+  )
+)
+
+(define-public (test-burn (amount uint) (recipient principal))
+  (begin
+    (as-contract (try! (contract-call? .citycoin-token burn amount recipient)))
     (ok true)
   )
 )

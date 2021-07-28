@@ -43,6 +43,15 @@ export class TokenClient extends Client {
     );
   }
 
+  burn(amount: number, sender: Account): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "burn",
+      [types.uint(amount), types.principal(sender.address)],
+      sender.address
+    );
+  }
+
   getName(): ReadOnlyFn {
     return this.callReadOnlyFn("get-name");
   }

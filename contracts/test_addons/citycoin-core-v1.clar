@@ -49,3 +49,10 @@
     (ok true)
   )
 )
+
+(define-public (test-burn (amount uint) (recipient principal))
+  (begin
+    (as-contract (try! (contract-call? .citycoin-token burn amount recipient)))
+    (ok true)
+  )
+)

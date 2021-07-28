@@ -1,6 +1,6 @@
 # CityCoins on Stacks
 
-[![Contract Tests](https://github.com/citycoins/citycoin/actions/workflows/test-contract.yaml/badge.svg)](https://github.com/citycoins/citycoin/actions/workflows/test-contract.yaml) [![codecov.io](https://codecov.io/github/citycoins/citycoin/coverage.svg?branch=master)](https://codecov.io/github/citycoins/citycoin?branch=main) [![Discord Chat](https://img.shields.io/discord/856920147381190717?label=Discord)](https://discord.com/invite/tANUVBz9bk)
+[![Contract Tests](https://github.com/citycoins/citycoin/actions/workflows/test-contract.yaml/badge.svg)](https://github.com/citycoins/citycoin/actions/workflows/test-contract.yaml) [![codecov.io](https://codecov.io/github/citycoins/citycoin/coverage.svg?branch=main)](https://codecov.io/github/citycoins/citycoin?branch=main) [![Discord Chat](https://img.shields.io/discord/856920147381190717?label=Discord)](https://discord.com/invite/tANUVBz9bk)
 
 ## Abstract
 

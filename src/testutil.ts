@@ -2,6 +2,7 @@ import { Account, Chain, Tx, it } from "../deps.ts";
 import { TokenClient } from "./token-client.ts";
 import { CoreClient } from "./core-client.ts";
 import { AuthClient } from "./auth-client.ts";
+import { TestUtilsClient } from "./test-utils-client.ts";
 
 class Accounts extends Map<string, Account> {}
 
@@ -10,6 +11,7 @@ interface Clients {
   core: CoreClient;
   core2: CoreClient;
   auth: AuthClient;
+  testUtils: TestUtilsClient;
 }
 
 function _it(
@@ -44,6 +46,7 @@ function _it(
       auth: new AuthClient("citycoin-auth", chain, deployer),
       core: new CoreClient("citycoin-core-v1", chain, deployer),
       core2: new CoreClient("citycoin-core-v2", chain, deployer),
+      testUtils: new TestUtilsClient("test-utils", chain, deployer),
     };
 
     await fn(chain, accounts, clients);
