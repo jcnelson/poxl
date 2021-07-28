@@ -8,6 +8,7 @@ class Accounts extends Map<string, Account> {}
 interface Clients {
   token: TokenClient;
   core: CoreClient;
+  core2: CoreClient;
   auth: AuthClient;
 }
 
@@ -42,6 +43,7 @@ function _it(
       token: new TokenClient("citycoin-token", chain, deployer),
       auth: new AuthClient("citycoin-auth", chain, deployer),
       core: new CoreClient("citycoin-core-v1", chain, deployer),
+      core2: new CoreClient("citycoin-core-v2", chain, deployer),
     };
 
     await fn(chain, accounts, clients);

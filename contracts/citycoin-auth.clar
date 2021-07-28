@@ -22,7 +22,7 @@
 (define-constant ERR_CORE_CONTRACT_NOT_FOUND u6009)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; JOBS
+;; JOB MANAGEMENT
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define-constant REQUIRED_APPROVALS u2)
