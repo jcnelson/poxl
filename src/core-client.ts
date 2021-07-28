@@ -121,6 +121,15 @@ export class CoreClient extends Client {
     );
   }
 
+  mineMany(amounts: number[], miner: Account): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "mine-many",
+      [types.list(amounts.map((amount) => types.uint(amount)))],
+      miner.address
+    );
+  }
+
   //////////////////////////////////////////////////
   // MINING REWARD CLAIM ACTIONS
   //////////////////////////////////////////////////
