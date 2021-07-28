@@ -981,6 +981,82 @@ describe("[CityCoin Auth]", () => {
         assertEquals(actualNewContractData, expectedNewContractData);
       });
     });
+    describe("execute-upgrade-core-contract-job()", () => {
+      it("succeeds and updates core contract map and active variable", (chain, accounts, clients) => {
+        // arrange
+        const jobId = 1;
+        const sender = accounts.get("wallet_1")!;
+        const approver1 = accounts.get("wallet_2")!;
+        const approver2 = accounts.get("wallet_3")!;
+        const oldContract = clients.core.getContractAddress();
+        const newContract = clients.core2.getContractAddress();
+
+        chain.mineBlock([
+          clients.core.testInitializeCore(oldContract),
+          clients.core.unsafeSetActivationThreshold(1),
+          clients.core.registerUser(sender),
+          clients.auth.createJob(
+            "upgrade core",
+            clients.auth.getContractAddress(),
+            sender
+          ),
+          clients.auth.addPrincipalArgument(
+            jobId,
+            "oldContract",
+            oldContract,
+            sender
+          ),
+          clients.auth.addPrincipalArgument(
+            jobId,
+            "newContract",
+            newContract,
+            sender
+          ),
+          clients.auth.activateJob(jobId, sender),
+          clients.auth.approveJob(jobId, approver1),
+          clients.auth.approveJob(jobId, approver2),
+        ]);
+
+        // act
+        const blockUpgrade = chain.mineBlock([
+          clients.auth.executeUpgradeCoreContractJob(
+            jobId,
+            oldContract,
+            newContract,
+            sender
+          ),
+        ]);
+
+        // act
+        const activeContract = clients.auth.getActiveCoreContract().result;
+        const oldContractData =
+          clients.auth.getCoreContractInfo(oldContract).result;
+        const newContractData =
+          clients.auth.getCoreContractInfo(newContract).result;
+
+        // assert
+        blockUpgrade.receipts[0].result.expectOk();
+
+        activeContract.expectOk().expectPrincipal(newContract);
+
+        // TODO: why the +1 and -1 here ??
+        const expectedOldContractData = {
+          state: types.uint(AuthClient.ContractState.STATE_INACTIVE),
+          startHeight: types.uint(CoreClient.ACTIVATION_DELAY + 1),
+          endHeight: types.uint(blockUpgrade.height - 1),
+        };
+        const expectedNewContractData = {
+          state: types.uint(AuthClient.ContractState.STATE_DEPLOYED),
+          startHeight: types.uint(0),
+          endHeight: types.uint(0),
+        };
+        const actualOldContractData = oldContractData.expectOk().expectTuple();
+        const actualNewContractData = newContractData.expectOk().expectTuple();
+
+        assertEquals(actualOldContractData, expectedOldContractData);
+        assertEquals(actualNewContractData, expectedNewContractData);
+      });
+    });
   });
 
   //////////////////////////////////////////////////
@@ -1087,6 +1163,54 @@ describe("[CityCoin Auth]", () => {
           .expectPrincipal(newCityWallet.address);
       });
     });
+    describe("execute-set-city-wallet-job()", () => {
+      it("successfully change city wallet when called by job approver", (chain, accounts, clients) => {
+        // arrange
+        const jobId = 1;
+        const sender = accounts.get("wallet_1")!;
+        const approver1 = accounts.get("wallet_2")!;
+        const approver2 = accounts.get("wallet_3")!;
+        const cityWallet = accounts.get("city_wallet")!;
+        const newCityWallet = accounts.get("wallet_2")!;
+        chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
+          clients.auth.testSetActiveCoreContract(cityWallet),
+        ]);
+
+        chain.mineBlock([
+          clients.auth.createJob(
+            "update city wallet 1",
+            clients.auth.getContractAddress(),
+            sender
+          ),
+          clients.auth.addPrincipalArgument(
+            jobId,
+            "newCityWallet",
+            newCityWallet.address,
+            sender
+          ),
+          clients.auth.activateJob(jobId, sender),
+          clients.auth.approveJob(jobId, approver1),
+          clients.auth.approveJob(jobId, approver2),
+        ]);
+
+        // act
+        const receipt = chain.mineBlock([
+          clients.auth.executeSetCityWalletJob(
+            jobId,
+            clients.core.getContractAddress(),
+            approver1
+          ),
+        ]).receipts[0];
+
+        // asserts
+        receipt.result.expectOk().expectBool(true);
+
+        clients.core
+          .getCityWallet()
+          .result.expectPrincipal(newCityWallet.address);
+      });
+    });
   });
 
   //////////////////////////////////////////////////
@@ -1161,132 +1285,6 @@ describe("[CityCoin Auth]", () => {
         const result = clients.token.getTokenUri().result;
         result.expectOk().expectSome().expectUtf8(newUri);
       });
-    });
-  });
-
-  describe("execute-set-city-wallet-job()", () => {
-    it("successfully change city wallet when called by job approver", (chain, accounts, clients) => {
-      // arrange
-      const jobId = 1;
-      const sender = accounts.get("wallet_1")!;
-      const approver1 = accounts.get("wallet_2")!;
-      const approver2 = accounts.get("wallet_3")!;
-      const cityWallet = accounts.get("city_wallet")!;
-      const newCityWallet = accounts.get("wallet_2")!;
-      chain.mineBlock([
-        clients.core.testInitializeCore(clients.core.getContractAddress()),
-        clients.auth.testSetActiveCoreContract(cityWallet),
-      ]);
-
-      chain.mineBlock([
-        clients.auth.createJob(
-          "update city wallet 1",
-          clients.auth.getContractAddress(),
-          sender
-        ),
-        clients.auth.addPrincipalArgument(
-          jobId,
-          "newCityWallet",
-          newCityWallet.address,
-          sender
-        ),
-        clients.auth.activateJob(jobId, sender),
-        clients.auth.approveJob(jobId, approver1),
-        clients.auth.approveJob(jobId, approver2),
-      ]);
-
-      // act
-      const receipt = chain.mineBlock([
-        clients.auth.executeSetCityWalletJob(
-          jobId,
-          clients.core.getContractAddress(),
-          approver1
-        ),
-      ]).receipts[0];
-
-      // asserts
-      receipt.result.expectOk().expectBool(true);
-
-      clients.core
-        .getCityWallet()
-        .result.expectPrincipal(newCityWallet.address);
-    });
-  });
-
-  describe("execute-upgrade-core-contract-job()", () => {
-    it("succeeds and updates core contract map and active variable", (chain, accounts, clients) => {
-      // arrange
-      const jobId = 1;
-      const sender = accounts.get("wallet_1")!;
-      const approver1 = accounts.get("wallet_2")!;
-      const approver2 = accounts.get("wallet_3")!;
-      const oldContract = clients.core.getContractAddress();
-      const newContract = clients.core2.getContractAddress();
-
-      chain.mineBlock([
-        clients.core.testInitializeCore(oldContract),
-        clients.core.unsafeSetActivationThreshold(1),
-        clients.core.registerUser(sender),
-        clients.auth.createJob(
-          "upgrade core",
-          clients.auth.getContractAddress(),
-          sender
-        ),
-        clients.auth.addPrincipalArgument(
-          jobId,
-          "oldContract",
-          oldContract,
-          sender
-        ),
-        clients.auth.addPrincipalArgument(
-          jobId,
-          "newContract",
-          newContract,
-          sender
-        ),
-        clients.auth.activateJob(jobId, sender),
-        clients.auth.approveJob(jobId, approver1),
-        clients.auth.approveJob(jobId, approver2),
-      ]);
-
-      // act
-      const blockUpgrade = chain.mineBlock([
-        clients.auth.executeUpgradeCoreContractJob(
-          jobId,
-          oldContract,
-          newContract,
-          sender
-        ),
-      ]);
-
-      // act
-      const activeContract = clients.auth.getActiveCoreContract().result;
-      const oldContractData =
-        clients.auth.getCoreContractInfo(oldContract).result;
-      const newContractData =
-        clients.auth.getCoreContractInfo(newContract).result;
-
-      // assert
-      blockUpgrade.receipts[0].result.expectOk();
-
-      activeContract.expectOk().expectPrincipal(newContract);
-
-      // TODO: why the +1 and -1 here ??
-      const expectedOldContractData = {
-        state: types.uint(AuthClient.ContractState.STATE_INACTIVE),
-        startHeight: types.uint(CoreClient.ACTIVATION_DELAY + 1),
-        endHeight: types.uint(blockUpgrade.height - 1),
-      };
-      const expectedNewContractData = {
-        state: types.uint(AuthClient.ContractState.STATE_DEPLOYED),
-        startHeight: types.uint(0),
-        endHeight: types.uint(0),
-      };
-      const actualOldContractData = oldContractData.expectOk().expectTuple();
-      const actualNewContractData = newContractData.expectOk().expectTuple();
-
-      assertEquals(actualOldContractData, expectedOldContractData);
-      assertEquals(actualNewContractData, expectedNewContractData);
     });
   });
 });
