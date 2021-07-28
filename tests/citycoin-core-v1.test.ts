@@ -664,6 +664,31 @@ describe("[CityCoin Core]", () => {
           clients.core.getContractAddress()
         );
       });
+
+      it("saves information that miner mined multiple consecutive blocks", (chain, accounts, clients) => {
+        // arrange
+        const miner = accounts.get("wallet_1")!;
+        const amounts = [1, 2, 200, 89, 3423];
+        const setupBlock = chain.mineBlock([
+          clients.core.unsafeSetActivationThreshold(1),
+          clients.core.registerUser(miner),
+        ]);
+        chain.mineEmptyBlockUntil(
+          setupBlock.height + CoreClient.ACTIVATION_DELAY - 1
+        );
+
+        // act
+        const block = chain.mineBlock([clients.core.mineMany(amounts, miner)]);
+
+        // assert
+        const userId = 1;
+
+        amounts.forEach((amount, idx) => {
+          clients.core
+            .hasMinedAtBlock(block.height + idx - 1, userId)
+            .result.expectBool(true);
+        });
+      });
     });
   });
 

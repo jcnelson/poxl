@@ -130,6 +130,13 @@ export class CoreClient extends Client {
     );
   }
 
+  hasMinedAtBlock(stacksHeight: number, userId: number): ReadOnlyFn {
+    return this.callReadOnlyFn("has-mined-at-block", [
+      types.uint(stacksHeight),
+      types.uint(userId),
+    ]);
+  }
+
   //////////////////////////////////////////////////
   // MINING REWARD CLAIM ACTIONS
   //////////////////////////////////////////////////
