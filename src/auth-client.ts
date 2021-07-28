@@ -23,6 +23,7 @@ enum ErrCode {
 export class AuthClient extends Client {
   static readonly ErrCode = ErrCode;
   static readonly ContractState = ContractState;
+  static readonly REQUIRED_APPROVALS = 3;
 
   getLastJobId() {
     return this.callReadOnlyFn("get-last-job-id");

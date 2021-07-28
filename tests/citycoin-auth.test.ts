@@ -262,7 +262,7 @@ describe("[CityCoin Auth]", () => {
         const name = "job-123456";
         const target = clients.core.getContractAddress();
         const creator = accounts.get("wallet_1")!;
-        const approver = accounts.get("wallet_5")!;
+        const approver = accounts.get("wallet_8")!;
         const jobId = 1;
         chain.mineBlock([
           clients.auth.createJob(name, target, creator),
@@ -366,19 +366,21 @@ describe("[CityCoin Auth]", () => {
         result.expectBool(false);
       });
 
-      it("returns when asked about active job with 2 or more approvals", (chain, accounts, clients) => {
+      it("returns when asked about active job with 3 or more approvals", (chain, accounts, clients) => {
         // arrange
         const name = "job-123456";
         const target = clients.core.getContractAddress();
         const creator = accounts.get("wallet_1")!;
         const approver1 = accounts.get("wallet_2")!;
         const approver2 = accounts.get("wallet_3")!;
+        const approver3 = accounts.get("wallet_4")!;
         const jobId = 1;
         chain.mineBlock([
           clients.auth.createJob(name, target, creator),
           clients.auth.activateJob(jobId, creator),
           clients.auth.approveJob(jobId, approver1),
           clients.auth.approveJob(jobId, approver2),
+          clients.auth.approveJob(jobId, approver3),
         ]);
 
         // act
@@ -457,12 +459,14 @@ describe("[CityCoin Auth]", () => {
         const jobId = 1;
         const approver1 = accounts.get("wallet_2")!;
         const approver2 = accounts.get("wallet_3")!;
+        const approver3 = accounts.get("wallet_4")!;
         const sender = accounts.get("wallet_1")!;
         chain.mineBlock([
           clients.auth.createJob(name, target, creator),
           clients.auth.activateJob(jobId, creator),
           clients.auth.approveJob(jobId, approver1),
           clients.auth.approveJob(jobId, approver2),
+          clients.auth.approveJob(jobId, approver3),
         ]);
 
         // act
@@ -485,11 +489,13 @@ describe("[CityCoin Auth]", () => {
         const jobId = 1;
         const approver1 = accounts.get("wallet_2")!;
         const approver2 = accounts.get("wallet_3")!;
+        const approver3 = accounts.get("wallet_4")!;
         chain.mineBlock([
           clients.auth.createJob(name, target, creator),
           clients.auth.activateJob(jobId, creator),
           clients.auth.approveJob(jobId, approver1),
           clients.auth.approveJob(jobId, approver2),
+          clients.auth.approveJob(jobId, approver3),
         ]);
 
         // act
@@ -504,7 +510,7 @@ describe("[CityCoin Auth]", () => {
           creator: creator.address,
           name: types.ascii(name),
           target: target,
-          approvals: types.uint(2),
+          approvals: types.uint(AuthClient.REQUIRED_APPROVALS),
           isActive: types.bool(true),
           isExecuted: types.bool(true),
         };
@@ -525,11 +531,13 @@ describe("[CityCoin Auth]", () => {
         const jobId = 1;
         const approver1 = accounts.get("wallet_2")!;
         const approver2 = accounts.get("wallet_3")!;
+        const approver3 = accounts.get("wallet_4")!;
         chain.mineBlock([
           clients.auth.createJob(name, target, creator),
           clients.auth.activateJob(jobId, creator),
           clients.auth.approveJob(jobId, approver1),
           clients.auth.approveJob(jobId, approver2),
+          clients.auth.approveJob(jobId, approver3),
           clients.auth.markJobAsExecuted(jobId, sender),
         ]);
 
@@ -988,6 +996,7 @@ describe("[CityCoin Auth]", () => {
         const sender = accounts.get("wallet_1")!;
         const approver1 = accounts.get("wallet_2")!;
         const approver2 = accounts.get("wallet_3")!;
+        const approver3 = accounts.get("wallet_4")!;
         const oldContract = clients.core.getContractAddress();
         const newContract = clients.core2.getContractAddress();
 
@@ -1015,6 +1024,7 @@ describe("[CityCoin Auth]", () => {
           clients.auth.activateJob(jobId, sender),
           clients.auth.approveJob(jobId, approver1),
           clients.auth.approveJob(jobId, approver2),
+          clients.auth.approveJob(jobId, approver3),
         ]);
 
         // act
@@ -1170,6 +1180,7 @@ describe("[CityCoin Auth]", () => {
         const sender = accounts.get("wallet_1")!;
         const approver1 = accounts.get("wallet_2")!;
         const approver2 = accounts.get("wallet_3")!;
+        const approver3 = accounts.get("wallet_4")!;
         const cityWallet = accounts.get("city_wallet")!;
         const newCityWallet = accounts.get("wallet_2")!;
         chain.mineBlock([
@@ -1192,6 +1203,7 @@ describe("[CityCoin Auth]", () => {
           clients.auth.activateJob(jobId, sender),
           clients.auth.approveJob(jobId, approver1),
           clients.auth.approveJob(jobId, approver2),
+          clients.auth.approveJob(jobId, approver3),
         ]);
 
         // act
