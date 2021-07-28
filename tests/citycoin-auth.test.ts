@@ -32,7 +32,24 @@ describe("[CityCoin Auth]", () => {
         result.expectUint(1);
       });
     });
+
     describe("create-job()", () => {
+      it("throws ERR_UNAUTHORIZED if not called by an approver", (chain, accounts, clients) => {
+        // arrange
+        const name = "job_1";
+        const target = clients.core.getContractAddress();
+        const sender = accounts.get("deployer")!;
+
+        // act
+        const block = chain.mineBlock([
+          clients.auth.createJob(name, target, sender),
+        ]);
+
+        // assert
+        block.receipts[0].result
+          .expectErr()
+          .expectUint(AuthClient.ErrCode.ERR_UNAUTHORIZED);
+      });
       it("creates new job", (chain, accounts, clients) => {
         // arrange
         const name = "job_1";
