@@ -14,6 +14,7 @@
 ;; TRAIT DEFINITIONS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; (impl-trait .citycoin-token-trait.citycoin-token)
 (use-trait coreTrait .citycoin-core-trait.citycoin-core)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -130,20 +131,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define-data-var tokenUri (optional (string-utf8 256)) (some u"https://cdn.citycoins.co/metadata/citycoin.json"))
-(define-data-var trustedCaller principal .citycoin-auth)
-
-;; set trustedCaller to a new value, only accessible by CityCoin Auth
-(define-public (set-trusted-caller (targetContract <coreTrait>))
-  (let
-    (
-      (targetContractAddress (contract-of targetContract))
-      (coreContract (try! (contract-call? .citycoin-auth get-core-contract-info targetContractAddress)))
-    )
-    (asserts! (is-authorized-auth) (err ERR_UNAUTHORIZED))
-    (var-set trustedCaller targetContractAddress)
-    (ok true)
-  )
-)
 
 ;; set token URI to new value, only accessible by CityCoin Auth
 (define-public (set-token-uri (newUri (optional (string-utf8 256))))
