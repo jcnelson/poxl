@@ -80,6 +80,39 @@ describe("[CityCoin Core]", () => {
         result.expectOk().expectUint(activationBlockHeight);
       });
     });
+    describe("get-activation-delay()", () => {
+      it("succeeds and returns activation delay", (chain, accounts, clients) => {
+        // act
+        const result = clients.core.getActivationDelay().result;
+        // assert
+        result.expectUint(CoreClient.ACTIVATION_DELAY);
+      });
+    });
+    describe("get-activation-threshold()", () => {
+      it("succeeds and returns activation threshold", (chain, accounts, clients) => {
+        // act
+        const result = clients.core.getActivationThreshold().result;
+        // assert
+        result.expectUint(CoreClient.ACTIVATION_THRESHOLD);
+      });
+    });
+    describe("get-registered-users-nonce()", () => {
+      it("succeeds and returns u0 if no users are registered", (chain, accounts, clients) => {
+        // act
+        const result = clients.core.getRegisteredUsersNonce().result;
+        // assert
+        result.expectUint(0);
+      });
+      it("succeeds and returns u1 if one user is registered", (chain, accounts, clients) => {
+        // arrange
+        const user = accounts.get("wallet_5")!;
+        chain.mineBlock([clients.core.registerUser(user)]);
+        // act
+        const result = clients.core.getRegisteredUsersNonce().result;
+        // assert
+        result.expectUint(1);
+      });
+    });
     describe("register-user()", () => {
       it("successfully register new user and emits print event with memo when supplied", (chain, accounts, clients) => {
         // arrange
@@ -164,7 +197,68 @@ describe("[CityCoin Core]", () => {
   // MINING CONFIGURATION
   //////////////////////////////////////////////////
 
-  // describe("MINING CONFIGURATION", () => {});
+  describe("MINING CONFIGURATION", () => {
+    describe("get-block-winner-id()", () => {
+      it("succeeds and returns none if winner is unknown at the block height", (chain, accounts, clients) => {
+        // arrange
+        const miner = accounts.get("wallet_2")!;
+        const miner2 = accounts.get("wallet_3")!;
+        const amount = 2;
+        const setupBlock = chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
+          clients.core.unsafeSetActivationThreshold(1),
+          clients.core.registerUser(miner),
+          clients.core.registerUser(miner2),
+        ]);
+        const activationBlockHeight =
+          setupBlock.height + CoreClient.ACTIVATION_DELAY - 1;
+
+        chain.mineEmptyBlockUntil(activationBlockHeight);
+
+        const block = chain.mineBlock([
+          clients.core.mineTokens(amount, miner),
+          clients.core.mineTokens(amount * 1000, miner2),
+        ]);
+        chain.mineEmptyBlock(CoreClient.TOKEN_REWARD_MATURITY);
+
+        // act
+        const result = clients.core.getBlockWinnerId(block.height).result;
+
+        // assert
+        result.expectNone();
+      });
+      it("succeeds and returns block winner ID if winner claimed at the block height", (chain, accounts, clients) => {
+        // arrange
+        const miner = accounts.get("wallet_2")!;
+        const miner2 = accounts.get("wallet_3")!;
+        const amount = 2;
+        const setupBlock = chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
+          clients.core.unsafeSetActivationThreshold(1),
+          clients.core.registerUser(miner),
+          clients.core.registerUser(miner2),
+        ]);
+        const activationBlockHeight =
+          setupBlock.height + CoreClient.ACTIVATION_DELAY - 1;
+
+        chain.mineEmptyBlockUntil(activationBlockHeight);
+
+        const block = chain.mineBlock([
+          clients.core.mineTokens(amount, miner),
+          clients.core.mineTokens(amount * 1000, miner2),
+        ]);
+        chain.mineEmptyBlock(CoreClient.TOKEN_REWARD_MATURITY);
+        chain.mineBlock([
+          clients.core.claimMiningReward(block.height - 1, miner2),
+        ]);
+        // act
+        const result = clients.core.getBlockWinnerId(block.height - 1).result;
+
+        // assert
+        result.expectSome().expectUint(2);
+      });
+    });
+  });
 
   //////////////////////////////////////////////////
   // MINING ACTIONS
@@ -413,7 +507,7 @@ describe("[CityCoin Core]", () => {
           .expectUint(CoreClient.ErrCode.ERR_USER_ID_NOT_FOUND);
       });
 
-      it("throws ERR_NO_MINERS_AT_BLOCK when called with block-hight at which nobody decided to mine", (chain, accounts, clients) => {
+      it("throws ERR_NO_MINERS_AT_BLOCK when called with block-height at which nobody decided to mine", (chain, accounts, clients) => {
         // arrange
         const miner = accounts.get("wallet_2")!;
         chain.mineBlock([clients.core.registerUser(miner)]);
