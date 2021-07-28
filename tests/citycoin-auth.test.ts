@@ -1146,4 +1146,53 @@ describe("[CityCoin Auth]", () => {
       });
     });
   });
+
+  describe("execute-set-city-wallet-job()", () => {
+    it("successfully change city wallet when called by job approver", (chain, accounts, clients) => {
+      // arrange
+      const jobId = 1;
+      const sender = accounts.get("wallet_1")!;
+      const approver1 = accounts.get("wallet_2")!;
+      const approver2 = accounts.get("wallet_3")!;
+      const cityWallet = accounts.get("city_wallet")!;
+      const newCityWallet = accounts.get("wallet_2")!;
+      chain.mineBlock([
+        clients.core.testInitializeCore(clients.core.getContractAddress()),
+        clients.auth.testSetActiveCoreContract(cityWallet),
+      ]);
+
+      chain.mineBlock([
+        clients.auth.createJob(
+          "update city wallet 1",
+          clients.auth.getContractAddress(),
+          sender
+        ),
+        clients.auth.addPrincipalArgument(
+          jobId,
+          "newCityWallet",
+          newCityWallet.address,
+          sender
+        ),
+        clients.auth.activateJob(jobId, sender),
+        clients.auth.approveJob(jobId, approver1),
+        clients.auth.approveJob(jobId, approver2),
+      ]);
+
+      // act
+      const receipt = chain.mineBlock([
+        clients.auth.executeSetCityWalletJob(
+          jobId,
+          clients.core.getContractAddress(),
+          approver1
+        ),
+      ]).receipts[0];
+
+      // asserts
+      receipt.result.expectOk().expectBool(true);
+
+      clients.core
+        .getCityWallet()
+        .result.expectPrincipal(newCityWallet.address);
+    });
+  });
 });

@@ -21,6 +21,7 @@
 (define-constant ERR_ARGUMENT_ALREADY_EXISTS u6007)
 (define-constant ERR_NO_ACTIVE_CORE_CONTRACT u6008)
 (define-constant ERR_CORE_CONTRACT_NOT_FOUND u6009)
+(define-constant ERR_UNKNOWN_ARGUMENT u6010)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; JOB MANAGEMENT
@@ -428,6 +429,21 @@
     (var-set cityWallet newCityWallet)
     (try! (contract-call? targetContract set-city-wallet newCityWallet))
     (ok true)
+  )
+)
+
+(define-public (execute-set-city-wallet-job (jobId uint) (targetContract <coreTrait>))
+  (let
+    (
+      (coreContractAddress (contract-of targetContract))
+      (coreContract (unwrap! (map-get? CityCoinCoreContracts coreContractAddress) (err ERR_CORE_CONTRACT_NOT_FOUND)))
+      (newCityWallet (unwrap! (get-principal-value-by-name jobId "newCityWallet") (err ERR_UNKNOWN_ARGUMENT)))
+    )
+    (asserts! (is-approver contract-caller) (err ERR_UNAUTHORIZED))
+    (asserts! (is-eq coreContractAddress (var-get activeCoreContract)) (err ERR_UNAUTHORIZED))
+    (var-set cityWallet newCityWallet)
+    (try! (contract-call? targetContract set-city-wallet newCityWallet))
+    (as-contract (mark-job-as-executed jobId))
   )
 )
 

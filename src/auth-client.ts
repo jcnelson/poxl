@@ -208,6 +208,19 @@ export class AuthClient extends Client {
     );
   }
 
+  executeSetCityWalletJob(
+    jobId: number,
+    targetContract: string,
+    sender: Account
+  ): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "execute-set-city-wallet-job",
+      [types.uint(jobId), types.principal(targetContract)],
+      sender.address
+    );
+  }
+
   testSetActiveCoreContract(sender: Account): Tx {
     return Tx.contractCall(
       this.contractName,
