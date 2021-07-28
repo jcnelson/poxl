@@ -176,44 +176,45 @@ describe("[CityCoin Token]", () => {
       });
     });
   });
-  describe("mint()", () => {
-    it("fails with ERR_CORE_CONTRACT_NOT_FOUND when called by someone who is not a trusted caller", (chain, accounts, clients) => {
-      const wallet_2 = accounts.get("wallet_2")!;
-      let block = chain.mineBlock([
-        clients.token.mint(200, wallet_2, wallet_2),
-      ]);
+  describe("UTILITIES", () => {
+    describe("mint()", () => {
+      it("fails with ERR_CORE_CONTRACT_NOT_FOUND when called by someone who is not a trusted caller", (chain, accounts, clients) => {
+        const wallet_2 = accounts.get("wallet_2")!;
+        let block = chain.mineBlock([
+          clients.token.mint(200, wallet_2, wallet_2),
+        ]);
 
-      let receipt = block.receipts[0];
+        let receipt = block.receipts[0];
 
-      receipt.result
-        .expectErr()
-        .expectUint(TokenClient.ErrCode.ERR_CORE_CONTRACT_NOT_FOUND);
-    });
+        receipt.result
+          .expectErr()
+          .expectUint(TokenClient.ErrCode.ERR_CORE_CONTRACT_NOT_FOUND);
+      });
 
-    it("succeeds when called by trusted caller and mints requested amount of tokens", (chain, accounts, clients) => {
-      const wallet_2 = accounts.get("wallet_2")!;
-      const amount = 200;
-      const recipient = accounts.get("wallet_3")!;
+      it("succeeds when called by trusted caller and mints requested amount of tokens", (chain, accounts, clients) => {
+        const wallet_2 = accounts.get("wallet_2")!;
+        const amount = 200;
+        const recipient = accounts.get("wallet_3")!;
 
-      chain.mineBlock([
-        clients.core.testInitializeCore(clients.core.getContractAddress()),
-      ]);
+        chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
+        ]);
 
-      let block = chain.mineBlock([
-        clients.core.testMint(amount, recipient, wallet_2),
-      ]);
+        let block = chain.mineBlock([
+          clients.core.testMint(amount, recipient, wallet_2),
+        ]);
 
-      let receipt = block.receipts[0];
-      receipt.result.expectOk().expectBool(true);
+        let receipt = block.receipts[0];
+        receipt.result.expectOk().expectBool(true);
 
-      receipt.events.expectFungibleTokenMintEvent(
-        amount,
-        recipient.address,
-        "citycoins"
-      );
+        receipt.events.expectFungibleTokenMintEvent(
+          amount,
+          recipient.address,
+          "citycoins"
+        );
+      });
     });
   });
-
   describe("TOKEN CONFIGURATION", () => {
     describe("activate-token()", () => {
       it("fails with ERR_UNAUTHORIZED if called by an unapproved sender", (chain, accounts, clients) => {

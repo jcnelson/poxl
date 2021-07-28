@@ -1075,130 +1075,75 @@ describe("[CityCoin Auth]", () => {
   //////////////////////////////////////////////////
   // TOKEN MANAGEMENT
   //////////////////////////////////////////////////
-  describe("set-token-uri()", () => {
-    it("fails with ERR_UNAUTHORIZED when called by someone who is not city wallet", (chain, accounts, clients) => {
-      // arrange
-      const sender = accounts.get("wallet_2")!;
-      // act
-      const block = chain.mineBlock([
-        clients.auth.setTokenUri(
-          sender,
-          clients.token.getContractAddress(),
-          "http://something-something.com"
-        ),
-      ]);
-      // assert
-      const receipt = block.receipts[0];
-
-      receipt.result
-        .expectErr()
-        .expectUint(AuthClient.ErrCode.ERR_UNAUTHORIZED);
-    });
-    it("fails with ERR_UNAUTHORIZED when called by someone who is not auth contract", (chain, accounts, clients) => {
-      // arrange
-      const sender = accounts.get("wallet_2")!;
-      // act
-      const block = chain.mineBlock([
-        clients.token.setTokenUri(sender, "http://something-something.com"),
-      ]);
-      // assert
-      const receipt = block.receipts[0];
-
-      receipt.result
-        .expectErr()
-        .expectUint(TokenClient.ErrCode.ERR_UNAUTHORIZED);
-    });
-    it("succeeds and changes token uri to none if no new value is provided", (chain, accounts, clients) => {
-      // arrange
-      const sender = accounts.get("city_wallet")!;
-      // act
-      const block = chain.mineBlock([
-        clients.auth.setTokenUri(sender, clients.token.getContractAddress()),
-      ]);
-      // assert
-      const receipt = block.receipts[0];
-
-      receipt.result.expectOk().expectBool(true);
-
-      const result = clients.token.getTokenUri().result;
-      result.expectOk().expectNone();
-    });
-    it("succeeds and changes token uri to new value if provided", (chain, accounts, clients) => {
-      // arrange
-      const sender = accounts.get("city_wallet")!;
-      const newUri = "http://something-something.com";
-      // act
-      const block = chain.mineBlock([
-        clients.auth.setTokenUri(
-          sender,
-          clients.token.getContractAddress(),
-          newUri
-        ),
-      ]);
-      // assert
-      const receipt = block.receipts[0];
-
-      receipt.result.expectOk().expectBool(true);
-
-      const result = clients.token.getTokenUri().result;
-      result.expectOk().expectSome().expectUtf8(newUri);
-    });
-  });
-});
-
-/*
-  describe("contract-name()", () => {
-    it("test", (chain, accounts, clients) => {
-      // arrange
-      // act
-      // assert
-    });
-  });
-
-  describe("UTILITIES", () => {
-
-    // TODO: should this be tested from AUTH instead, since its the approved caller?
+  describe("TOKEN MANAGEMENT", () => {
     describe("set-token-uri()", () => {
-      it("fails with ERR_UNAUTHORIZED when called by someone who is not core contract", (chain, accounts, clients) => {
-        const wallet_2 = accounts.get("wallet_2")!;
+      it("fails with ERR_UNAUTHORIZED when called by someone who is not city wallet", (chain, accounts, clients) => {
+        // arrange
+        const sender = accounts.get("wallet_2")!;
+        // act
         const block = chain.mineBlock([
-          clients.token.setTokenUri(wallet_2, "http://something-something.com"),
+          clients.auth.setTokenUri(
+            sender,
+            clients.token.getContractAddress(),
+            "http://something-something.com"
+          ),
         ]);
+        // assert
+        const receipt = block.receipts[0];
 
+        receipt.result
+          .expectErr()
+          .expectUint(AuthClient.ErrCode.ERR_UNAUTHORIZED);
+      });
+      it("fails with ERR_UNAUTHORIZED when called by someone who is not auth contract", (chain, accounts, clients) => {
+        // arrange
+        const sender = accounts.get("wallet_2")!;
+        // act
+        const block = chain.mineBlock([
+          clients.token.setTokenUri(sender, "http://something-something.com"),
+        ]);
+        // assert
         const receipt = block.receipts[0];
 
         receipt.result
           .expectErr()
           .expectUint(TokenClient.ErrCode.ERR_UNAUTHORIZED);
       });
-
-      it("changes token uri to none if no new value is provided", (chain, accounts, clients) => {
-        const deployer = accounts.get("deployer")!;
-        chain.mineBlock([clients.token.setTrustedCaller(deployer)]);
-
-        const block = chain.mineBlock([clients.token.setTokenUri(deployer)]);
-
+      it("succeeds and changes token uri to none if no new value is provided", (chain, accounts, clients) => {
+        // arrange
+        const sender = accounts.get("city_wallet")!;
+        // act
+        const block = chain.mineBlock([
+          clients.auth.setTokenUri(sender, clients.token.getContractAddress()),
+        ]);
+        // assert
         const receipt = block.receipts[0];
+
         receipt.result.expectOk().expectBool(true);
 
         const result = clients.token.getTokenUri().result;
         result.expectOk().expectNone();
       });
-
-      it("changes token uri to new value if provided", (chain, accounts, clients) => {
-        const deployer = accounts.get("deployer")!;
+      it("succeeds and changes token uri to new value if provided", (chain, accounts, clients) => {
+        // arrange
+        const sender = accounts.get("city_wallet")!;
         const newUri = "http://something-something.com";
-        chain.mineBlock([clients.token.setTrustedCaller(deployer)]);
-
+        // act
         const block = chain.mineBlock([
-          clients.token.setTokenUri(deployer, newUri),
+          clients.auth.setTokenUri(
+            sender,
+            clients.token.getContractAddress(),
+            newUri
+          ),
         ]);
-
+        // assert
         const receipt = block.receipts[0];
+
         receipt.result.expectOk().expectBool(true);
 
         const result = clients.token.getTokenUri().result;
         result.expectOk().expectSome().expectUtf8(newUri);
       });
     });
-*/
+  });
+});
