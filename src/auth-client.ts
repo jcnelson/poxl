@@ -190,6 +190,24 @@ export class AuthClient extends Client {
     );
   }
 
+  setTokenUri(
+    sender: Account,
+    target: string,
+    newUri?: string | undefined
+  ): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "set-token-uri",
+      [
+        types.principal(target),
+        typeof newUri == "undefined"
+          ? types.none()
+          : types.some(types.utf8(newUri)),
+      ],
+      sender.address
+    );
+  }
+
   testSetActiveCoreContract(sender: Account): Tx {
     return Tx.contractCall(
       this.contractName,

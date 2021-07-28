@@ -5,6 +5,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (use-trait coreTrait .citycoin-core-trait.citycoin-core)
+(use-trait tokenTrait .citycoin-token-trait.citycoin-token)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ERRORS
@@ -423,7 +424,6 @@
     )
     (asserts! (is-authorized-city) (err ERR_UNAUTHORIZED))
     ;; TODO: allow call via approved job
-    ;; (asserts! (is-eq coreContractAddress targetContractAddress) (err ERR_UNAUTHORIZED))
     (asserts! (is-eq coreContractAddress (var-get activeCoreContract)) (err ERR_UNAUTHORIZED))
     (var-set cityWallet newCityWallet)
     (try! (contract-call? targetContract set-city-wallet newCityWallet))
@@ -434,6 +434,19 @@
 ;; check if contract caller is city wallet
 (define-private (is-authorized-city)
   (is-eq contract-caller (var-get cityWallet))
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; TOKEN MANAGEMENT
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define-public (set-token-uri (targetContract <tokenTrait>) (newUri (optional (string-utf8 256))))
+  (begin
+    (asserts! (is-authorized-city) (err ERR_UNAUTHORIZED))
+    ;; TODO: allow call via approved job
+    (as-contract (try! (contract-call? targetContract set-token-uri newUri)))
+    (ok true)
+  )
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

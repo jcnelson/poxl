@@ -1,6 +1,7 @@
 import { assertEquals, describe, Tx, types } from "../deps.ts";
 import { CoreClient } from "../src/core-client.ts";
 import { AuthClient } from "../src/auth-client.ts";
+import { TokenClient } from "../src/token-client.ts";
 import { it } from "../src/testutil.ts";
 
 describe("[CityCoin Auth]", () => {
@@ -1068,6 +1069,79 @@ describe("[CityCoin Auth]", () => {
           .result.expectOk()
           .expectPrincipal(newCityWallet.address);
       });
+    });
+  });
+
+  //////////////////////////////////////////////////
+  // TOKEN MANAGEMENT
+  //////////////////////////////////////////////////
+  describe("set-token-uri()", () => {
+    it("fails with ERR_UNAUTHORIZED when called by someone who is not city wallet", (chain, accounts, clients) => {
+      // arrange
+      const sender = accounts.get("wallet_2")!;
+      // act
+      const block = chain.mineBlock([
+        clients.auth.setTokenUri(
+          sender,
+          clients.token.getContractAddress(),
+          "http://something-something.com"
+        ),
+      ]);
+      // assert
+      const receipt = block.receipts[0];
+
+      receipt.result
+        .expectErr()
+        .expectUint(AuthClient.ErrCode.ERR_UNAUTHORIZED);
+    });
+    it("fails with ERR_UNAUTHORIZED when called by someone who is not auth contract", (chain, accounts, clients) => {
+      // arrange
+      const sender = accounts.get("wallet_2")!;
+      // act
+      const block = chain.mineBlock([
+        clients.token.setTokenUri(sender, "http://something-something.com"),
+      ]);
+      // assert
+      const receipt = block.receipts[0];
+
+      receipt.result
+        .expectErr()
+        .expectUint(TokenClient.ErrCode.ERR_UNAUTHORIZED);
+    });
+    it("succeeds and changes token uri to none if no new value is provided", (chain, accounts, clients) => {
+      // arrange
+      const sender = accounts.get("city_wallet")!;
+      // act
+      const block = chain.mineBlock([
+        clients.auth.setTokenUri(sender, clients.token.getContractAddress()),
+      ]);
+      // assert
+      const receipt = block.receipts[0];
+
+      receipt.result.expectOk().expectBool(true);
+
+      const result = clients.token.getTokenUri().result;
+      result.expectOk().expectNone();
+    });
+    it("succeeds and changes token uri to new value if provided", (chain, accounts, clients) => {
+      // arrange
+      const sender = accounts.get("city_wallet")!;
+      const newUri = "http://something-something.com";
+      // act
+      const block = chain.mineBlock([
+        clients.auth.setTokenUri(
+          sender,
+          clients.token.getContractAddress(),
+          newUri
+        ),
+      ]);
+      // assert
+      const receipt = block.receipts[0];
+
+      receipt.result.expectOk().expectBool(true);
+
+      const result = clients.token.getTokenUri().result;
+      result.expectOk().expectSome().expectUtf8(newUri);
     });
   });
 });
