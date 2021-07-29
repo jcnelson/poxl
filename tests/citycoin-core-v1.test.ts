@@ -1203,6 +1203,170 @@ describe("[CityCoin Core]", () => {
         );
       });
     });
+
+    describe("is-block-winner()", () => {
+      it("returns false when user is unknown", (chain, accounts, clients) => {
+        // arrange
+        const user = accounts.get("wallet_1")!;
+        const minerBlockHeight = 1;
+
+        // act
+        const result = clients.core.isBlockWinner(
+          user,
+          minerBlockHeight
+        ).result;
+
+        // assert
+        result.expectBool(false);
+      });
+
+      it("returns false when selected block has not been mined by anyone", (chain, accounts, clients) => {
+        // arrange
+        const user = accounts.get("wallet_1")!;
+        const minerBlockHeight = 1;
+        chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
+          clients.core.unsafeSetActivationThreshold(1),
+          clients.core.registerUser(user),
+        ]);
+
+        // act
+        const result = clients.core.isBlockWinner(
+          user,
+          minerBlockHeight
+        ).result;
+
+        // assert
+        result.expectBool(false);
+      });
+
+      it("returns false when user didn't mine selected block", (chain, accounts, clients) => {
+        // arrange
+        const user = accounts.get("wallet_1")!;
+        const user2 = accounts.get("wallet_2")!;
+        const setupBlock = chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
+          clients.core.unsafeSetActivationThreshold(1),
+          clients.core.registerUser(user),
+        ]);
+        const activationBlockHeight =
+          setupBlock.height + CoreClient.ACTIVATION_DELAY - 1;
+
+        chain.mineEmptyBlockUntil(activationBlockHeight);
+
+        const minerBlockHeight = chain.mineBlock([
+          clients.core.mineTokens(200, user2),
+        ]).height;
+
+        // act
+        const result = clients.core.isBlockWinner(
+          user,
+          minerBlockHeight
+        ).result;
+
+        // assert
+        result.expectBool(false);
+      });
+
+      it("returns false when user mined selected block, but block is not mature", (chain, accounts, clients) => {
+        // arrange
+        const user = accounts.get("wallet_1")!;
+        const setupBlock = chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
+          clients.core.unsafeSetActivationThreshold(1),
+          clients.core.registerUser(user),
+        ]);
+        const activationBlockHeight =
+          setupBlock.height + CoreClient.ACTIVATION_DELAY - 1;
+
+        chain.mineEmptyBlockUntil(activationBlockHeight);
+
+        const minerBlockHeight =
+          chain.mineBlock([clients.core.mineTokens(200, user)]).height - 1;
+
+        // act
+        const result = clients.core.isBlockWinner(
+          user,
+          minerBlockHeight
+        ).result;
+
+        // assert
+        result.expectBool(false);
+      });
+
+      it("returns false when user mined selected block, but other user won it", (chain, accounts, clients) => {
+        // arrange
+        const user = accounts.get("wallet_1")!;
+        const user2 = accounts.get("wallet_2")!;
+
+        const setupBlock = chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
+          clients.core.unsafeSetActivationThreshold(1),
+          clients.core.registerUser(user),
+        ]);
+        const activationBlockHeight =
+          setupBlock.height + CoreClient.ACTIVATION_DELAY - 1;
+
+        chain.mineEmptyBlockUntil(activationBlockHeight);
+
+        const minerBlockHeight =
+          chain.mineBlock([
+            clients.core.mineTokens(1, user),
+            clients.core.mineTokens(200000, user2),
+          ]).height - 1;
+
+        chain.mineEmptyBlockUntil(
+          minerBlockHeight + CoreClient.TOKEN_REWARD_MATURITY + 1
+        );
+
+        // act
+        const result = clients.core.isBlockWinner(
+          user,
+          minerBlockHeight
+        ).result;
+
+        // assert
+        result.expectBool(false);
+        clients.core
+          .isBlockWinner(user2, minerBlockHeight)
+          .result.expectBool(true);
+      });
+
+      it("returns true when user mined selected block and won it", (chain, accounts, clients) => {
+        // arrange
+        const user = accounts.get("wallet_1")!;
+        const user2 = accounts.get("wallet_2")!;
+
+        const setupBlock = chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
+          clients.core.unsafeSetActivationThreshold(1),
+          clients.core.registerUser(user),
+        ]);
+        const activationBlockHeight =
+          setupBlock.height + CoreClient.ACTIVATION_DELAY - 1;
+
+        chain.mineEmptyBlockUntil(activationBlockHeight);
+
+        const minerBlockHeight =
+          chain.mineBlock([
+            clients.core.mineTokens(200000, user),
+            clients.core.mineTokens(1, user2),
+          ]).height - 1;
+
+        chain.mineEmptyBlockUntil(
+          minerBlockHeight + CoreClient.TOKEN_REWARD_MATURITY + 1
+        );
+
+        // act
+        const result = clients.core.isBlockWinner(
+          user,
+          minerBlockHeight
+        ).result;
+
+        // assert
+        result.expectBool(true);
+      });
+    });
   });
 
   //////////////////////////////////////////////////

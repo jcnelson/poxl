@@ -157,6 +157,13 @@ export class CoreClient extends Client {
     );
   }
 
+  isBlockWinner(user: Account, minerBlockHeight: number): ReadOnlyFn {
+    return this.callReadOnlyFn("is-block-winner", [
+      types.principal(user.address),
+      types.uint(minerBlockHeight),
+    ]);
+  }
+
   //////////////////////////////////////////////////
   // STACKING CONFIGURATION
   //////////////////////////////////////////////////
