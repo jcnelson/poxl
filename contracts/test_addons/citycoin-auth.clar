@@ -10,7 +10,7 @@
     )
     ;; (asserts! (is-eq contract-caller CONTRACT_OWNER) (err ERR_UNAUTHORIZED))
     (asserts! (not (var-get initialized)) (err ERR_UNAUTHORIZED))
-    (map-set CityCoinCoreContracts
+    (map-set CoreContracts
       coreContractAddress
       {
         state: STATE_DEPLOYED,
