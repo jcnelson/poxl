@@ -1,6 +1,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; CITYCOIN TOKEN CONTRACT
+;; TOKEN CONTRACT
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -14,7 +14,7 @@
 ;; TRAIT DEFINITIONS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; (impl-trait .citycoin-token-trait.citycoin-token)
+(impl-trait .citycoin-token-trait.citycoin-token)
 (use-trait coreTrait .citycoin-core-trait.citycoin-core)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -132,7 +132,7 @@
 
 (define-data-var tokenUri (optional (string-utf8 256)) (some u"https://cdn.citycoins.co/metadata/citycoin.json"))
 
-;; set token URI to new value, only accessible by CityCoin Auth
+;; set token URI to new value, only accessible by Auth
 (define-public (set-token-uri (newUri (optional (string-utf8 256))))
   (begin
     (asserts! (is-authorized-auth) (err ERR_UNAUTHORIZED))
@@ -140,7 +140,7 @@
   )
 )
 
-;; mint new tokens, only accessible by a CityCoin Core contract
+;; mint new tokens, only accessible by a Core contract
 (define-public (mint (amount uint) (recipient principal))
   (let
     (
@@ -150,7 +150,7 @@
   )
 )
 
-;; burn tokens, only accessible by a CityCoin Core contract
+;; burn tokens, only accessible by a Core contract
 (define-public (burn (amount uint) (recipient principal))
   (let
     (
@@ -160,7 +160,7 @@
   )
 )
 
-;; checks if caller is CityCoin Auth contract
+;; checks if caller is Auth contract
 (define-private (is-authorized-auth)
   (is-eq contract-caller .citycoin-auth)
 )
