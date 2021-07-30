@@ -164,6 +164,13 @@ export class CoreClient extends Client {
     ]);
   }
 
+  canClaimMiningReward(user: Account, minerBlockHeight: number): ReadOnlyFn {
+    return this.callReadOnlyFn("can-claim-mining-reward", [
+      types.principal(user.address),
+      types.uint(minerBlockHeight),
+    ]);
+  }
+
   //////////////////////////////////////////////////
   // STACKING CONFIGURATION
   //////////////////////////////////////////////////

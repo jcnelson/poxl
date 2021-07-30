@@ -530,6 +530,23 @@
   )
 )
 
+(define-read-only (can-claim-mining-reward (user principal) (minerBlockHeight uint))
+  (let
+    (
+      (userId (unwrap! (get-user-id user) false))
+      (blockStats (unwrap! (get-mining-stats-at-block minerBlockHeight) false))
+      (minerStats (unwrap! (get-miner-at-block minerBlockHeight userId) false))
+      (maturityHeight (+ (var-get tokenRewardMaturity) minerBlockHeight))
+      (vrfSample (unwrap! (contract-call? .citycoin-vrf get-random-uint-at-block maturityHeight) false))
+      (commitTotal (get-last-high-value-at-block minerBlockHeight))
+      (winningValue (mod vrfSample commitTotal))
+    )
+    (if (and (>= winningValue (get lowValue minerStats)) (<= winningValue (get highValue minerStats)))
+      (not (get rewardClaimed blockStats))
+      false
+    )
+  )
+)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; STACKING CONFIGURATION
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
