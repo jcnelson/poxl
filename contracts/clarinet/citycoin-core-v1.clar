@@ -513,7 +513,15 @@
 )
 
 (define-read-only (is-block-winner (user principal) (minerBlockHeight uint))
-  (let
+  (is-block-winner-and-can-claim user minerBlockHeight false)
+)
+
+(define-read-only (can-claim-mining-reward (user principal) (minerBlockHeight uint))
+  (is-block-winner-and-can-claim user minerBlockHeight true)
+)
+
+(define-private (is-block-winner-and-can-claim (user principal) (minerBlockHeight uint) (testCanClaim bool))
+(let
     (
       (userId (unwrap! (get-user-id user) false))
       (blockStats (unwrap! (get-mining-stats-at-block minerBlockHeight) false))
@@ -524,12 +532,14 @@
       (winningValue (mod vrfSample commitTotal))
     )
     (if (and (>= winningValue (get lowValue minerStats)) (<= winningValue (get highValue minerStats)))
-      true
+      (if testCanClaim
+        (not (get rewardClaimed blockStats))
+        true
+      )
       false
     )
   )
 )
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; STACKING CONFIGURATION
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
