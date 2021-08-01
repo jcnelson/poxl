@@ -1299,4 +1299,52 @@ describe("[CityCoin Auth]", () => {
       });
     });
   });
+
+  describe("APPROVERS MANAGEMENT", () => {
+    describe("execute-replace-approver-job()", () => {
+      it("successfully replace one approver with another one", (chain, accounts, clients) => {
+        const jobId = 1;
+        const approver1 = accounts.get("wallet_1")!;
+        const approver2 = accounts.get("wallet_2")!;
+        const approver3 = accounts.get("wallet_3")!;
+        const approver4 = accounts.get("wallet_4")!;
+        const newApprover = accounts.get("wallet_7")!;
+
+        clients.auth.isApprover(newApprover).result.expectBool(false);
+        chain.mineBlock([
+          clients.auth.createJob(
+            "replace approver1",
+            clients.auth.getContractAddress(),
+            approver1
+          ),
+          clients.auth.addPrincipalArgument(
+            jobId,
+            "oldApprover",
+            approver1.address,
+            approver1
+          ),
+          clients.auth.addPrincipalArgument(
+            jobId,
+            "newApprover",
+            newApprover.address,
+            approver1
+          ),
+          clients.auth.activateJob(jobId, approver1),
+          clients.auth.approveJob(jobId, approver1),
+          clients.auth.approveJob(jobId, approver2),
+          clients.auth.approveJob(jobId, approver3),
+          clients.auth.approveJob(jobId, approver4),
+        ]);
+
+        const receipt = chain.mineBlock([
+          clients.auth.executeReplaceApproverJob(jobId, approver1),
+        ]).receipts[0];
+
+        receipt.result.expectOk().expectBool(true);
+
+        clients.auth.isApprover(approver1).result.expectBool(false);
+        clients.auth.isApprover(newApprover).result.expectBool(true);
+      });
+    });
+  });
 });

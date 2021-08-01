@@ -51,7 +51,7 @@ export class AuthClient extends Client {
     );
   }
 
-  approveJob(jobId: number, approver: Account) {
+  approveJob(jobId: number, approver: Account): Tx {
     return Tx.contractCall(
       this.contractName,
       "approve-job",
@@ -236,6 +236,19 @@ export class AuthClient extends Client {
       this.contractName,
       "execute-set-city-wallet-job",
       [types.uint(jobId), types.principal(targetContract)],
+      sender.address
+    );
+  }
+
+  isApprover(user: Account) {
+    return this.callReadOnlyFn("is-approver", [types.principal(user.address)]);
+  }
+
+  executeReplaceApproverJob(jobId: number, sender: Account): Tx {
+    return Tx.contractCall(
+      this.contractName,
+      "execute-replace-approver-job",
+      [types.uint(jobId)],
       sender.address
     );
   }
