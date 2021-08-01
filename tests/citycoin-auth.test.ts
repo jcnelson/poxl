@@ -94,6 +94,7 @@ describe("[CityCoin Auth]", () => {
           name: types.ascii(name),
           target: target,
           approvals: types.uint(0),
+          disapprovals: types.uint(0),
           isActive: types.bool(false),
           isExecuted: types.bool(false),
         };
@@ -183,6 +184,7 @@ describe("[CityCoin Auth]", () => {
           name: types.ascii(name),
           target: target,
           approvals: types.uint(0),
+          disapprovals: types.uint(0),
           isActive: types.bool(true),
           isExecuted: types.bool(false),
         };
@@ -233,7 +235,7 @@ describe("[CityCoin Auth]", () => {
           .expectUint(AuthClient.ErrCode.ERR_JOB_IS_NOT_ACTIVE);
       });
 
-      it("throws ERR_ALREADY_APPROVED while approving job previously approved", (chain, accounts, clients) => {
+      it("throws ERR_ALREADY_VOTED_THIS_WAY while approving job previously approved", (chain, accounts, clients) => {
         // arrange
         const name = "job-123456";
         const target = clients.core.getContractAddress();
@@ -254,7 +256,7 @@ describe("[CityCoin Auth]", () => {
         // assert
         block.receipts[0].result
           .expectErr()
-          .expectUint(AuthClient.ErrCode.ERR_ALREADY_APPROVED);
+          .expectUint(AuthClient.ErrCode.ERR_ALREADY_VOTED_THIS_WAY);
       });
 
       it("throws ERR_UNAUTHORIZED while approving job by user who is not approver", (chain, accounts, clients) => {
@@ -308,6 +310,7 @@ describe("[CityCoin Auth]", () => {
           name: types.ascii(name),
           target: target,
           approvals: types.uint(2),
+          disapprovals: types.uint(0),
           isActive: types.bool(true),
           isExecuted: types.bool(false),
         };
@@ -511,6 +514,7 @@ describe("[CityCoin Auth]", () => {
           name: types.ascii(name),
           target: target,
           approvals: types.uint(AuthClient.REQUIRED_APPROVALS),
+          disapprovals: types.uint(0),
           isActive: types.bool(true),
           isExecuted: types.bool(true),
         };

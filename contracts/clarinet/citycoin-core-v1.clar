@@ -521,7 +521,7 @@
 )
 
 (define-private (is-block-winner-and-can-claim (user principal) (minerBlockHeight uint) (testCanClaim bool))
-(let
+  (let
     (
       (userId (unwrap! (get-user-id user) false))
       (blockStats (unwrap! (get-mining-stats-at-block minerBlockHeight) false))
@@ -532,10 +532,7 @@
       (winningValue (mod vrfSample commitTotal))
     )
     (if (and (>= winningValue (get lowValue minerStats)) (<= winningValue (get highValue minerStats)))
-      (if testCanClaim
-        (not (get rewardClaimed blockStats))
-        true
-      )
+      (if testCanClaim (not (get rewardClaimed blockStats)) true)
       false
     )
   )

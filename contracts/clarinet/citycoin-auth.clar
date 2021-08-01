@@ -15,7 +15,7 @@
 (define-constant ERR_UNAUTHORIZED u6001)
 (define-constant ERR_JOB_IS_ACTIVE u6002)
 (define-constant ERR_JOB_IS_NOT_ACTIVE u6003)
-(define-constant ERR_ALREADY_APPROVED u6004)
+(define-constant ERR_ALREADY_VOTED_THIS_WAY u6004)
 (define-constant ERR_JOB_IS_EXECUTED u6005)
 (define-constant ERR_JOB_IS_NOT_APPROVED u6006)
 (define-constant ERR_ARGUMENT_ALREADY_EXISTS u6007)
@@ -38,6 +38,7 @@
     name: (string-ascii 255),
     target: principal,
     approvals: uint,
+    disapprovals: uint,
     isActive: bool,
     isExecuted: bool
   }
@@ -96,6 +97,7 @@
         name: name,
         target: target,
         approvals: u0,
+        disapprovals: u0,
         isActive: false,
         isExecuted: false
       }
@@ -128,19 +130,34 @@
   (let
     (
       (job (unwrap! (get-job jobId) (err ERR_UNKNOWN_JOB)))
+      (previousVote (map-get? JobApprovers { jobId: jobId, approver: tx-sender }))
     )
     (asserts! (get isActive job) (err ERR_JOB_IS_NOT_ACTIVE))
-    (asserts! (not (has-approved jobId tx-sender)) (err ERR_ALREADY_APPROVED))
     (asserts! (is-approver tx-sender) (err ERR_UNAUTHORIZED))
+    ;; save vote
     (map-set JobApprovers
       { jobId: jobId, approver: tx-sender }
       true
     )
-    (map-set Jobs
-      jobId
-      (merge job { approvals: (+ (get approvals job) u1) })
-    )
-    
+    (match previousVote 
+      approved
+      (begin
+        (asserts! (not approved) (err ERR_ALREADY_VOTED_THIS_WAY))
+        (map-set Jobs jobId
+          (merge job 
+            {
+              approvals: (+ (get approvals job) u1),
+              disapprovals: (- (get disapprovals job) u1)
+            }
+          )
+        )
+      )
+      ;; no previous vote
+      (map-set Jobs
+        jobId
+        (merge job { approvals: (+ (get approvals job) u1) } )
+      )
+    )  
     (ok true)
   )
 )
