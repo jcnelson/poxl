@@ -1559,6 +1559,70 @@ describe("[CityCoin Auth]", () => {
         clients.auth.isApprover(approver1).result.expectBool(false);
         clients.auth.isApprover(newApprover).result.expectBool(true);
       });
+
+      it("replaced approver is not allowed to create nor approve jobs", (chain, accounts, clients) => {
+        const replaceApproverJobId = 1;
+        const anotherJobId = 2;
+        const oldApprover = accounts.get("wallet_1")!;
+        const approver2 = accounts.get("wallet_2")!;
+        const approver3 = accounts.get("wallet_3")!;
+        const approver4 = accounts.get("wallet_4")!;
+        const newApprover = accounts.get("wallet_7")!;
+
+        clients.auth.isApprover(newApprover).result.expectBool(false);
+        chain.mineBlock([
+          clients.auth.createJob(
+            "replace oldApprover",
+            clients.auth.getContractAddress(),
+            approver2
+          ),
+          clients.auth.addPrincipalArgument(
+            replaceApproverJobId,
+            "oldApprover",
+            oldApprover.address,
+            approver2
+          ),
+          clients.auth.addPrincipalArgument(
+            replaceApproverJobId,
+            "newApprover",
+            newApprover.address,
+            approver2
+          ),
+          clients.auth.activateJob(replaceApproverJobId, approver2),
+          clients.auth.approveJob(replaceApproverJobId, oldApprover),
+          clients.auth.approveJob(replaceApproverJobId, approver2),
+          clients.auth.approveJob(replaceApproverJobId, approver3),
+          clients.auth.approveJob(replaceApproverJobId, approver4),
+          clients.auth.executeReplaceApproverJob(
+            replaceApproverJobId,
+            oldApprover
+          ),
+          clients.auth.createJob(
+            "new job",
+            clients.auth.getContractAddress(),
+            approver2
+          ),
+          clients.auth.activateJob(anotherJobId, approver2),
+        ]);
+
+        // act
+        const receipts = chain.mineBlock([
+          clients.auth.createJob(
+            "test job",
+            clients.auth.getContractAddress(),
+            oldApprover
+          ),
+          clients.auth.approveJob(anotherJobId, oldApprover),
+        ]).receipts;
+
+        // assert
+        receipts[0].result
+          .expectErr()
+          .expectUint(AuthClient.ErrCode.ERR_UNAUTHORIZED);
+        receipts[1].result
+          .expectErr()
+          .expectUint(AuthClient.ErrCode.ERR_UNAUTHORIZED);
+      });
     });
   });
 });
