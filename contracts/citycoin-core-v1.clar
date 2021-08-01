@@ -1,6 +1,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; CITYCOIN CORE CONTRACT
+;; CORE CONTRACT
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -861,7 +861,7 @@
     (asserts! (>= minerBlockHeight (var-get activationBlock)) u0)
     ;; if contract is active, return based on issuance schedule
     ;; halvings occur every 210,000 blocks for 1,050,000 Stacks blocks
-    ;; then mining continues indefinitely with 3,125 CityCoins as the reward
+    ;; then mining continues indefinitely with 3,125 tokens as the reward
     (asserts! (> minerBlockHeight (var-get coinbaseThreshold1))
       (if (<= (- minerBlockHeight (var-get activationBlock)) u10000)
         ;; bonus reward first 10,000 blocks
@@ -917,7 +917,7 @@
   (is-eq contract-caller CONTRACT_OWNER)
 )
 
-;; checks if caller is CityCoin Auth contract
+;; checks if caller is Auth contract
 (define-private (is-authorized-auth)
   (is-eq contract-caller .citycoin-auth)
 )
