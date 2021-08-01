@@ -162,6 +162,42 @@
   )
 )
 
+(define-public (disapprove-job (jobId uint))
+  (let
+    (
+      (job (unwrap! (get-job jobId) (err ERR_UNKNOWN_JOB)))
+      (previousVote (map-get? JobApprovers { jobId: jobId, approver: tx-sender }))
+    )
+    (asserts! (get isActive job) (err ERR_JOB_IS_NOT_ACTIVE))
+    (asserts! (is-approver tx-sender) (err ERR_UNAUTHORIZED))
+    ;; save vote
+    (map-set JobApprovers
+      { jobId: jobId, approver: tx-sender }
+      false
+    )
+    (match previousVote 
+      approved
+      (begin
+        (asserts! approved (err ERR_ALREADY_VOTED_THIS_WAY))
+        (map-set Jobs jobId
+          (merge job 
+            {
+              approvals: (- (get approvals job) u1),
+              disapprovals: (+ (get disapprovals job) u1)
+            }
+          )
+        )
+      )
+      ;; no previous vote
+      (map-set Jobs
+        jobId
+        (merge job { disapprovals: (+ (get disapprovals job) u1) } )
+      )
+    )
+    (ok true)
+  )
+)
+
 (define-read-only (is-job-approved (jobId uint))
   (match (get-job jobId) job
     (>= (get approvals job) REQUIRED_APPROVALS)

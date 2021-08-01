@@ -60,6 +60,15 @@ export class AuthClient extends Client {
     );
   }
 
+  disapproveJob(jobId: number, approver: Account) {
+    return Tx.contractCall(
+      this.contractName,
+      "disapprove-job",
+      [types.uint(jobId)],
+      approver.address
+    );
+  }
+
   isJobApproved(jobId: number) {
     return this.callReadOnlyFn("is-job-approved", [types.uint(jobId)]);
   }

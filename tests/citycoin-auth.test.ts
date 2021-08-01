@@ -324,6 +324,132 @@ describe("[CityCoin Auth]", () => {
       });
     });
 
+    describe("disapprove-job()", () => {
+      it("throws ERR_UNKNOWN_JOB while disapproving unknown job", (chain, accounts, clients) => {
+        // arrange
+        const approver = accounts.get("wallet_2")!;
+        const jobId = 399;
+
+        // act
+        const block = chain.mineBlock([
+          clients.auth.disapproveJob(jobId, approver),
+        ]);
+
+        // assert
+        block.receipts[0].result
+          .expectErr()
+          .expectUint(AuthClient.ErrCode.ERR_UNKNOWN_JOB);
+      });
+
+      it("throws ERR_JOB_IS_NOT_ACTIVE while disapproving not active job", (chain, accounts, clients) => {
+        // arrange
+        const name = "job-123456";
+        const target = clients.core.getContractAddress();
+        const creator = accounts.get("wallet_1")!;
+        const approver = accounts.get("wallet_2")!;
+        const jobId = 1;
+        chain.mineBlock([clients.auth.createJob(name, target, creator)]);
+
+        // act
+        const block = chain.mineBlock([
+          clients.auth.disapproveJob(jobId, approver),
+        ]);
+
+        // assert
+        block.receipts[0].result
+          .expectErr()
+          .expectUint(AuthClient.ErrCode.ERR_JOB_IS_NOT_ACTIVE);
+      });
+
+      it("throws ERR_ALREADY_VOTED_THIS_WAY while disapproving job previously disapproved", (chain, accounts, clients) => {
+        // arrange
+        const name = "job-123456";
+        const target = clients.core.getContractAddress();
+        const creator = accounts.get("wallet_1")!;
+        const approver = accounts.get("wallet_2")!;
+        const jobId = 1;
+        chain.mineBlock([
+          clients.auth.createJob(name, target, creator),
+          clients.auth.activateJob(jobId, creator),
+          clients.auth.disapproveJob(jobId, approver),
+        ]);
+
+        // act
+        const block = chain.mineBlock([
+          clients.auth.disapproveJob(jobId, approver),
+        ]);
+
+        // assert
+        block.receipts[0].result
+          .expectErr()
+          .expectUint(AuthClient.ErrCode.ERR_ALREADY_VOTED_THIS_WAY);
+      });
+
+      it("throws ERR_UNAUTHORIZED while disapproving job by user who is not approver", (chain, accounts, clients) => {
+        // arrange
+        const name = "job-123456";
+        const target = clients.core.getContractAddress();
+        const creator = accounts.get("wallet_1")!;
+        const approver = accounts.get("wallet_8")!;
+        const jobId = 1;
+        chain.mineBlock([
+          clients.auth.createJob(name, target, creator),
+          clients.auth.activateJob(jobId, creator),
+        ]);
+
+        // act
+        const block = chain.mineBlock([
+          clients.auth.disapproveJob(jobId, approver),
+        ]);
+
+        // assert
+        block.receipts[0].result
+          .expectErr()
+          .expectUint(AuthClient.ErrCode.ERR_UNAUTHORIZED);
+      });
+
+      it("successfully saves disapprovals", (chain, accounts, clients) => {
+        // arrange
+        const name = "job-123456";
+        const target = clients.core.getContractAddress();
+        const creator = accounts.get("wallet_1")!;
+        const approver1 = accounts.get("wallet_2")!;
+        const approver2 = accounts.get("wallet_3")!;
+        const jobId = 1;
+        chain.mineBlock([
+          clients.auth.createJob(name, target, creator),
+          clients.auth.activateJob(jobId, creator),
+        ]);
+
+        // act
+        const block = chain.mineBlock([
+          clients.auth.disapproveJob(jobId, approver1),
+          clients.auth.disapproveJob(jobId, approver2),
+        ]);
+
+        // assert
+        block.receipts[0].result.expectOk().expectBool(true);
+        block.receipts[1].result.expectOk().expectBool(true);
+
+        const expectedJob = {
+          creator: creator.address,
+          name: types.ascii(name),
+          target: target,
+          approvals: types.uint(0),
+          disapprovals: types.uint(2),
+          isActive: types.bool(true),
+          isExecuted: types.bool(false),
+        };
+
+        const actualJob = clients.auth
+          .getJob(jobId)
+          .result.expectSome()
+          .expectTuple();
+
+        assertEquals(actualJob, expectedJob);
+      });
+    });
+
     describe("is-job-approved()", () => {
       it("returns false when asked about unknown job", (chain, accounts, clients) => {
         // arrange
