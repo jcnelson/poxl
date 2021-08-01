@@ -139,8 +139,7 @@
       { jobId: jobId, approver: tx-sender }
       true
     )
-    (match previousVote 
-      approved
+    (match previousVote approved
       (begin
         (asserts! (not approved) (err ERR_ALREADY_VOTED_THIS_WAY))
         (map-set Jobs jobId
@@ -175,8 +174,7 @@
       { jobId: jobId, approver: tx-sender }
       false
     )
-    (match previousVote 
-      approved
+    (match previousVote approved
       (begin
         (asserts! approved (err ERR_ALREADY_VOTED_THIS_WAY))
         (map-set Jobs jobId
