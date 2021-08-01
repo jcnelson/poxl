@@ -12,7 +12,7 @@ enum ErrCode {
   ERR_UNAUTHORIZED,
   ERR_JOB_IS_ACTIVE,
   ERR_JOB_IS_NOT_ACTIVE,
-  ERR_ALREADY_APPROVED,
+  ERR_ALREADY_VOTED_THIS_WAY,
   ERR_JOB_IS_EXECUTED,
   ERR_JOB_IS_NOT_APPROVED,
   ERR_ARGUMENT_ALREADY_EXISTS,
@@ -55,6 +55,15 @@ export class AuthClient extends Client {
     return Tx.contractCall(
       this.contractName,
       "approve-job",
+      [types.uint(jobId)],
+      approver.address
+    );
+  }
+
+  disapproveJob(jobId: number, approver: Account) {
+    return Tx.contractCall(
+      this.contractName,
+      "disapprove-job",
       [types.uint(jobId)],
       approver.address
     );
