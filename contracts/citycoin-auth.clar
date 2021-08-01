@@ -300,11 +300,7 @@
   (get value (get-principal-argument-by-id jobId argumentId))
 )
 
-;; PRIVATE FUNCIONS
-(define-private (has-approved (jobId uint) (approver principal))
-  (default-to false (map-get? JobApprovers { jobId: jobId, approver: approver }))
-)
-
+;; PRIVATE FUNCTIONS
 (define-private (is-approver (user principal))
   (default-to false (map-get? Approvers user))
 )
