@@ -299,7 +299,7 @@
 )
 
 ;; PRIVATE FUNCTIONS
-(define-private (is-approver (user principal))
+(define-read-only  (is-approver (user principal))
   (default-to false (map-get? Approvers user))
 )
 
@@ -544,6 +544,23 @@
     (ok true)
   )
 )
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; APPROVERS MANAGEMENT
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(define-public (execute-replace-approver-job (jobId uint))
+  (let
+    (
+      (oldApprover (unwrap! (get-principal-value-by-name jobId "oldApprover") (err ERR_UNKNOWN_ARGUMENT)))
+      (newApprover (unwrap! (get-principal-value-by-name jobId "newApprover") (err ERR_UNKNOWN_ARGUMENT)))
+    )
+    (asserts! (is-approver contract-caller) (err ERR_UNAUTHORIZED))
+    (map-set Approvers oldApprover false)
+    (map-set Approvers newApprover true)
+    (as-contract (mark-job-as-executed jobId))
+  )
+)
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CONTRACT INITIALIZATION
