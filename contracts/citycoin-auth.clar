@@ -393,6 +393,10 @@
   )
 )
 
+(define-read-only (is-initialized)
+  (var-get initialized)
+)
+
 ;; function to activate core contract through registration
 ;; - check that target is in core contract map
 ;; - check that caller is core contract
@@ -426,7 +430,6 @@
     )
     (asserts! (not (is-eq oldContractAddress newContractAddress)) (err ERR_UNAUTHORIZED))
     (asserts! (is-authorized-city) (err ERR_UNAUTHORIZED))
-    ;; TODO: allow call via approved job
     (map-set CoreContracts
       oldContractAddress
       {
@@ -499,7 +502,6 @@
       (coreContract (unwrap! (map-get? CoreContracts coreContractAddress) (err ERR_CORE_CONTRACT_NOT_FOUND)))
     )
     (asserts! (is-authorized-city) (err ERR_UNAUTHORIZED))
-    ;; TODO: allow call via approved job
     (asserts! (is-eq coreContractAddress (var-get activeCoreContract)) (err ERR_UNAUTHORIZED))
     (var-set cityWallet newCityWallet)
     (try! (contract-call? targetContract set-city-wallet newCityWallet))
@@ -532,7 +534,6 @@
 (define-public (set-token-uri (targetContract <tokenTrait>) (newUri (optional (string-utf8 256))))
   (begin
     (asserts! (is-authorized-city) (err ERR_UNAUTHORIZED))
-    ;; TODO: allow call via approved job
     (as-contract (try! (contract-call? targetContract set-token-uri newUri)))
     (ok true)
   )

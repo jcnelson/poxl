@@ -31,7 +31,7 @@
 
 ;; CITY WALLET MANAGEMENT
 
-;; initial value for city wallet, set to this contract until updated
+;; initial value for city wallet, set to this contract until initialized
 (define-data-var cityWallet principal .citycoin-core-v1)
 
 ;; returns set city wallet principal
@@ -131,7 +131,10 @@
     (
       (newId (+ u1 (var-get usersNonce)))
       (threshold (var-get activationThreshold))
+      (initialized (contract-call? .citycoin-auth is-initialized))
     )
+
+    (asserts! initialized (err ERR_UNAUTHORIZED))
 
     (asserts! (is-none (map-get? UserIds tx-sender))
       (err ERR_USER_ALREADY_REGISTERED))
