@@ -74,14 +74,18 @@
 ;; once activated, thresholds cannot be updated again
 (define-data-var tokenActivated bool false)
 
+;; core contract states
+(define-constant STATE_DEPLOYED u0)
+(define-constant STATE_ACTIVE u1)
+(define-constant STATE_INACTIVE u2)
+
 ;; one-time function to activate the token
 (define-public (activate-token (coreContract principal) (stacksHeight uint))
   (let
     (
       (coreContractMap (try! (contract-call? .citycoin-auth get-core-contract-info coreContract)))
-      (statusActive u1)
     )
-    (asserts! (is-eq (get state coreContractMap) statusActive) (err ERR_UNAUTHORIZED))
+    (asserts! (is-eq (get state coreContractMap) STATE_ACTIVE) (err ERR_UNAUTHORIZED))
     (asserts! (not (var-get tokenActivated)) (err ERR_TOKEN_ALREADY_ACTIVATED))
     (var-set tokenActivated true)
     (var-set coinbaseThreshold1 (+ stacksHeight TOKEN_HALVING_BLOCKS))
