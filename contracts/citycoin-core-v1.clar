@@ -1,19 +1,11 @@
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; CORE CONTRACT
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; CITYCOINS CORE CONTRACT
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; GENERAL CONFIGURATION
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (impl-trait .citycoin-core-trait.citycoin-core)
 (define-constant CONTRACT_OWNER tx-sender)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ERROR CODES
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define-constant ERR_UNAUTHORIZED u1000)
 (define-constant ERR_USER_ALREADY_REGISTERED u1001)
@@ -37,11 +29,9 @@
 (define-constant ERR_UNABLE_TO_FIND_CITY_WALLET u1019)
 (define-constant ERR_CLAIM_IN_WRONG_CONTRACT u1020)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CITY WALLET MANAGEMENT
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; initial value for city wallet, set to this contract until updated
+;; initial value for city wallet, set to this contract until initialized
 (define-data-var cityWallet principal .citycoin-core-v1)
 
 ;; returns set city wallet principal
@@ -57,9 +47,7 @@
   )
 )
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; REGISTRATION
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define-data-var activationBlock uint u340282366920938463463374607431768211455)
 (define-data-var activationDelay uint u150)
@@ -143,7 +131,10 @@
     (
       (newId (+ u1 (var-get usersNonce)))
       (threshold (var-get activationThreshold))
+      (initialized (contract-call? .citycoin-auth is-initialized))
     )
+
+    (asserts! initialized (err ERR_UNAUTHORIZED))
 
     (asserts! (is-none (map-get? UserIds tx-sender))
       (err ERR_USER_ALREADY_REGISTERED))
@@ -175,9 +166,7 @@
   )
 )
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MINING CONFIGURATION
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; define split to custodied wallet address for the city
 (define-constant SPLIT_CITY_PCT u30)
@@ -284,9 +273,8 @@
 (define-read-only (get-block-winner-id (stacksHeight uint))
   (map-get? BlockWinnerIds stacksHeight)
 )
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ;; MINING ACTIONS
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define-public (mine-tokens (amountUstx uint) (memo (optional (buff 34))))
   (let
@@ -440,9 +428,7 @@
   )
 )
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MINING REWARD CLAIM ACTIONS
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; calls function to claim mining reward in active logic contract
 (define-public (claim-mining-reward (minerBlockHeight uint))
@@ -538,9 +524,8 @@
     )
   )
 )
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ;; STACKING CONFIGURATION
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define-constant MAX_REWARD_CYCLES u32)
 (define-constant REWARD_CYCLE_INDEXES (list u0 u1 u2 u3 u4 u5 u6 u7 u8 u9 u10 u11 u12 u13 u14 u15 u16 u17 u18 u19 u20 u21 u22 u23 u24 u25 u26 u27 u28 u29 u30 u31))
@@ -656,9 +641,7 @@
   )
 )
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; STACKING ACTIONS
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define-public (stack-tokens (amountTokens uint) (lockPeriod uint))
   (let
@@ -762,9 +745,7 @@
   )
 )
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; STACKING REWARD CLAIMS
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; calls function to claim stacking reward in active logic contract
 (define-public (claim-stacking-reward (targetCycle uint))
@@ -813,9 +794,7 @@
   )
 )
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TOKEN CONFIGURATION
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; store block height at each halving, set by register-user in core contract
 (define-data-var coinbaseThreshold1 uint u0)
@@ -886,9 +865,7 @@
   (as-contract (contract-call? .citycoin-token mint (get-coinbase-amount stacksHeight) recipient))
 )
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UTILITIES
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define-data-var shutdownHeight uint u0)
 (define-data-var isShutdown bool false)

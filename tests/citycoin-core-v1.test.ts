@@ -106,7 +106,10 @@ describe("[CityCoin Core]", () => {
       it("succeeds and returns u1 if one user is registered", (chain, accounts, clients) => {
         // arrange
         const user = accounts.get("wallet_5")!;
-        chain.mineBlock([clients.core.registerUser(user)]);
+        chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
+          clients.core.registerUser(user)
+        ]);
         // act
         const result = clients.core.getRegisteredUsersNonce().result;
         // assert
@@ -114,12 +117,24 @@ describe("[CityCoin Core]", () => {
       });
     });
     describe("register-user()", () => {
+      it("throws ERR_UNAUTHORIZED if contracts are not initialized", (chain, accounts, clients) => {
+        // arrange
+        const user = accounts.get("wallet_4")!;
+
+        // act
+        const receipt = chain.mineBlock([clients.core.registerUser(user)])
+          .receipts[0];
+
+        // assert
+        receipt.result.expectErr().expectUint(CoreClient.ErrCode.ERR_UNAUTHORIZED);
+      })
       it("successfully register new user and emits print event with memo when supplied", (chain, accounts, clients) => {
         // arrange
         const user = accounts.get("wallet_5")!;
         const memo = "hello world";
 
         // act
+        chain.mineBlock([clients.core.testInitializeCore(clients.core.getContractAddress())])
         const receipt = chain.mineBlock([clients.core.registerUser(user, memo)])
           .receipts[0];
 
@@ -146,6 +161,7 @@ describe("[CityCoin Core]", () => {
         const user = accounts.get("wallet_4")!;
 
         // act
+        chain.mineBlock([clients.core.testInitializeCore(clients.core.getContractAddress())])
         const receipt = chain.mineBlock([clients.core.registerUser(user)])
           .receipts[0];
 
@@ -160,7 +176,10 @@ describe("[CityCoin Core]", () => {
         // arrange
         const user = accounts.get("wallet_4")!;
         const registerUserTx = clients.core.registerUser(user);
-        chain.mineBlock([registerUserTx]);
+        chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
+          registerUserTx
+        ]);
 
         // act
         const receipt = chain.mineBlock([registerUserTx]).receipts[0];
@@ -843,7 +862,11 @@ describe("[CityCoin Core]", () => {
       it("throws ERR_NO_MINERS_AT_BLOCK when called with block-height at which nobody decided to mine", (chain, accounts, clients) => {
         // arrange
         const miner = accounts.get("wallet_2")!;
-        chain.mineBlock([clients.core.registerUser(miner)]);
+        chain.mineBlock([])
+        chain.mineBlock([
+          clients.core.testInitializeCore(clients.core.getContractAddress()),
+          clients.core.registerUser(miner)
+        ]);
 
         // act
         const receipt = chain.mineBlock([

@@ -1,15 +1,13 @@
+;; CITYCOIN AUTH CONTRACT
+
 (define-constant CONTRACT_OWNER tx-sender)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TRAIT DEFINITIONS
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (use-trait coreTrait .citycoin-core-trait.citycoin-core)
 (use-trait tokenTrait .citycoin-token-trait.citycoin-token)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ERRORS
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define-constant ERR_UNKNOWN_JOB u6000)
 (define-constant ERR_UNAUTHORIZED u6001)
@@ -23,16 +21,14 @@
 (define-constant ERR_CORE_CONTRACT_NOT_FOUND u6009)
 (define-constant ERR_UNKNOWN_ARGUMENT u6010)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; JOB MANAGEMENT
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define-constant REQUIRED_APPROVALS u3)
 
 (define-data-var lastJobId uint u0)
 
 (define-map Jobs
-  uint ;; jobId
+  uint
   {
     creator: principal,
     name: (string-ascii 255),
@@ -80,6 +76,7 @@
 )
 
 ;; FUNCTIONS
+
 (define-read-only (get-last-job-id)
   (var-get lastJobId)
 )
@@ -299,6 +296,7 @@
 )
 
 ;; PRIVATE FUNCTIONS
+
 (define-read-only  (is-approver (user principal))
   (default-to false (map-get? Approvers user))
 )
@@ -328,9 +326,7 @@
   )
 )
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CONTRACT MANAGEMENT
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; initial value for active core contract
 ;; set to deployer address at startup to prevent
@@ -397,6 +393,10 @@
   )
 )
 
+(define-read-only (is-initialized)
+  (var-get initialized)
+)
+
 ;; function to activate core contract through registration
 ;; - check that target is in core contract map
 ;; - check that caller is core contract
@@ -420,6 +420,7 @@
   )
 )
 
+;; protected function to update core contract
 (define-public (upgrade-core-contract (oldContract <coreTrait>) (newContract <coreTrait>))
   (let
     (
@@ -429,7 +430,6 @@
     )
     (asserts! (not (is-eq oldContractAddress newContractAddress)) (err ERR_UNAUTHORIZED))
     (asserts! (is-authorized-city) (err ERR_UNAUTHORIZED))
-    ;; TODO: allow call via approved job
     (map-set CoreContracts
       oldContractAddress
       {
@@ -484,9 +484,7 @@
   )
 )
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CITY WALLET MANAGEMENT
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; initial value for city wallet
 (define-data-var cityWallet principal 'STFCVYY1RJDNJHST7RRTPACYHVJQDJ7R1DWTQHQA)
@@ -504,7 +502,6 @@
       (coreContract (unwrap! (map-get? CoreContracts coreContractAddress) (err ERR_CORE_CONTRACT_NOT_FOUND)))
     )
     (asserts! (is-authorized-city) (err ERR_UNAUTHORIZED))
-    ;; TODO: allow call via approved job
     (asserts! (is-eq coreContractAddress (var-get activeCoreContract)) (err ERR_UNAUTHORIZED))
     (var-set cityWallet newCityWallet)
     (try! (contract-call? targetContract set-city-wallet newCityWallet))
@@ -532,22 +529,18 @@
   (is-eq contract-caller (var-get cityWallet))
 )
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TOKEN MANAGEMENT
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define-public (set-token-uri (targetContract <tokenTrait>) (newUri (optional (string-utf8 256))))
   (begin
     (asserts! (is-authorized-city) (err ERR_UNAUTHORIZED))
-    ;; TODO: allow call via approved job
     (as-contract (try! (contract-call? targetContract set-token-uri newUri)))
     (ok true)
   )
 )
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; APPROVERS MANAGEMENT
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (define-public (execute-replace-approver-job (jobId uint))
   (let
     (
@@ -561,10 +554,7 @@
   )
 )
 
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CONTRACT INITIALIZATION
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (map-insert Approvers 'ST1J4G6RR643BCG8G8SR6M2D9Z9KXT2NJDRK3FBTK true)
 (map-insert Approvers 'ST20ATRN26N9P05V2F1RHFRV24X8C8M3W54E427B2 true)
