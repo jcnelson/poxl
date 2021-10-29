@@ -1,4 +1,4 @@
-import { describe, assertEquals, types, Account } from "../deps.ts";
+import { describe, assertEquals, types, Account, run } from "../deps.ts";
 import { it } from "../src/testutil.ts";
 import { TokenClient, SendManyRecord } from "../src/token-client.ts";
 
@@ -541,3 +541,5 @@ Array.prototype.expectPrintEvent = function (
   }
   throw new Error(`Unable to retrieve expected PrintEvent`);
 };
+
+run();

@@ -13,7 +13,12 @@ export {
 export { assertEquals } from "https://deno.land/std@0.93.0/testing/asserts.ts";
 
 export {
-  beforeEach,
   describe,
   it,
-} from "https://deno.land/x/test_suite@v0.7.0/mod.ts";
+  beforeAll,
+  beforeEach,
+  afterAll,
+  afterEach,
+  test,
+  run,
+} from "https://deno.land/x/dspec@v0.2.0/mod.ts";

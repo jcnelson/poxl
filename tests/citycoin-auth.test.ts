@@ -1,4 +1,4 @@
-import { assertEquals, describe, Tx, types } from "../deps.ts";
+import { assertEquals, describe, Tx, types, run } from "../deps.ts";
 import { CoreClient } from "../src/core-client.ts";
 import { AuthClient } from "../src/auth-client.ts";
 import { TokenClient } from "../src/token-client.ts";
@@ -1626,3 +1626,5 @@ describe("[CityCoin Auth]", () => {
     });
   });
 });
+
+run();

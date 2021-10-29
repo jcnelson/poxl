@@ -1,4 +1,4 @@
-import { assertEquals, describe, Tx, TxReceipt, types } from "../deps.ts";
+import { assertEquals, describe, Tx, TxReceipt, types, run } from "../deps.ts";
 import { CoreClient } from "../src/core-client.ts";
 import { it } from "../src/testutil.ts";
 
@@ -2331,3 +2331,5 @@ describe("[CityCoin Core]", () => {
 
   // describe("UTILITIES", () => {});
 });
+
+run();

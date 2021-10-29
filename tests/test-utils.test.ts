@@ -1,4 +1,4 @@
-import { assertEquals, describe, Tx, types } from "../deps.ts";
+import { assertEquals, describe, Tx, types, run } from "../deps.ts";
 import { TestUtilsClient } from "../src/test-utils-client.ts";
 import { it } from "../src/testutil.ts";
 
@@ -32,3 +32,5 @@ describe("[CityCoin Test Utils]", () => {
     });
   });
 });
+
+run();
