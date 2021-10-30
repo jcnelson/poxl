@@ -1,5 +1,5 @@
 import { Account, Tx, types } from "../deps.ts";
-import { Client } from "./client.ts";
+import { Model } from "../src/model.ts";
 
 enum ContractState {
   STATE_DEPLOYED = 0,
@@ -20,18 +20,19 @@ enum ErrCode {
   ERR_CORE_CONTRACT_NOT_FOUND,
 }
 
-export class AuthClient extends Client {
+export class AuthModel extends Model {
+  name = "citycoin-auth";
+
   static readonly ErrCode = ErrCode;
   static readonly ContractState = ContractState;
   static readonly REQUIRED_APPROVALS = 3;
 
   getLastJobId() {
-    return this.callReadOnlyFn("get-last-job-id");
+    return this.callReadOnly("get-last-job-id");
   }
 
   createJob(name: string, target: string, sender: Account) {
-    return Tx.contractCall(
-      this.contractName,
+    return this.callPublic(
       "create-job",
       [types.ascii(name), types.principal(target)],
       sender.address
@@ -39,12 +40,11 @@ export class AuthClient extends Client {
   }
 
   getJob(jobId: number) {
-    return this.callReadOnlyFn("get-job", [types.uint(jobId)]);
+    return this.callReadOnly("get-job", [types.uint(jobId)]);
   }
 
   activateJob(jobId: number, sender: Account) {
-    return Tx.contractCall(
-      this.contractName,
+    return this.callPublic(
       "activate-job",
       [types.uint(jobId)],
       sender.address
@@ -52,8 +52,7 @@ export class AuthClient extends Client {
   }
 
   approveJob(jobId: number, approver: Account): Tx {
-    return Tx.contractCall(
-      this.contractName,
+    return this.callPublic(
       "approve-job",
       [types.uint(jobId)],
       approver.address
@@ -61,8 +60,7 @@ export class AuthClient extends Client {
   }
 
   disapproveJob(jobId: number, approver: Account) {
-    return Tx.contractCall(
-      this.contractName,
+    return this.callPublic(
       "disapprove-job",
       [types.uint(jobId)],
       approver.address
@@ -70,12 +68,11 @@ export class AuthClient extends Client {
   }
 
   isJobApproved(jobId: number) {
-    return this.callReadOnlyFn("is-job-approved", [types.uint(jobId)]);
+    return this.callReadOnly("is-job-approved", [types.uint(jobId)]);
   }
 
   markJobAsExecuted(jobId: number, sender: Account) {
-    return Tx.contractCall(
-      this.contractName,
+    return this.callPublic(
       "mark-job-as-executed",
       [types.uint(jobId)],
       sender.address
@@ -88,8 +85,7 @@ export class AuthClient extends Client {
     value: number,
     sender: Account
   ) {
-    return Tx.contractCall(
-      this.contractName,
+    return this.callPublic(
       "add-uint-argument",
       [types.uint(jobId), types.ascii(argumentName), types.uint(value)],
       sender.address
@@ -97,14 +93,14 @@ export class AuthClient extends Client {
   }
 
   getUIntValueByName(jobId: number, argumentName: string) {
-    return this.callReadOnlyFn("get-uint-value-by-name", [
+    return this.callReadOnly("get-uint-value-by-name", [
       types.uint(jobId),
       types.ascii(argumentName),
     ]);
   }
 
   getUIntValueById(jobId: number, argumentId: number) {
-    return this.callReadOnlyFn("get-uint-value-by-id", [
+    return this.callReadOnly("get-uint-value-by-id", [
       types.uint(jobId),
       types.uint(argumentId),
     ]);
@@ -116,8 +112,7 @@ export class AuthClient extends Client {
     value: string,
     sender: Account
   ) {
-    return Tx.contractCall(
-      this.contractName,
+    return this.callPublic(
       "add-principal-argument",
       [types.uint(jobId), types.ascii(argumentName), types.principal(value)],
       sender.address
@@ -125,32 +120,31 @@ export class AuthClient extends Client {
   }
 
   getPrincipalValueByName(jobId: number, argumentName: string) {
-    return this.callReadOnlyFn("get-principal-value-by-name", [
+    return this.callReadOnly("get-principal-value-by-name", [
       types.uint(jobId),
       types.ascii(argumentName),
     ]);
   }
 
   getPrincipalValueById(jobId: number, argumentId: number) {
-    return this.callReadOnlyFn("get-principal-value-by-id", [
+    return this.callReadOnly("get-principal-value-by-id", [
       types.uint(jobId),
       types.uint(argumentId),
     ]);
   }
 
   getActiveCoreContract() {
-    return this.callReadOnlyFn("get-active-core-contract");
+    return this.callReadOnly("get-active-core-contract");
   }
 
   getCoreContractInfo(targetContract: string) {
-    return this.callReadOnlyFn("get-core-contract-info", [
+    return this.callReadOnly("get-core-contract-info", [
       types.principal(targetContract),
     ]);
   }
 
   initializeContracts(targetContract: string, sender: Account): Tx {
-    return Tx.contractCall(
-      this.contractName,
+    return this.callPublic(
       "initialize-contracts",
       [types.principal(targetContract)],
       sender.address
@@ -162,8 +156,7 @@ export class AuthClient extends Client {
     stacksHeight: number,
     sender: Account
   ): Tx {
-    return Tx.contractCall(
-      this.contractName,
+    return this.callPublic(
       "activate-core-contract",
       [types.principal(targetContract), types.uint(stacksHeight)],
       sender.address
@@ -175,8 +168,7 @@ export class AuthClient extends Client {
     newContract: string,
     sender: Account
   ): Tx {
-    return Tx.contractCall(
-      this.contractName,
+    return this.callPublic(
       "upgrade-core-contract",
       [types.principal(oldContract), types.principal(newContract)],
       sender.address
@@ -189,8 +181,7 @@ export class AuthClient extends Client {
     newContract: string,
     sender: Account
   ): Tx {
-    return Tx.contractCall(
-      this.contractName,
+    return this.callPublic(
       "execute-upgrade-core-contract-job",
       [
         types.uint(jobId),
@@ -202,7 +193,7 @@ export class AuthClient extends Client {
   }
 
   getCityWallet() {
-    return this.callReadOnlyFn("get-city-wallet");
+    return this.callReadOnly("get-city-wallet");
   }
 
   setCityWallet(
@@ -210,8 +201,7 @@ export class AuthClient extends Client {
     newCityWallet: Account,
     sender: Account
   ): Tx {
-    return Tx.contractCall(
-      this.contractName,
+    return this.callPublic(
       "set-city-wallet",
       [types.principal(requestor), types.principal(newCityWallet.address)],
       sender.address
@@ -223,8 +213,7 @@ export class AuthClient extends Client {
     target: string,
     newUri?: string | undefined
   ): Tx {
-    return Tx.contractCall(
-      this.contractName,
+    return this.callPublic(
       "set-token-uri",
       [
         types.principal(target),
@@ -241,8 +230,7 @@ export class AuthClient extends Client {
     targetContract: string,
     sender: Account
   ): Tx {
-    return Tx.contractCall(
-      this.contractName,
+    return this.callPublic(
       "execute-set-city-wallet-job",
       [types.uint(jobId), types.principal(targetContract)],
       sender.address
@@ -250,12 +238,11 @@ export class AuthClient extends Client {
   }
 
   isApprover(user: Account) {
-    return this.callReadOnlyFn("is-approver", [types.principal(user.address)]);
+    return this.callReadOnly("is-approver", [types.principal(user.address)]);
   }
 
   executeReplaceApproverJob(jobId: number, sender: Account): Tx {
-    return Tx.contractCall(
-      this.contractName,
+    return this.callPublic(
       "execute-replace-approver-job",
       [types.uint(jobId)],
       sender.address
@@ -263,8 +250,7 @@ export class AuthClient extends Client {
   }
 
   testSetActiveCoreContract(sender: Account): Tx {
-    return Tx.contractCall(
-      this.contractName,
+    return this.callPublic(
       "test-set-active-core-contract",
       [],
       sender.address

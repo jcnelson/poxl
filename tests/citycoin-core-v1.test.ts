@@ -1,6 +1,22 @@
-import { assertEquals, describe, Tx, TxReceipt, types, run } from "../deps.ts";
-import { CoreClient } from "../src/core-client.ts";
-import { it } from "../src/testutil.ts";
+import { assertEquals, describe, TxReceipt, types, run, Chain, beforeEach, it } from "../deps.ts";
+import { CoreModel } from "../models/core.model.ts";
+import { TokenModel } from "../models/token.model.ts";
+import { Accounts, Context } from "../src/context.ts";
+
+
+let ctx: Context;
+let chain: Chain;
+let accounts: Accounts;
+let core: CoreModel;
+let token: TokenModel;
+
+beforeEach(() => {
+  ctx = new Context();
+  chain = ctx.chain;
+  accounts = ctx.accounts;
+  core = ctx.models.get(CoreModel);
+  token = ctx.models.get(TokenModel);
+});
 
 describe("[CityCoin Core]", () => {
   //////////////////////////////////////////////////
@@ -9,40 +25,40 @@ describe("[CityCoin Core]", () => {
 
   describe("CITY WALLET MANAGEMENT", () => {
     describe("get-city-wallet()", () => {
-      it("returns current city wallet variable as contract address before initialization", (chain, accounts, clients) => {
+      it("returns current city wallet variable as contract address before initialization", () => {
         // arrange
-        const result = clients.core.getCityWallet().result;
+        const result = core.getCityWallet().result;
 
         // assert
-        result.expectPrincipal(clients.core.getContractAddress());
+        result.expectPrincipal(core.address);
       });
-      it("returns current city wallet variable as city wallet address after initialization", (chain, accounts, clients) => {
+      it("returns current city wallet variable as city wallet address after initialization", () => {
         // arrange
         const cityWallet = accounts.get("city_wallet")!;
         chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
+          core.testInitializeCore(core.address),
         ]);
 
-        const result = clients.core.getCityWallet().result;
+        const result = core.getCityWallet().result;
 
         // assert
         result.expectPrincipal(cityWallet.address);
       });
     });
     describe("set-city-wallet()", () => {
-      it("throws ERR_UNAUTHORIZED when called by non-city wallet", (chain, accounts, clients) => {
+      it("throws ERR_UNAUTHORIZED when called by non-city wallet", () => {
         // arrange
         const wallet = accounts.get("wallet_1")!;
 
         // act
         const receipt = chain.mineBlock([
-          clients.core.setCityWallet(wallet, wallet),
+          core.setCityWallet(wallet, wallet),
         ]).receipts[0];
 
         // assert
         receipt.result
           .expectErr()
-          .expectUint(CoreClient.ErrCode.ERR_UNAUTHORIZED);
+          .expectUint(CoreModel.ErrCode.ERR_UNAUTHORIZED);
       });
     });
   });
@@ -53,101 +69,101 @@ describe("[CityCoin Core]", () => {
 
   describe("REGISTRATION", () => {
     describe("get-activation-block()", () => {
-      it("throws ERR_CONTRACT_NOT_ACTIVATED if called before contract is activated", (chain, accounts, clients) => {
+      it("throws ERR_CONTRACT_NOT_ACTIVATED if called before contract is activated", () => {
         // act
-        const result = clients.core.getActivationBlock().result;
+        const result = core.getActivationBlock().result;
 
         // assert
         result
           .expectErr()
-          .expectUint(CoreClient.ErrCode.ERR_CONTRACT_NOT_ACTIVATED);
+          .expectUint(CoreModel.ErrCode.ERR_CONTRACT_NOT_ACTIVATED);
       });
-      it("succeeds and returns activation height", (chain, accounts, clients) => {
+      it("succeeds and returns activation height", () => {
         // arrange
         const user = accounts.get("wallet_4")!;
         const block = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(user),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(user),
         ]);
         const activationBlockHeight =
-          block.height + CoreClient.ACTIVATION_DELAY - 1;
+          block.height + CoreModel.ACTIVATION_DELAY - 1;
 
         // act
-        const result = clients.core.getActivationBlock().result;
+        const result = core.getActivationBlock().result;
 
         // assert
         result.expectOk().expectUint(activationBlockHeight);
       });
     });
     describe("get-activation-delay()", () => {
-      it("succeeds and returns activation delay", (chain, accounts, clients) => {
+      it("succeeds and returns activation delay", () => {
         // act
-        const result = clients.core.getActivationDelay().result;
+        const result = core.getActivationDelay().result;
         // assert
-        result.expectUint(CoreClient.ACTIVATION_DELAY);
+        result.expectUint(CoreModel.ACTIVATION_DELAY);
       });
     });
     describe("get-activation-threshold()", () => {
-      it("succeeds and returns activation threshold", (chain, accounts, clients) => {
+      it("succeeds and returns activation threshold", () => {
         // act
-        const result = clients.core.getActivationThreshold().result;
+        const result = core.getActivationThreshold().result;
         // assert
-        result.expectUint(CoreClient.ACTIVATION_THRESHOLD);
+        result.expectUint(CoreModel.ACTIVATION_THRESHOLD);
       });
     });
     describe("get-registered-users-nonce()", () => {
-      it("succeeds and returns u0 if no users are registered", (chain, accounts, clients) => {
+      it("succeeds and returns u0 if no users are registered", () => {
         // act
-        const result = clients.core.getRegisteredUsersNonce().result;
+        const result = core.getRegisteredUsersNonce().result;
         // assert
         result.expectUint(0);
       });
-      it("succeeds and returns u1 if one user is registered", (chain, accounts, clients) => {
+      it("succeeds and returns u1 if one user is registered", () => {
         // arrange
         const user = accounts.get("wallet_5")!;
         chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.registerUser(user)
+          core.testInitializeCore(core.address),
+          core.registerUser(user)
         ]);
         // act
-        const result = clients.core.getRegisteredUsersNonce().result;
+        const result = core.getRegisteredUsersNonce().result;
         // assert
         result.expectUint(1);
       });
     });
     describe("register-user()", () => {
-      it("throws ERR_UNAUTHORIZED if contracts are not initialized", (chain, accounts, clients) => {
+      it("throws ERR_UNAUTHORIZED if contracts are not initialized", () => {
         // arrange
         const user = accounts.get("wallet_4")!;
 
         // act
-        const receipt = chain.mineBlock([clients.core.registerUser(user)])
+        const receipt = chain.mineBlock([core.registerUser(user)])
           .receipts[0];
 
         // assert
-        receipt.result.expectErr().expectUint(CoreClient.ErrCode.ERR_UNAUTHORIZED);
+        receipt.result.expectErr().expectUint(CoreModel.ErrCode.ERR_UNAUTHORIZED);
       })
-      it("successfully register new user and emits print event with memo when supplied", (chain, accounts, clients) => {
+      it("successfully register new user and emits print event with memo when supplied", () => {
         // arrange
         const user = accounts.get("wallet_5")!;
         const memo = "hello world";
 
         // act
-        chain.mineBlock([clients.core.testInitializeCore(clients.core.getContractAddress())])
-        const receipt = chain.mineBlock([clients.core.registerUser(user, memo)])
+        chain.mineBlock([core.testInitializeCore(core.address)])
+        const receipt = chain.mineBlock([core.registerUser(user, memo)])
           .receipts[0];
 
         // assert
         receipt.result.expectOk().expectBool(true);
-        clients.core.getUserId(user).result.expectSome().expectUint(1);
+        core.getUserId(user).result.expectSome().expectUint(1);
 
         assertEquals(receipt.events.length, 1);
 
         const expectedEvent = {
           type: "contract_event",
           contract_event: {
-            contract_identifier: clients.core.getContractAddress(),
+            contract_identifier: core.address,
             topic: "print",
             value: types.some(types.utf8(memo)),
           },
@@ -156,28 +172,28 @@ describe("[CityCoin Core]", () => {
         assertEquals(receipt.events[0], expectedEvent);
       });
 
-      it("successfully register new user and do not emit any events when memo is not supplied", (chain, accounts, clients) => {
+      it("successfully register new user and do not emit any events when memo is not supplied", () => {
         // arrange
         const user = accounts.get("wallet_4")!;
 
         // act
-        chain.mineBlock([clients.core.testInitializeCore(clients.core.getContractAddress())])
-        const receipt = chain.mineBlock([clients.core.registerUser(user)])
+        chain.mineBlock([core.testInitializeCore(core.address)])
+        const receipt = chain.mineBlock([core.registerUser(user)])
           .receipts[0];
 
         // assert
         receipt.result.expectOk().expectBool(true);
-        clients.core.getUserId(user).result.expectSome().expectUint(1);
+        core.getUserId(user).result.expectSome().expectUint(1);
 
         assertEquals(receipt.events.length, 0);
       });
 
-      it("throws ERR_USER_ALREADY_REGISTERED while trying to register user 2nd time", (chain, accounts, clients) => {
+      it("throws ERR_USER_ALREADY_REGISTERED while trying to register user 2nd time", () => {
         // arrange
         const user = accounts.get("wallet_4")!;
-        const registerUserTx = clients.core.registerUser(user);
+        const registerUserTx = core.registerUser(user);
         chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
+          core.testInitializeCore(core.address),
           registerUserTx
         ]);
 
@@ -187,27 +203,27 @@ describe("[CityCoin Core]", () => {
         // assert
         receipt.result
           .expectErr()
-          .expectUint(CoreClient.ErrCode.ERR_USER_ALREADY_REGISTERED);
+          .expectUint(CoreModel.ErrCode.ERR_USER_ALREADY_REGISTERED);
       });
 
-      it("throws ERR_ACTIVATION_THRESHOLD_REACHED error when user wants to register after reaching activation threshold", (chain, accounts, clients) => {
+      it("throws ERR_ACTIVATION_THRESHOLD_REACHED error when user wants to register after reaching activation threshold", () => {
         // arrange
         const user1 = accounts.get("wallet_4")!;
         const user2 = accounts.get("wallet_5")!;
         chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(user1),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(user1),
         ]);
 
         // act
-        const receipt = chain.mineBlock([clients.core.registerUser(user2)])
+        const receipt = chain.mineBlock([core.registerUser(user2)])
           .receipts[0];
 
         // assert
         receipt.result
           .expectErr()
-          .expectUint(CoreClient.ErrCode.ERR_ACTIVATION_THRESHOLD_REACHED);
+          .expectUint(CoreModel.ErrCode.ERR_ACTIVATION_THRESHOLD_REACHED);
       });
     });
   });
@@ -218,60 +234,60 @@ describe("[CityCoin Core]", () => {
 
   describe("MINING CONFIGURATION", () => {
     describe("get-block-winner-id()", () => {
-      it("succeeds and returns none if winner is unknown at the block height", (chain, accounts, clients) => {
+      it("succeeds and returns none if winner is unknown at the block height", () => {
         // arrange
         const miner = accounts.get("wallet_2")!;
         const miner2 = accounts.get("wallet_3")!;
         const amount = 2;
         const setupBlock = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(miner),
-          clients.core.registerUser(miner2),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(miner),
+          core.registerUser(miner2),
         ]);
         const activationBlockHeight =
-          setupBlock.height + CoreClient.ACTIVATION_DELAY - 1;
+          setupBlock.height + CoreModel.ACTIVATION_DELAY - 1;
 
         chain.mineEmptyBlockUntil(activationBlockHeight);
 
         const block = chain.mineBlock([
-          clients.core.mineTokens(amount, miner),
-          clients.core.mineTokens(amount * 1000, miner2),
+          core.mineTokens(amount, miner),
+          core.mineTokens(amount * 1000, miner2),
         ]);
-        chain.mineEmptyBlock(CoreClient.TOKEN_REWARD_MATURITY);
+        chain.mineEmptyBlock(CoreModel.TOKEN_REWARD_MATURITY);
 
         // act
-        const result = clients.core.getBlockWinnerId(block.height).result;
+        const result = core.getBlockWinnerId(block.height).result;
 
         // assert
         result.expectNone();
       });
-      it("succeeds and returns block winner ID if winner claimed at the block height", (chain, accounts, clients) => {
+      it("succeeds and returns block winner ID if winner claimed at the block height", () => {
         // arrange
         const miner = accounts.get("wallet_2")!;
         const miner2 = accounts.get("wallet_3")!;
         const amount = 2;
         const setupBlock = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(miner),
-          clients.core.registerUser(miner2),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(miner),
+          core.registerUser(miner2),
         ]);
         const activationBlockHeight =
-          setupBlock.height + CoreClient.ACTIVATION_DELAY - 1;
+          setupBlock.height + CoreModel.ACTIVATION_DELAY - 1;
 
         chain.mineEmptyBlockUntil(activationBlockHeight);
 
         const block = chain.mineBlock([
-          clients.core.mineTokens(amount, miner),
-          clients.core.mineTokens(amount * 1000, miner2),
+          core.mineTokens(amount, miner),
+          core.mineTokens(amount * 1000, miner2),
         ]);
-        chain.mineEmptyBlock(CoreClient.TOKEN_REWARD_MATURITY);
+        chain.mineEmptyBlock(CoreModel.TOKEN_REWARD_MATURITY);
         chain.mineBlock([
-          clients.core.claimMiningReward(block.height - 1, miner2),
+          core.claimMiningReward(block.height - 1, miner2),
         ]);
         // act
-        const result = clients.core.getBlockWinnerId(block.height - 1).result;
+        const result = core.getBlockWinnerId(block.height - 1).result;
 
         // assert
         result.expectSome().expectUint(2);
@@ -285,103 +301,103 @@ describe("[CityCoin Core]", () => {
 
   describe("MINING ACTIONS", () => {
     describe("mine-tokens()", () => {
-      it("throws ERR_CONTRACT_NOT_ACTIVATED while trying to mine before reaching activation threshold", (chain, accounts, clients) => {
+      it("throws ERR_CONTRACT_NOT_ACTIVATED while trying to mine before reaching activation threshold", () => {
         // arrange
         const miner = accounts.get("wallet_2")!;
         const amountUstx = 200;
 
         // act
         const receipt = chain.mineBlock([
-          clients.core.mineTokens(amountUstx, miner),
+          core.mineTokens(amountUstx, miner),
         ]).receipts[0];
 
         // assert
         receipt.result
           .expectErr()
-          .expectUint(CoreClient.ErrCode.ERR_CONTRACT_NOT_ACTIVATED);
+          .expectUint(CoreModel.ErrCode.ERR_CONTRACT_NOT_ACTIVATED);
       });
 
-      it("throws ERR_INSUFFICIENT_COMMITMENT while trying to mine with 0 commitment", (chain, accounts, clients) => {
+      it("throws ERR_INSUFFICIENT_COMMITMENT while trying to mine with 0 commitment", () => {
         // arrange
         const miner = accounts.get("wallet_2")!;
         const amountUstx = 0;
         chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(miner),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(miner),
         ]);
 
         // act
         const receipt = chain.mineBlock([
-          clients.core.mineTokens(amountUstx, miner),
+          core.mineTokens(amountUstx, miner),
         ]).receipts[0];
 
         // assert
         receipt.result
           .expectErr()
-          .expectUint(CoreClient.ErrCode.ERR_INSUFFICIENT_COMMITMENT);
+          .expectUint(CoreModel.ErrCode.ERR_INSUFFICIENT_COMMITMENT);
       });
 
-      it("throws ERR_INSUFFICIENT_BALANCE while trying to mine with commitment larger than current balance", (chain, accounts, clients) => {
+      it("throws ERR_INSUFFICIENT_BALANCE while trying to mine with commitment larger than current balance", () => {
         // arrange
         const miner = accounts.get("wallet_2")!;
         const amountUstx = miner.balance + 1;
         chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(miner),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(miner),
         ]);
 
         // act
         const receipt = chain.mineBlock([
-          clients.core.mineTokens(amountUstx, miner),
+          core.mineTokens(amountUstx, miner),
         ]).receipts[0];
 
         // assert
         receipt.result
           .expectErr()
-          .expectUint(CoreClient.ErrCode.ERR_INSUFFICIENT_BALANCE);
+          .expectUint(CoreModel.ErrCode.ERR_INSUFFICIENT_BALANCE);
       });
 
-      it("throws ERR_STACKING_NOT_AVAILABLE while trying to mine before activation period end", (chain, accounts, clients) => {
+      it("throws ERR_STACKING_NOT_AVAILABLE while trying to mine before activation period end", () => {
         // arrange
         const miner = accounts.get("wallet_2")!;
         const amountUstx = 200;
         chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(miner),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(miner),
         ]);
 
         // act
         const receipt = chain.mineBlock([
-          clients.core.mineTokens(amountUstx, miner),
+          core.mineTokens(amountUstx, miner),
         ]).receipts[0];
 
         //assert
         receipt.result
           .expectErr()
-          .expectUint(CoreClient.ErrCode.ERR_STACKING_NOT_AVAILABLE);
+          .expectUint(CoreModel.ErrCode.ERR_STACKING_NOT_AVAILABLE);
       });
 
-      it("succeeds and cause one stx_transfer_event to city-wallet during first cycle", (chain, accounts, clients) => {
+      it("succeeds and cause one stx_transfer_event to city-wallet during first cycle", () => {
         // arrange
         const cityWallet = accounts.get("city_wallet")!;
         const miner = accounts.get("wallet_2")!;
         const amountUstx = 200;
         const block = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetCityWallet(cityWallet),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(miner),
+          core.testInitializeCore(core.address),
+          core.unsafeSetCityWallet(cityWallet),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(miner),
         ]);
         chain.mineEmptyBlockUntil(
-          block.height + CoreClient.ACTIVATION_DELAY - 1
+          block.height + CoreModel.ACTIVATION_DELAY - 1
         );
 
         // act
         const receipt = chain.mineBlock([
-          clients.core.mineTokens(amountUstx, miner),
+          core.mineTokens(amountUstx, miner),
         ]).receipts[0];
 
         //assert
@@ -394,32 +410,32 @@ describe("[CityCoin Core]", () => {
         );
       });
 
-      it("succeeds and cause one stx_transfer event to city-wallet and one to stacker while mining in cycle with stackers", (chain, accounts, clients) => {
+      it("succeeds and cause one stx_transfer event to city-wallet and one to stacker while mining in cycle with stackers", () => {
         // arrange
         const cityWallet = accounts.get("city_wallet")!;
         const miner = accounts.get("wallet_2")!;
         const amountUstx = 200;
         const amountTokens = 500;
         const block = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetCityWallet(cityWallet),
-          clients.token.ftMint(amountTokens, miner),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(miner),
+          core.testInitializeCore(core.address),
+          core.unsafeSetCityWallet(cityWallet),
+          token.ftMint(amountTokens, miner),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(miner),
         ]);
 
         const activationBlockHeight =
-          block.height + CoreClient.ACTIVATION_DELAY - 1;
+          block.height + CoreModel.ACTIVATION_DELAY - 1;
         const cycle1FirstBlockHeight =
-          activationBlockHeight + CoreClient.REWARD_CYCLE_LENGTH;
+          activationBlockHeight + CoreModel.REWARD_CYCLE_LENGTH;
 
         chain.mineEmptyBlockUntil(activationBlockHeight);
-        chain.mineBlock([clients.core.stackTokens(amountTokens, 1, miner)]);
+        chain.mineBlock([core.stackTokens(amountTokens, 1, miner)]);
         chain.mineEmptyBlockUntil(cycle1FirstBlockHeight);
 
         // act
         const receipt = chain.mineBlock([
-          clients.core.mineTokens(amountUstx, miner),
+          core.mineTokens(amountUstx, miner),
         ]).receipts[0];
 
         //assert
@@ -427,37 +443,37 @@ describe("[CityCoin Core]", () => {
         assertEquals(receipt.events.length, 2);
 
         receipt.events.expectSTXTransferEvent(
-          amountUstx * CoreClient.SPLIT_CITY_PCT,
+          amountUstx * CoreModel.SPLIT_CITY_PCT,
           miner.address,
           cityWallet.address
         );
 
         receipt.events.expectSTXTransferEvent(
-          amountUstx * (1 - CoreClient.SPLIT_CITY_PCT),
+          amountUstx * (1 - CoreModel.SPLIT_CITY_PCT),
           miner.address,
-          clients.core.getContractAddress()
+          core.address
         );
       });
 
-      it("succeeds and prints memo when supplied", (chain, accounts, clients) => {
+      it("succeeds and prints memo when supplied", () => {
         // arrange
         const miner = accounts.get("wallet_2")!;
         const amountUstx = 200;
         const memo = new TextEncoder().encode("hello world");
         const block = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(miner),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(miner),
         ]);
 
         const activationBlockHeight =
-          block.height + CoreClient.ACTIVATION_DELAY - 1;
+          block.height + CoreModel.ACTIVATION_DELAY - 1;
 
         chain.mineEmptyBlockUntil(activationBlockHeight);
 
         // act
         const receipt = chain.mineBlock([
-          clients.core.mineTokens(amountUstx, miner, memo),
+          core.mineTokens(amountUstx, miner, memo),
         ]).receipts[0];
 
         //assert
@@ -467,7 +483,7 @@ describe("[CityCoin Core]", () => {
         const expectedEvent = {
           type: "contract_event",
           contract_event: {
-            contract_identifier: clients.core.getContractAddress(),
+            contract_identifier: core.address,
             topic: "print",
             value: types.some(types.buff(memo)),
           },
@@ -476,202 +492,202 @@ describe("[CityCoin Core]", () => {
         assertEquals(receipt.events[0], expectedEvent);
       });
 
-      it("throws ERR_USER_ALREADY_MINED while trying to mine same block 2nd time", (chain, accounts, clients) => {
+      it("throws ERR_USER_ALREADY_MINED while trying to mine same block 2nd time", () => {
         // arrange
         const miner = accounts.get("wallet_2")!;
         const amountUstx = 200;
         const memo = new TextEncoder().encode("hello world");
         const block = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(miner),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(miner),
         ]);
 
         const activationBlockHeight =
-          block.height + CoreClient.ACTIVATION_DELAY - 1;
+          block.height + CoreModel.ACTIVATION_DELAY - 1;
 
         chain.mineEmptyBlockUntil(activationBlockHeight);
 
         // act
-        const mineTokensTx = clients.core.mineTokens(amountUstx, miner, memo);
+        const mineTokensTx = core.mineTokens(amountUstx, miner, memo);
         const receipts = chain.mineBlock([mineTokensTx, mineTokensTx]).receipts;
 
         //assert
         receipts[0].result.expectOk().expectBool(true);
         receipts[1].result
           .expectErr()
-          .expectUint(CoreClient.ErrCode.ERR_USER_ALREADY_MINED);
+          .expectUint(CoreModel.ErrCode.ERR_USER_ALREADY_MINED);
       });
     });
 
     describe("mine-many()", () => {
-      it("throws ERR_CONTRACT_NOT_ACTIVATED while trying to mine before reaching activation threshold", (chain, accounts, clients) => {
+      it("throws ERR_CONTRACT_NOT_ACTIVATED while trying to mine before reaching activation threshold", () => {
         // arrange
         const miner = accounts.get("wallet_2")!;
         const amounts = [1, 2, 3, 4];
 
         // act
-        const receipt = chain.mineBlock([clients.core.mineMany(amounts, miner)])
+        const receipt = chain.mineBlock([core.mineMany(amounts, miner)])
           .receipts[0];
 
         // assert
         receipt.result
           .expectErr()
-          .expectUint(CoreClient.ErrCode.ERR_CONTRACT_NOT_ACTIVATED);
+          .expectUint(CoreModel.ErrCode.ERR_CONTRACT_NOT_ACTIVATED);
       });
 
-      it("throws ERR_STACKING_NOT_AVAILABLE while trying to mine before activation period end", (chain, accounts, clients) => {
+      it("throws ERR_STACKING_NOT_AVAILABLE while trying to mine before activation period end", () => {
         // arrange
         const miner = accounts.get("wallet_1")!;
         const amounts = [1, 2, 3, 4];
         chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(miner),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(miner),
         ]);
 
         // act
-        const receipt = chain.mineBlock([clients.core.mineMany(amounts, miner)])
+        const receipt = chain.mineBlock([core.mineMany(amounts, miner)])
           .receipts[0];
 
         // assert
         receipt.result
           .expectErr()
-          .expectUint(CoreClient.ErrCode.ERR_STACKING_NOT_AVAILABLE);
+          .expectUint(CoreModel.ErrCode.ERR_STACKING_NOT_AVAILABLE);
       });
 
-      it("throws ERR_INSUFFICIENT_COMMITMENT while providing empty list of amounts", (chain, accounts, clients) => {
+      it("throws ERR_INSUFFICIENT_COMMITMENT while providing empty list of amounts", () => {
         // arrange
         const miner = accounts.get("wallet_1")!;
         const amounts: number[] = [];
         const setupBlock = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(miner),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(miner),
         ]);
         chain.mineEmptyBlockUntil(
-          setupBlock.height + CoreClient.ACTIVATION_DELAY - 1
+          setupBlock.height + CoreModel.ACTIVATION_DELAY - 1
         );
 
         // act
-        const receipt = chain.mineBlock([clients.core.mineMany(amounts, miner)])
+        const receipt = chain.mineBlock([core.mineMany(amounts, miner)])
           .receipts[0];
 
         // assert
         receipt.result
           .expectErr()
-          .expectUint(CoreClient.ErrCode.ERR_INSUFFICIENT_COMMITMENT);
+          .expectUint(CoreModel.ErrCode.ERR_INSUFFICIENT_COMMITMENT);
       });
 
-      it("throws ERR_INSUFFICIENT_COMMITMENT while providing list of amounts filled with 0", (chain, accounts, clients) => {
+      it("throws ERR_INSUFFICIENT_COMMITMENT while providing list of amounts filled with 0", () => {
         // arrange
         const miner = accounts.get("wallet_1")!;
         const amounts = [0, 0, 0, 0];
         const setupBlock = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(miner),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(miner),
         ]);
         chain.mineEmptyBlockUntil(
-          setupBlock.height + CoreClient.ACTIVATION_DELAY - 1
+          setupBlock.height + CoreModel.ACTIVATION_DELAY - 1
         );
 
         // act
-        const receipt = chain.mineBlock([clients.core.mineMany(amounts, miner)])
+        const receipt = chain.mineBlock([core.mineMany(amounts, miner)])
           .receipts[0];
 
         // assert
         receipt.result
           .expectErr()
-          .expectUint(CoreClient.ErrCode.ERR_INSUFFICIENT_COMMITMENT);
+          .expectUint(CoreModel.ErrCode.ERR_INSUFFICIENT_COMMITMENT);
       });
 
-      it("throws ERR_INSUFFICIENT_COMMITMENT while providing list of amounts with one or more 0s", (chain, accounts, clients) => {
+      it("throws ERR_INSUFFICIENT_COMMITMENT while providing list of amounts with one or more 0s", () => {
         // arrange
         const miner = accounts.get("wallet_1")!;
         const amounts = [1, 2, 3, 4, 0, 5, 6, 7];
         const setupBlock = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(miner),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(miner),
         ]);
         chain.mineEmptyBlockUntil(
-          setupBlock.height + CoreClient.ACTIVATION_DELAY - 1
+          setupBlock.height + CoreModel.ACTIVATION_DELAY - 1
         );
 
         // act
-        const receipt = chain.mineBlock([clients.core.mineMany(amounts, miner)])
+        const receipt = chain.mineBlock([core.mineMany(amounts, miner)])
           .receipts[0];
 
         // assert
         receipt.result
           .expectErr()
-          .expectUint(CoreClient.ErrCode.ERR_INSUFFICIENT_COMMITMENT);
+          .expectUint(CoreModel.ErrCode.ERR_INSUFFICIENT_COMMITMENT);
       });
 
-      it("throws ERR_INSUFFICIENT_BALANCE when sum of all commitments > miner balance", (chain, accounts, clients) => {
+      it("throws ERR_INSUFFICIENT_BALANCE when sum of all commitments > miner balance", () => {
         // arrange
         const miner = accounts.get("wallet_1")!;
         const amounts = [1, miner.balance];
         const setupBlock = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(miner),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(miner),
         ]);
         chain.mineEmptyBlockUntil(
-          setupBlock.height + CoreClient.ACTIVATION_DELAY - 1
+          setupBlock.height + CoreModel.ACTIVATION_DELAY - 1
         );
 
         // act
-        const receipt = chain.mineBlock([clients.core.mineMany(amounts, miner)])
+        const receipt = chain.mineBlock([core.mineMany(amounts, miner)])
           .receipts[0];
 
         // assert
         receipt.result
           .expectErr()
-          .expectUint(CoreClient.ErrCode.ERR_INSUFFICIENT_BALANCE);
+          .expectUint(CoreModel.ErrCode.ERR_INSUFFICIENT_BALANCE);
       });
 
-      it("throws ERR_USER_ALREADY_MINED when call overlaps already mined blocks", (chain, accounts, clients) => {
+      it("throws ERR_USER_ALREADY_MINED when call overlaps already mined blocks", () => {
         // arrange
         const miner = accounts.get("wallet_1")!;
         const amounts = [1, 2];
         const setupBlock = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(miner),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(miner),
         ]);
         chain.mineEmptyBlockUntil(
-          setupBlock.height + CoreClient.ACTIVATION_DELAY - 1
+          setupBlock.height + CoreModel.ACTIVATION_DELAY - 1
         );
-        chain.mineBlock([clients.core.mineMany(amounts, miner)]);
+        chain.mineBlock([core.mineMany(amounts, miner)]);
 
         // act
-        const receipt = chain.mineBlock([clients.core.mineMany(amounts, miner)])
+        const receipt = chain.mineBlock([core.mineMany(amounts, miner)])
           .receipts[0];
 
         // assert
         receipt.result
           .expectErr()
-          .expectUint(CoreClient.ErrCode.ERR_USER_ALREADY_MINED);
+          .expectUint(CoreModel.ErrCode.ERR_USER_ALREADY_MINED);
       });
 
-      it("succeeds and cause one STX transfer event when amounts list have only one value and there are no stackers", (chain, accounts, clients) => {
+      it("succeeds and cause one STX transfer event when amounts list have only one value and there are no stackers", () => {
         // arrange
         const miner = accounts.get("wallet_1")!;
         const amounts = [1];
         const cityWallet = accounts.get("city_wallet")!;
         const setupBlock = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(miner),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(miner),
         ]);
         chain.mineEmptyBlockUntil(
-          setupBlock.height + CoreClient.ACTIVATION_DELAY - 1
+          setupBlock.height + CoreModel.ACTIVATION_DELAY - 1
         );
 
         // act
-        const receipt = chain.mineBlock([clients.core.mineMany(amounts, miner)])
+        const receipt = chain.mineBlock([core.mineMany(amounts, miner)])
           .receipts[0];
 
         // assert
@@ -686,22 +702,22 @@ describe("[CityCoin Core]", () => {
         );
       });
 
-      it("succeeds and cause one STX transfer event when amounts list have multiple values and there are no stackers", (chain, accounts, clients) => {
+      it("succeeds and cause one STX transfer event when amounts list have multiple values and there are no stackers", () => {
         // arrange
         const miner = accounts.get("wallet_1")!;
         const amounts = [1, 2, 200, 89, 3423];
         const cityWallet = accounts.get("city_wallet")!;
         const setupBlock = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(miner),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(miner),
         ]);
         chain.mineEmptyBlockUntil(
-          setupBlock.height + CoreClient.ACTIVATION_DELAY - 1
+          setupBlock.height + CoreModel.ACTIVATION_DELAY - 1
         );
 
         // act
-        const receipt = chain.mineBlock([clients.core.mineMany(amounts, miner)])
+        const receipt = chain.mineBlock([core.mineMany(amounts, miner)])
           .receipts[0];
 
         // assert
@@ -716,31 +732,31 @@ describe("[CityCoin Core]", () => {
         );
       });
 
-      it("succeeds and cause 2 stx transfers when amounts list have only one value and there is at least one stacker", (chain, accounts, clients) => {
+      it("succeeds and cause 2 stx transfers when amounts list have only one value and there is at least one stacker", () => {
         // arrange
         const miner = accounts.get("wallet_1")!;
         const amounts = [10000];
         const cityWallet = accounts.get("city_wallet")!;
         const amountTokens = 500;
         const block = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetCityWallet(cityWallet),
-          clients.token.ftMint(amountTokens, miner),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(miner),
+          core.testInitializeCore(core.address),
+          core.unsafeSetCityWallet(cityWallet),
+          token.ftMint(amountTokens, miner),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(miner),
         ]);
 
         const activationBlockHeight =
-          block.height + CoreClient.ACTIVATION_DELAY - 1;
+          block.height + CoreModel.ACTIVATION_DELAY - 1;
         const cycle1FirstBlockHeight =
-          activationBlockHeight + CoreClient.REWARD_CYCLE_LENGTH;
+          activationBlockHeight + CoreModel.REWARD_CYCLE_LENGTH;
 
         chain.mineEmptyBlockUntil(activationBlockHeight);
-        chain.mineBlock([clients.core.stackTokens(amountTokens, 1, miner)]);
+        chain.mineBlock([core.stackTokens(amountTokens, 1, miner)]);
         chain.mineEmptyBlockUntil(cycle1FirstBlockHeight);
 
         // act
-        const receipt = chain.mineBlock([clients.core.mineMany(amounts, miner)])
+        const receipt = chain.mineBlock([core.mineMany(amounts, miner)])
           .receipts[0];
 
         // assert
@@ -751,43 +767,43 @@ describe("[CityCoin Core]", () => {
         const totalAmount = amounts.reduce((sum, amount) => sum + amount, 0);
 
         receipt.events.expectSTXTransferEvent(
-          totalAmount * CoreClient.SPLIT_CITY_PCT,
+          totalAmount * CoreModel.SPLIT_CITY_PCT,
           miner.address,
           cityWallet.address
         );
 
         receipt.events.expectSTXTransferEvent(
-          totalAmount * (1 - CoreClient.SPLIT_CITY_PCT),
+          totalAmount * (1 - CoreModel.SPLIT_CITY_PCT),
           miner.address,
-          clients.core.getContractAddress()
+          core.address
         );
       });
 
-      it("succeeds and cause 2 stx transfers when amounts list have multiple values and there is at least one stacker", (chain, accounts, clients) => {
+      it("succeeds and cause 2 stx transfers when amounts list have multiple values and there is at least one stacker", () => {
         // arrange
         const miner = accounts.get("wallet_1")!;
         const amounts = [100, 200, 300];
         const cityWallet = accounts.get("city_wallet")!;
         const amountTokens = 500;
         const block = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetCityWallet(cityWallet),
-          clients.token.ftMint(amountTokens, miner),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(miner),
+          core.testInitializeCore(core.address),
+          core.unsafeSetCityWallet(cityWallet),
+          token.ftMint(amountTokens, miner),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(miner),
         ]);
 
         const activationBlockHeight =
-          block.height + CoreClient.ACTIVATION_DELAY - 1;
+          block.height + CoreModel.ACTIVATION_DELAY - 1;
         const cycle1FirstBlockHeight =
-          activationBlockHeight + CoreClient.REWARD_CYCLE_LENGTH;
+          activationBlockHeight + CoreModel.REWARD_CYCLE_LENGTH;
 
         chain.mineEmptyBlockUntil(activationBlockHeight);
-        chain.mineBlock([clients.core.stackTokens(amountTokens, 1, miner)]);
+        chain.mineBlock([core.stackTokens(amountTokens, 1, miner)]);
         chain.mineEmptyBlockUntil(cycle1FirstBlockHeight);
 
         // act
-        const receipt = chain.mineBlock([clients.core.mineMany(amounts, miner)])
+        const receipt = chain.mineBlock([core.mineMany(amounts, miner)])
           .receipts[0];
 
         // assert
@@ -798,39 +814,39 @@ describe("[CityCoin Core]", () => {
         const totalAmount = amounts.reduce((sum, amount) => sum + amount, 0);
 
         receipt.events.expectSTXTransferEvent(
-          totalAmount * CoreClient.SPLIT_CITY_PCT,
+          totalAmount * CoreModel.SPLIT_CITY_PCT,
           miner.address,
           cityWallet.address
         );
 
         receipt.events.expectSTXTransferEvent(
-          totalAmount * (1 - CoreClient.SPLIT_CITY_PCT),
+          totalAmount * (1 - CoreModel.SPLIT_CITY_PCT),
           miner.address,
-          clients.core.getContractAddress()
+          core.address
         );
       });
 
-      it("saves information that miner mined multiple consecutive blocks", (chain, accounts, clients) => {
+      it("saves information that miner mined multiple consecutive blocks", () => {
         // arrange
         const miner = accounts.get("wallet_1")!;
         const amounts = [1, 2, 200, 89, 3423];
         const setupBlock = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(miner),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(miner),
         ]);
         chain.mineEmptyBlockUntil(
-          setupBlock.height + CoreClient.ACTIVATION_DELAY - 1
+          setupBlock.height + CoreModel.ACTIVATION_DELAY - 1
         );
 
         // act
-        const block = chain.mineBlock([clients.core.mineMany(amounts, miner)]);
+        const block = chain.mineBlock([core.mineMany(amounts, miner)]);
 
         // assert
         const userId = 1;
 
         amounts.forEach((amount, idx) => {
-          clients.core
+          core
             .hasMinedAtBlock(block.height + idx - 1, userId)
             .result.expectBool(true);
         });
@@ -844,179 +860,179 @@ describe("[CityCoin Core]", () => {
 
   describe("MINING REWARD CLAIM ACTIONS", () => {
     describe("claim-mining-reward()", () => {
-      it("throws ERR_USER_NOT_FOUND when called by non-registered user or user who didn't mine at all", (chain, accounts, clients) => {
+      it("throws ERR_USER_NOT_FOUND when called by non-registered user or user who didn't mine at all", () => {
         // arrange
         const miner = accounts.get("wallet_2")!;
 
         // act
         const receipt = chain.mineBlock([
-          clients.core.claimMiningReward(0, miner),
+          core.claimMiningReward(0, miner),
         ]).receipts[0];
 
         // assert
         receipt.result
           .expectErr()
-          .expectUint(CoreClient.ErrCode.ERR_USER_ID_NOT_FOUND);
+          .expectUint(CoreModel.ErrCode.ERR_USER_ID_NOT_FOUND);
       });
 
-      it("throws ERR_NO_MINERS_AT_BLOCK when called with block-height at which nobody decided to mine", (chain, accounts, clients) => {
+      it("throws ERR_NO_MINERS_AT_BLOCK when called with block-height at which nobody decided to mine", () => {
         // arrange
         const miner = accounts.get("wallet_2")!;
         chain.mineBlock([])
         chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.registerUser(miner)
+          core.testInitializeCore(core.address),
+          core.registerUser(miner)
         ]);
 
         // act
         const receipt = chain.mineBlock([
-          clients.core.claimMiningReward(0, miner),
+          core.claimMiningReward(0, miner),
         ]).receipts[0];
 
         // assert
         receipt.result
           .expectErr()
-          .expectUint(CoreClient.ErrCode.ERR_NO_MINERS_AT_BLOCK);
+          .expectUint(CoreModel.ErrCode.ERR_NO_MINERS_AT_BLOCK);
       });
 
-      it("throws ERR_USER_DID_NOT_MINE_IN_BLOCK when called by user who didn't mine specific block", (chain, accounts, clients) => {
+      it("throws ERR_USER_DID_NOT_MINE_IN_BLOCK when called by user who didn't mine specific block", () => {
         // arrange
         const otherMiner = accounts.get("wallet_4")!;
         const miner = accounts.get("wallet_2")!;
         const amount = 2000;
         const setupBlock = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(miner),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(miner),
         ]);
         const activationBlockHeight =
-          setupBlock.height + CoreClient.ACTIVATION_DELAY - 1;
+          setupBlock.height + CoreModel.ACTIVATION_DELAY - 1;
 
         chain.mineEmptyBlockUntil(activationBlockHeight);
 
         const block = chain.mineBlock([
-          clients.core.mineTokens(amount, otherMiner),
+          core.mineTokens(amount, otherMiner),
         ]);
 
         // act
         const receipt = chain.mineBlock([
-          clients.core.claimMiningReward(block.height - 1, miner),
+          core.claimMiningReward(block.height - 1, miner),
         ]);
 
         // assert
         receipt.receipts[0].result
           .expectErr()
-          .expectUint(CoreClient.ErrCode.ERR_USER_DID_NOT_MINE_IN_BLOCK);
+          .expectUint(CoreModel.ErrCode.ERR_USER_DID_NOT_MINE_IN_BLOCK);
       });
 
-      it("throws ERR_CLAIMED_BEFORE_MATURITY when called before reward was mature to be claimed", (chain, accounts, clients) => {
+      it("throws ERR_CLAIMED_BEFORE_MATURITY when called before reward was mature to be claimed", () => {
         // arrange
         const miner = accounts.get("wallet_2")!;
         const amount = 2000;
         const setupBlock = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(miner),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(miner),
         ]);
         const activationBlockHeight =
-          setupBlock.height + CoreClient.ACTIVATION_DELAY - 1;
+          setupBlock.height + CoreModel.ACTIVATION_DELAY - 1;
 
         chain.mineEmptyBlockUntil(activationBlockHeight);
 
-        const block = chain.mineBlock([clients.core.mineTokens(amount, miner)]);
+        const block = chain.mineBlock([core.mineTokens(amount, miner)]);
 
         // act
         const receipt = chain.mineBlock([
-          clients.core.claimMiningReward(block.height - 1, miner),
+          core.claimMiningReward(block.height - 1, miner),
         ]).receipts[0];
 
         // assert
         receipt.result
           .expectErr()
-          .expectUint(CoreClient.ErrCode.ERR_CLAIMED_BEFORE_MATURITY);
+          .expectUint(CoreModel.ErrCode.ERR_CLAIMED_BEFORE_MATURITY);
       });
 
-      it("throws ERR_REWARD_ALREADY_CLAIMED when trying to claim reward 2nd time", (chain, accounts, clients) => {
+      it("throws ERR_REWARD_ALREADY_CLAIMED when trying to claim reward 2nd time", () => {
         // arrange
         const miner = accounts.get("wallet_2")!;
         const amount = 2000;
         const setupBlock = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(miner),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(miner),
         ]);
         const activationBlockHeight =
-          setupBlock.height + CoreClient.ACTIVATION_DELAY - 1;
+          setupBlock.height + CoreModel.ACTIVATION_DELAY - 1;
 
         chain.mineEmptyBlockUntil(activationBlockHeight);
 
-        const block = chain.mineBlock([clients.core.mineTokens(amount, miner)]);
-        chain.mineEmptyBlock(CoreClient.TOKEN_REWARD_MATURITY);
+        const block = chain.mineBlock([core.mineTokens(amount, miner)]);
+        chain.mineEmptyBlock(CoreModel.TOKEN_REWARD_MATURITY);
 
         // act
         const receipt = chain.mineBlock([
-          clients.core.claimMiningReward(block.height - 1, miner),
-          clients.core.claimMiningReward(block.height - 1, miner),
+          core.claimMiningReward(block.height - 1, miner),
+          core.claimMiningReward(block.height - 1, miner),
         ]).receipts[1];
 
         // assert
         receipt.result
           .expectErr()
-          .expectUint(CoreClient.ErrCode.ERR_REWARD_ALREADY_CLAIMED);
+          .expectUint(CoreModel.ErrCode.ERR_REWARD_ALREADY_CLAIMED);
       });
 
-      it("throws ERR_MINER_DID_NOT_WIN when trying to claim reward owed to someone else", (chain, accounts, clients) => {
+      it("throws ERR_MINER_DID_NOT_WIN when trying to claim reward owed to someone else", () => {
         // arrange
         const miner = accounts.get("wallet_2")!;
         const otherMiner = accounts.get("wallet_3")!;
         const amount = 2;
         const setupBlock = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(miner),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(miner),
         ]);
         const activationBlockHeight =
-          setupBlock.height + CoreClient.ACTIVATION_DELAY - 1;
+          setupBlock.height + CoreModel.ACTIVATION_DELAY - 1;
 
         chain.mineEmptyBlockUntil(activationBlockHeight);
 
         const block = chain.mineBlock([
-          clients.core.mineTokens(amount, miner),
-          clients.core.mineTokens(amount * 10000, otherMiner),
+          core.mineTokens(amount, miner),
+          core.mineTokens(amount * 10000, otherMiner),
         ]);
-        chain.mineEmptyBlock(CoreClient.TOKEN_REWARD_MATURITY);
+        chain.mineEmptyBlock(CoreModel.TOKEN_REWARD_MATURITY);
 
         // act
         const receipt = chain.mineBlock([
-          clients.core.claimMiningReward(block.height - 1, miner),
+          core.claimMiningReward(block.height - 1, miner),
         ]).receipts[0];
 
         // assert
         receipt.result
           .expectErr()
-          .expectUint(CoreClient.ErrCode.ERR_MINER_DID_NOT_WIN);
+          .expectUint(CoreModel.ErrCode.ERR_MINER_DID_NOT_WIN);
       });
 
-      it("succeeds and mints 250000 tokens in 1st issuance cycle, during bonus period", (chain, accounts, clients) => {
+      it("succeeds and mints 250000 tokens in 1st issuance cycle, during bonus period", () => {
         // arrange
         const miner = accounts.get("wallet_2")!;
         const amount = 2;
         const setupBlock = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(miner),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(miner),
         ]);
         const activationBlockHeight =
-          setupBlock.height + CoreClient.ACTIVATION_DELAY - 1;
+          setupBlock.height + CoreModel.ACTIVATION_DELAY - 1;
 
         chain.mineEmptyBlockUntil(activationBlockHeight);
 
-        const block = chain.mineBlock([clients.core.mineTokens(amount, miner)]);
-        chain.mineEmptyBlock(CoreClient.TOKEN_REWARD_MATURITY);
+        const block = chain.mineBlock([core.mineTokens(amount, miner)]);
+        chain.mineEmptyBlock(CoreModel.TOKEN_REWARD_MATURITY);
 
         // act
         const receipt = chain.mineBlock([
-          clients.core.claimMiningReward(block.height - 1, miner),
+          core.claimMiningReward(block.height - 1, miner),
         ]).receipts[0];
 
         // assert
@@ -1031,28 +1047,28 @@ describe("[CityCoin Core]", () => {
         );
       });
 
-      it("succeeds and mints 100000 tokens in 1st issuance cycle, after bonus period", (chain, accounts, clients) => {
+      it("succeeds and mints 100000 tokens in 1st issuance cycle, after bonus period", () => {
         // arrange
         const miner = accounts.get("wallet_2")!;
         const amount = 2;
         const setupBlock = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(miner),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(miner),
         ]);
         const activationBlockHeight =
-          setupBlock.height + CoreClient.ACTIVATION_DELAY - 1;
+          setupBlock.height + CoreModel.ACTIVATION_DELAY - 1;
 
         chain.mineEmptyBlockUntil(
-          activationBlockHeight + CoreClient.BONUS_PERIOD_LENGTH + 1
+          activationBlockHeight + CoreModel.BONUS_PERIOD_LENGTH + 1
         );
 
-        const block = chain.mineBlock([clients.core.mineTokens(amount, miner)]);
-        chain.mineEmptyBlock(CoreClient.TOKEN_REWARD_MATURITY);
+        const block = chain.mineBlock([core.mineTokens(amount, miner)]);
+        chain.mineEmptyBlock(CoreModel.TOKEN_REWARD_MATURITY);
 
         // act
         const receipt = chain.mineBlock([
-          clients.core.claimMiningReward(block.height - 1, miner),
+          core.claimMiningReward(block.height - 1, miner),
         ]).receipts[0];
 
         // assert
@@ -1067,28 +1083,28 @@ describe("[CityCoin Core]", () => {
         );
       });
 
-      it("succeeds and mints 50000 tokens in 2nd issuance cycle", (chain, accounts, clients) => {
+      it("succeeds and mints 50000 tokens in 2nd issuance cycle", () => {
         // arrange
         const miner = accounts.get("wallet_2")!;
         const amount = 2;
         const setupBlock = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(miner),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(miner),
         ]);
         const activationBlockHeight =
-          setupBlock.height + CoreClient.ACTIVATION_DELAY - 1;
+          setupBlock.height + CoreModel.ACTIVATION_DELAY - 1;
 
         chain.mineEmptyBlockUntil(
-          activationBlockHeight + CoreClient.TOKEN_HALVING_BLOCKS + 1
+          activationBlockHeight + CoreModel.TOKEN_HALVING_BLOCKS + 1
         );
 
-        const block = chain.mineBlock([clients.core.mineTokens(amount, miner)]);
-        chain.mineEmptyBlock(CoreClient.TOKEN_REWARD_MATURITY);
+        const block = chain.mineBlock([core.mineTokens(amount, miner)]);
+        chain.mineEmptyBlock(CoreModel.TOKEN_REWARD_MATURITY);
 
         // act
         const receipt = chain.mineBlock([
-          clients.core.claimMiningReward(block.height - 1, miner),
+          core.claimMiningReward(block.height - 1, miner),
         ]).receipts[0];
 
         // assert
@@ -1103,28 +1119,28 @@ describe("[CityCoin Core]", () => {
         );
       });
 
-      it("succeeds and mints 25000 tokens in 3rd issuance cycle", (chain, accounts, clients) => {
+      it("succeeds and mints 25000 tokens in 3rd issuance cycle", () => {
         // arrange
         const miner = accounts.get("wallet_2")!;
         const amount = 2;
         const setupBlock = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(miner),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(miner),
         ]);
         const activationBlockHeight =
-          setupBlock.height + CoreClient.ACTIVATION_DELAY - 1;
+          setupBlock.height + CoreModel.ACTIVATION_DELAY - 1;
 
         chain.mineEmptyBlockUntil(
-          activationBlockHeight + CoreClient.TOKEN_HALVING_BLOCKS * 2 + 1
+          activationBlockHeight + CoreModel.TOKEN_HALVING_BLOCKS * 2 + 1
         );
 
-        const block = chain.mineBlock([clients.core.mineTokens(amount, miner)]);
-        chain.mineEmptyBlock(CoreClient.TOKEN_REWARD_MATURITY);
+        const block = chain.mineBlock([core.mineTokens(amount, miner)]);
+        chain.mineEmptyBlock(CoreModel.TOKEN_REWARD_MATURITY);
 
         // act
         const receipt = chain.mineBlock([
-          clients.core.claimMiningReward(block.height - 1, miner),
+          core.claimMiningReward(block.height - 1, miner),
         ]).receipts[0];
 
         // assert
@@ -1139,28 +1155,28 @@ describe("[CityCoin Core]", () => {
         );
       });
 
-      it("succeeds and mints 12500 tokens in 4th issuance cycle", (chain, accounts, clients) => {
+      it("succeeds and mints 12500 tokens in 4th issuance cycle", () => {
         // arrange
         const miner = accounts.get("wallet_2")!;
         const amount = 2;
         const setupBlock = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(miner),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(miner),
         ]);
         const activationBlockHeight =
-          setupBlock.height + CoreClient.ACTIVATION_DELAY - 1;
+          setupBlock.height + CoreModel.ACTIVATION_DELAY - 1;
 
         chain.mineEmptyBlockUntil(
-          activationBlockHeight + CoreClient.TOKEN_HALVING_BLOCKS * 3 + 1
+          activationBlockHeight + CoreModel.TOKEN_HALVING_BLOCKS * 3 + 1
         );
 
-        const block = chain.mineBlock([clients.core.mineTokens(amount, miner)]);
-        chain.mineEmptyBlock(CoreClient.TOKEN_REWARD_MATURITY);
+        const block = chain.mineBlock([core.mineTokens(amount, miner)]);
+        chain.mineEmptyBlock(CoreModel.TOKEN_REWARD_MATURITY);
 
         // act
         const receipt = chain.mineBlock([
-          clients.core.claimMiningReward(block.height - 1, miner),
+          core.claimMiningReward(block.height - 1, miner),
         ]).receipts[0];
 
         // assert
@@ -1175,28 +1191,28 @@ describe("[CityCoin Core]", () => {
         );
       });
 
-      it("succeeds and mints 6250 tokens in 5th issuance cycle", (chain, accounts, clients) => {
+      it("succeeds and mints 6250 tokens in 5th issuance cycle", () => {
         // arrange
         const miner = accounts.get("wallet_2")!;
         const amount = 2;
         const setupBlock = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(miner),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(miner),
         ]);
         const activationBlockHeight =
-          setupBlock.height + CoreClient.ACTIVATION_DELAY - 1;
+          setupBlock.height + CoreModel.ACTIVATION_DELAY - 1;
 
         chain.mineEmptyBlockUntil(
-          activationBlockHeight + CoreClient.TOKEN_HALVING_BLOCKS * 4 + 1
+          activationBlockHeight + CoreModel.TOKEN_HALVING_BLOCKS * 4 + 1
         );
 
-        const block = chain.mineBlock([clients.core.mineTokens(amount, miner)]);
-        chain.mineEmptyBlock(CoreClient.TOKEN_REWARD_MATURITY);
+        const block = chain.mineBlock([core.mineTokens(amount, miner)]);
+        chain.mineEmptyBlock(CoreModel.TOKEN_REWARD_MATURITY);
 
         // act
         const receipt = chain.mineBlock([
-          clients.core.claimMiningReward(block.height - 1, miner),
+          core.claimMiningReward(block.height - 1, miner),
         ]).receipts[0];
 
         // assert
@@ -1211,28 +1227,28 @@ describe("[CityCoin Core]", () => {
         );
       });
 
-      it("succeeds and mints 3125 tokens in final issuance cycle", (chain, accounts, clients) => {
+      it("succeeds and mints 3125 tokens in final issuance cycle", () => {
         // arrange
         const miner = accounts.get("wallet_2")!;
         const amount = 2;
         const setupBlock = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(miner),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(miner),
         ]);
         const activationBlockHeight =
-          setupBlock.height + CoreClient.ACTIVATION_DELAY - 1;
+          setupBlock.height + CoreModel.ACTIVATION_DELAY - 1;
 
         chain.mineEmptyBlockUntil(
-          activationBlockHeight + CoreClient.TOKEN_HALVING_BLOCKS * 5 + 1
+          activationBlockHeight + CoreModel.TOKEN_HALVING_BLOCKS * 5 + 1
         );
 
-        const block = chain.mineBlock([clients.core.mineTokens(amount, miner)]);
-        chain.mineEmptyBlock(CoreClient.TOKEN_REWARD_MATURITY);
+        const block = chain.mineBlock([core.mineTokens(amount, miner)]);
+        chain.mineEmptyBlock(CoreModel.TOKEN_REWARD_MATURITY);
 
         // act
         const receipt = chain.mineBlock([
-          clients.core.claimMiningReward(block.height - 1, miner),
+          core.claimMiningReward(block.height - 1, miner),
         ]).receipts[0];
 
         // assert
@@ -1249,13 +1265,13 @@ describe("[CityCoin Core]", () => {
     });
 
     describe("is-block-winner()", () => {
-      it("returns false when user is unknown", (chain, accounts, clients) => {
+      it("returns false when user is unknown", () => {
         // arrange
         const user = accounts.get("wallet_1")!;
         const minerBlockHeight = 1;
 
         // act
-        const result = clients.core.isBlockWinner(
+        const result = core.isBlockWinner(
           user,
           minerBlockHeight
         ).result;
@@ -1264,18 +1280,18 @@ describe("[CityCoin Core]", () => {
         result.expectBool(false);
       });
 
-      it("returns false when selected block has not been mined by anyone", (chain, accounts, clients) => {
+      it("returns false when selected block has not been mined by anyone", () => {
         // arrange
         const user = accounts.get("wallet_1")!;
         const minerBlockHeight = 1;
         chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(user),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(user),
         ]);
 
         // act
-        const result = clients.core.isBlockWinner(
+        const result = core.isBlockWinner(
           user,
           minerBlockHeight
         ).result;
@@ -1284,26 +1300,26 @@ describe("[CityCoin Core]", () => {
         result.expectBool(false);
       });
 
-      it("returns false when user didn't mine selected block", (chain, accounts, clients) => {
+      it("returns false when user didn't mine selected block", () => {
         // arrange
         const user = accounts.get("wallet_1")!;
         const user2 = accounts.get("wallet_2")!;
         const setupBlock = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(user),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(user),
         ]);
         const activationBlockHeight =
-          setupBlock.height + CoreClient.ACTIVATION_DELAY - 1;
+          setupBlock.height + CoreModel.ACTIVATION_DELAY - 1;
 
         chain.mineEmptyBlockUntil(activationBlockHeight);
 
         const minerBlockHeight = chain.mineBlock([
-          clients.core.mineTokens(200, user2),
+          core.mineTokens(200, user2),
         ]).height;
 
         // act
-        const result = clients.core.isBlockWinner(
+        const result = core.isBlockWinner(
           user,
           minerBlockHeight
         ).result;
@@ -1312,24 +1328,24 @@ describe("[CityCoin Core]", () => {
         result.expectBool(false);
       });
 
-      it("returns false when user mined selected block, but block is not mature", (chain, accounts, clients) => {
+      it("returns false when user mined selected block, but block is not mature", () => {
         // arrange
         const user = accounts.get("wallet_1")!;
         const setupBlock = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(user),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(user),
         ]);
         const activationBlockHeight =
-          setupBlock.height + CoreClient.ACTIVATION_DELAY - 1;
+          setupBlock.height + CoreModel.ACTIVATION_DELAY - 1;
 
         chain.mineEmptyBlockUntil(activationBlockHeight);
 
         const minerBlockHeight =
-          chain.mineBlock([clients.core.mineTokens(200, user)]).height - 1;
+          chain.mineBlock([core.mineTokens(200, user)]).height - 1;
 
         // act
-        const result = clients.core.isBlockWinner(
+        const result = core.isBlockWinner(
           user,
           minerBlockHeight
         ).result;
@@ -1338,71 +1354,71 @@ describe("[CityCoin Core]", () => {
         result.expectBool(false);
       });
 
-      it("returns false when user mined selected block, but other user won it", (chain, accounts, clients) => {
+      it("returns false when user mined selected block, but other user won it", () => {
         // arrange
         const user = accounts.get("wallet_1")!;
         const user2 = accounts.get("wallet_2")!;
 
         const setupBlock = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(user),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(user),
         ]);
         const activationBlockHeight =
-          setupBlock.height + CoreClient.ACTIVATION_DELAY - 1;
+          setupBlock.height + CoreModel.ACTIVATION_DELAY - 1;
 
         chain.mineEmptyBlockUntil(activationBlockHeight);
 
         const minerBlockHeight =
           chain.mineBlock([
-            clients.core.mineTokens(1, user),
-            clients.core.mineTokens(200000, user2),
+            core.mineTokens(1, user),
+            core.mineTokens(200000, user2),
           ]).height - 1;
 
         chain.mineEmptyBlockUntil(
-          minerBlockHeight + CoreClient.TOKEN_REWARD_MATURITY + 1
+          minerBlockHeight + CoreModel.TOKEN_REWARD_MATURITY + 1
         );
 
         // act
-        const result = clients.core.isBlockWinner(
+        const result = core.isBlockWinner(
           user,
           minerBlockHeight
         ).result;
 
         // assert
         result.expectBool(false);
-        clients.core
+        core
           .isBlockWinner(user2, minerBlockHeight)
           .result.expectBool(true);
       });
 
-      it("returns true when user mined selected block and won it", (chain, accounts, clients) => {
+      it("returns true when user mined selected block and won it", () => {
         // arrange
         const user = accounts.get("wallet_1")!;
         const user2 = accounts.get("wallet_2")!;
 
         const setupBlock = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(user),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(user),
         ]);
         const activationBlockHeight =
-          setupBlock.height + CoreClient.ACTIVATION_DELAY - 1;
+          setupBlock.height + CoreModel.ACTIVATION_DELAY - 1;
 
         chain.mineEmptyBlockUntil(activationBlockHeight);
 
         const minerBlockHeight =
           chain.mineBlock([
-            clients.core.mineTokens(200000, user),
-            clients.core.mineTokens(1, user2),
+            core.mineTokens(200000, user),
+            core.mineTokens(1, user2),
           ]).height - 1;
 
         chain.mineEmptyBlockUntil(
-          minerBlockHeight + CoreClient.TOKEN_REWARD_MATURITY + 1
+          minerBlockHeight + CoreModel.TOKEN_REWARD_MATURITY + 1
         );
 
         // act
-        const result = clients.core.isBlockWinner(
+        const result = core.isBlockWinner(
           user,
           minerBlockHeight
         ).result;
@@ -1413,13 +1429,13 @@ describe("[CityCoin Core]", () => {
     });
 
     describe("can-claim-mining-reward()", () => {
-      it("returns false when user is unknown", (chain, accounts, clients) => {
+      it("returns false when user is unknown", () => {
         // arrange
         const user = accounts.get("wallet_1")!;
         const minerBlockHeight = 1;
 
         // act
-        const result = clients.core.canClaimMiningReward(
+        const result = core.canClaimMiningReward(
           user,
           minerBlockHeight
         ).result;
@@ -1428,18 +1444,18 @@ describe("[CityCoin Core]", () => {
         result.expectBool(false);
       });
 
-      it("returns false when selected block has not been mined by anyone", (chain, accounts, clients) => {
+      it("returns false when selected block has not been mined by anyone", () => {
         // arrange
         const user = accounts.get("wallet_1")!;
         const minerBlockHeight = 1;
         chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(user),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(user),
         ]);
 
         // act
-        const result = clients.core.canClaimMiningReward(
+        const result = core.canClaimMiningReward(
           user,
           minerBlockHeight
         ).result;
@@ -1448,26 +1464,26 @@ describe("[CityCoin Core]", () => {
         result.expectBool(false);
       });
 
-      it("returns false when user didn't mine selected block", (chain, accounts, clients) => {
+      it("returns false when user didn't mine selected block", () => {
         // arrange
         const user = accounts.get("wallet_1")!;
         const user2 = accounts.get("wallet_2")!;
         const setupBlock = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(user),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(user),
         ]);
         const activationBlockHeight =
-          setupBlock.height + CoreClient.ACTIVATION_DELAY - 1;
+          setupBlock.height + CoreModel.ACTIVATION_DELAY - 1;
 
         chain.mineEmptyBlockUntil(activationBlockHeight);
 
         const minerBlockHeight = chain.mineBlock([
-          clients.core.mineTokens(200, user2),
+          core.mineTokens(200, user2),
         ]).height;
 
         // act
-        const result = clients.core.canClaimMiningReward(
+        const result = core.canClaimMiningReward(
           user,
           minerBlockHeight
         ).result;
@@ -1476,24 +1492,24 @@ describe("[CityCoin Core]", () => {
         result.expectBool(false);
       });
 
-      it("returns false when user mined selected block, but block is not mature", (chain, accounts, clients) => {
+      it("returns false when user mined selected block, but block is not mature", () => {
         // arrange
         const user = accounts.get("wallet_1")!;
         const setupBlock = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(user),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(user),
         ]);
         const activationBlockHeight =
-          setupBlock.height + CoreClient.ACTIVATION_DELAY - 1;
+          setupBlock.height + CoreModel.ACTIVATION_DELAY - 1;
 
         chain.mineEmptyBlockUntil(activationBlockHeight);
 
         const minerBlockHeight =
-          chain.mineBlock([clients.core.mineTokens(200, user)]).height - 1;
+          chain.mineBlock([core.mineTokens(200, user)]).height - 1;
 
         // act
-        const result = clients.core.canClaimMiningReward(
+        const result = core.canClaimMiningReward(
           user,
           minerBlockHeight
         ).result;
@@ -1502,74 +1518,74 @@ describe("[CityCoin Core]", () => {
         result.expectBool(false);
       });
 
-      it("returns false when user mined selected block, but other user won it", (chain, accounts, clients) => {
+      it("returns false when user mined selected block, but other user won it", () => {
         // arrange
         const user = accounts.get("wallet_1")!;
         const user2 = accounts.get("wallet_2")!;
 
         const setupBlock = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(user),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(user),
         ]);
         const activationBlockHeight =
-          setupBlock.height + CoreClient.ACTIVATION_DELAY - 1;
+          setupBlock.height + CoreModel.ACTIVATION_DELAY - 1;
 
         chain.mineEmptyBlockUntil(activationBlockHeight);
 
         const minerBlockHeight =
           chain.mineBlock([
-            clients.core.mineTokens(1, user),
-            clients.core.mineTokens(200000, user2),
+            core.mineTokens(1, user),
+            core.mineTokens(200000, user2),
           ]).height - 1;
 
         chain.mineEmptyBlockUntil(
-          minerBlockHeight + CoreClient.TOKEN_REWARD_MATURITY + 1
+          minerBlockHeight + CoreModel.TOKEN_REWARD_MATURITY + 1
         );
 
         // act
-        const result = clients.core.canClaimMiningReward(
+        const result = core.canClaimMiningReward(
           user,
           minerBlockHeight
         ).result;
 
         // assert
         result.expectBool(false);
-        clients.core
+        core
           .canClaimMiningReward(user2, minerBlockHeight)
           .result.expectBool(true);
       });
 
-      it("returns false when user mined selected block, won it but already claimed the reward", (chain, accounts, clients) => {
+      it("returns false when user mined selected block, won it but already claimed the reward", () => {
         // arrange
         const user = accounts.get("wallet_1")!;
         const user2 = accounts.get("wallet_2")!;
 
         const setupBlock = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(user),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(user),
         ]);
         const activationBlockHeight =
-          setupBlock.height + CoreClient.ACTIVATION_DELAY - 1;
+          setupBlock.height + CoreModel.ACTIVATION_DELAY - 1;
 
         chain.mineEmptyBlockUntil(activationBlockHeight);
 
         const minerBlockHeight =
           chain.mineBlock([
-            clients.core.mineTokens(200000, user),
-            clients.core.mineTokens(1, user2),
+            core.mineTokens(200000, user),
+            core.mineTokens(1, user2),
           ]).height - 1;
 
         chain.mineEmptyBlockUntil(
-          minerBlockHeight + CoreClient.TOKEN_REWARD_MATURITY + 1
+          minerBlockHeight + CoreModel.TOKEN_REWARD_MATURITY + 1
         );
         chain.mineBlock([
-          clients.core.claimMiningReward(minerBlockHeight, user),
+          core.claimMiningReward(minerBlockHeight, user),
         ]);
 
         // act
-        const result = clients.core.canClaimMiningReward(
+        const result = core.canClaimMiningReward(
           user,
           minerBlockHeight
         ).result;
@@ -1578,33 +1594,33 @@ describe("[CityCoin Core]", () => {
         result.expectBool(false);
       });
 
-      it("returns true when user mined selected block, won it and did not claim the reward yet", (chain, accounts, clients) => {
+      it("returns true when user mined selected block, won it and did not claim the reward yet", () => {
         // arrange
         const user = accounts.get("wallet_1")!;
         const user2 = accounts.get("wallet_2")!;
 
         const setupBlock = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(user),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(user),
         ]);
         const activationBlockHeight =
-          setupBlock.height + CoreClient.ACTIVATION_DELAY - 1;
+          setupBlock.height + CoreModel.ACTIVATION_DELAY - 1;
 
         chain.mineEmptyBlockUntil(activationBlockHeight);
 
         const minerBlockHeight =
           chain.mineBlock([
-            clients.core.mineTokens(200000, user),
-            clients.core.mineTokens(1, user2),
+            core.mineTokens(200000, user),
+            core.mineTokens(1, user2),
           ]).height - 1;
 
         chain.mineEmptyBlockUntil(
-          minerBlockHeight + CoreClient.TOKEN_REWARD_MATURITY + 1
+          minerBlockHeight + CoreModel.TOKEN_REWARD_MATURITY + 1
         );
 
         // act
-        const result = clients.core.canClaimMiningReward(
+        const result = core.canClaimMiningReward(
           user,
           minerBlockHeight
         ).result;
@@ -1627,146 +1643,146 @@ describe("[CityCoin Core]", () => {
 
   describe("STACKING ACTIONS", () => {
     describe("stack-tokens()", () => {
-      it("throws ERR_STACKING_NOT_AVAILABLE when stacking is not available", (chain, accounts, clients) => {
+      it("throws ERR_STACKING_NOT_AVAILABLE when stacking is not available", () => {
         // arrange
         const stacker = accounts.get("wallet_2")!;
         const amountTokens = 200;
         const lockPeriod = 2;
-        chain.mineBlock([clients.token.ftMint(amountTokens, stacker)]);
+        chain.mineBlock([token.ftMint(amountTokens, stacker)]);
 
         // act
         const receipt = chain.mineBlock([
-          clients.core.stackTokens(amountTokens, lockPeriod, stacker),
+          core.stackTokens(amountTokens, lockPeriod, stacker),
         ]).receipts[0];
 
         // assert
         receipt.result
           .expectErr()
-          .expectUint(CoreClient.ErrCode.ERR_STACKING_NOT_AVAILABLE);
+          .expectUint(CoreModel.ErrCode.ERR_STACKING_NOT_AVAILABLE);
       });
 
-      it("throws ERR_CANNOT_STACK while trying to stack with lock period = 0", (chain, accounts, clients) => {
+      it("throws ERR_CANNOT_STACK while trying to stack with lock period = 0", () => {
         // arrange
         const stacker = accounts.get("wallet_2")!;
         const amountTokens = 200;
         const lockPeriod = 0;
         const block = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(stacker),
-          clients.token.ftMint(amountTokens, stacker),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(stacker),
+          token.ftMint(amountTokens, stacker),
         ]);
         const activationBlockHeight =
-          block.height + CoreClient.ACTIVATION_DELAY - 1;
+          block.height + CoreModel.ACTIVATION_DELAY - 1;
         chain.mineEmptyBlockUntil(activationBlockHeight);
 
         // act
         const receipt = chain.mineBlock([
-          clients.core.stackTokens(amountTokens, lockPeriod, stacker),
+          core.stackTokens(amountTokens, lockPeriod, stacker),
         ]).receipts[0];
 
         // assert
         receipt.result
           .expectErr()
-          .expectUint(CoreClient.ErrCode.ERR_CANNOT_STACK);
+          .expectUint(CoreModel.ErrCode.ERR_CANNOT_STACK);
       });
 
-      it("throws ERR_CANNOT_STACK while trying to stack with lock period > 32", (chain, accounts, clients) => {
+      it("throws ERR_CANNOT_STACK while trying to stack with lock period > 32", () => {
         // arrange
         const stacker = accounts.get("wallet_2")!;
         const amountTokens = 200;
         const lockPeriod = 33;
         const block = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(stacker),
-          clients.token.ftMint(amountTokens, stacker),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(stacker),
+          token.ftMint(amountTokens, stacker),
         ]);
         const activationBlockHeight =
-          block.height + CoreClient.ACTIVATION_DELAY - 1;
+          block.height + CoreModel.ACTIVATION_DELAY - 1;
         chain.mineEmptyBlockUntil(activationBlockHeight);
 
         // act
         const receipt = chain.mineBlock([
-          clients.core.stackTokens(amountTokens, lockPeriod, stacker),
+          core.stackTokens(amountTokens, lockPeriod, stacker),
         ]).receipts[0];
 
         // assert
         receipt.result
           .expectErr()
-          .expectUint(CoreClient.ErrCode.ERR_CANNOT_STACK);
+          .expectUint(CoreModel.ErrCode.ERR_CANNOT_STACK);
       });
 
-      it("throws ERR_CANNOT_STACK while trying to stack with amount tokens = 0", (chain, accounts, clients) => {
+      it("throws ERR_CANNOT_STACK while trying to stack with amount tokens = 0", () => {
         // arrange
         const stacker = accounts.get("wallet_2")!;
         const amountTokens = 0;
         const lockPeriod = 5;
         const block = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(stacker),
-          clients.token.ftMint(amountTokens, stacker),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(stacker),
+          token.ftMint(amountTokens, stacker),
         ]);
         const activationBlockHeight =
-          block.height + CoreClient.ACTIVATION_DELAY - 1;
+          block.height + CoreModel.ACTIVATION_DELAY - 1;
         chain.mineEmptyBlockUntil(activationBlockHeight);
 
         // act
         const receipt = chain.mineBlock([
-          clients.core.stackTokens(amountTokens, lockPeriod, stacker),
+          core.stackTokens(amountTokens, lockPeriod, stacker),
         ]).receipts[0];
 
         // assert
         receipt.result
           .expectErr()
-          .expectUint(CoreClient.ErrCode.ERR_CANNOT_STACK);
+          .expectUint(CoreModel.ErrCode.ERR_CANNOT_STACK);
       });
 
-      it("throws ERR_FT_INSUFFICIENT_BALANCE while trying to stack with amount tokens > user balance", (chain, accounts, clients) => {
+      it("throws ERR_FT_INSUFFICIENT_BALANCE while trying to stack with amount tokens > user balance", () => {
         // arrange
         const stacker = accounts.get("wallet_2")!;
         const amountTokens = 20;
         const lockPeriod = 5;
         const block = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(stacker),
-          clients.token.ftMint(amountTokens, stacker),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(stacker),
+          token.ftMint(amountTokens, stacker),
         ]);
         const activationBlockHeight =
-          block.height + CoreClient.ACTIVATION_DELAY - 1;
+          block.height + CoreModel.ACTIVATION_DELAY - 1;
         chain.mineEmptyBlockUntil(activationBlockHeight);
 
         // act
         const receipt = chain.mineBlock([
-          clients.core.stackTokens(amountTokens + 1, lockPeriod, stacker),
+          core.stackTokens(amountTokens + 1, lockPeriod, stacker),
         ]).receipts[0];
 
         // assert
         receipt.result
           .expectErr()
-          .expectUint(CoreClient.ErrCode.ERR_FT_INSUFFICIENT_BALANCE);
+          .expectUint(CoreModel.ErrCode.ERR_FT_INSUFFICIENT_BALANCE);
       });
 
-      it("succeeds and cause one ft_transfer_event to core contract", (chain, accounts, clients) => {
+      it("succeeds and cause one ft_transfer_event to core contract", () => {
         // arrange
         const stacker = accounts.get("wallet_2")!;
         const amountTokens = 20;
         const lockPeriod = 5;
         const block = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(stacker),
-          clients.token.ftMint(amountTokens, stacker),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(stacker),
+          token.ftMint(amountTokens, stacker),
         ]);
         const activationBlockHeight =
-          block.height + CoreClient.ACTIVATION_DELAY - 1;
+          block.height + CoreModel.ACTIVATION_DELAY - 1;
         chain.mineEmptyBlockUntil(activationBlockHeight);
 
         // act
         const receipt = chain.mineBlock([
-          clients.core.stackTokens(amountTokens, lockPeriod, stacker),
+          core.stackTokens(amountTokens, lockPeriod, stacker),
         ]).receipts[0];
 
         // assert
@@ -1776,28 +1792,28 @@ describe("[CityCoin Core]", () => {
         receipt.events.expectFungibleTokenTransferEvent(
           amountTokens,
           stacker.address,
-          clients.core.getContractAddress(),
+          core.address,
           "citycoins"
         );
       });
 
-      it("succeeds when called more than once", (chain, accounts, clients) => {
+      it("succeeds when called more than once", () => {
         // arrange
         const stacker = accounts.get("wallet_2")!;
         const amountTokens = 20;
         const lockPeriod = 5;
         const block = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(stacker),
-          clients.token.ftMint(amountTokens * 3, stacker),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(stacker),
+          token.ftMint(amountTokens * 3, stacker),
         ]);
         const activationBlockHeight =
-          block.height + CoreClient.ACTIVATION_DELAY - 1;
+          block.height + CoreModel.ACTIVATION_DELAY - 1;
         chain.mineEmptyBlockUntil(activationBlockHeight);
 
         // act
-        const mineTokensTx = clients.core.stackTokens(
+        const mineTokensTx = core.stackTokens(
           amountTokens,
           lockPeriod,
           stacker
@@ -1816,36 +1832,36 @@ describe("[CityCoin Core]", () => {
           receipt.events.expectFungibleTokenTransferEvent(
             amountTokens,
             stacker.address,
-            clients.core.getContractAddress(),
+            core.address,
             "citycoins"
           );
         });
       });
 
-      it("remembers when tokens should be returned when locking period = 1", (chain, accounts, clients) => {
+      it("remembers when tokens should be returned when locking period = 1", () => {
         // arrange
         const stacker = accounts.get("wallet_2")!;
         const amountTokens = 20;
         const lockPeriod = 1;
         const block = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(stacker),
-          clients.token.ftMint(amountTokens, stacker),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(stacker),
+          token.ftMint(amountTokens, stacker),
         ]);
         const activationBlockHeight =
-          block.height + CoreClient.ACTIVATION_DELAY - 1;
+          block.height + CoreModel.ACTIVATION_DELAY - 1;
         chain.mineEmptyBlockUntil(activationBlockHeight);
 
         // act
         chain.mineBlock([
-          clients.core.stackTokens(amountTokens, lockPeriod, stacker),
+          core.stackTokens(amountTokens, lockPeriod, stacker),
         ]);
 
         // assert
         const rewardCycle = 1;
         const userId = 1;
-        const result = clients.core.getStackerAtCycleOrDefault(
+        const result = core.getStackerAtCycleOrDefault(
           rewardCycle,
           userId
         ).result;
@@ -1856,31 +1872,31 @@ describe("[CityCoin Core]", () => {
         });
       });
 
-      it("remembers when tokens should be returned when locking period > 1", (chain, accounts, clients) => {
+      it("remembers when tokens should be returned when locking period > 1", () => {
         // arrange
         const stacker = accounts.get("wallet_2")!;
         const amountTokens = 20;
         const lockPeriod = 8;
         const block = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(stacker),
-          clients.token.ftMint(amountTokens, stacker),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(stacker),
+          token.ftMint(amountTokens, stacker),
         ]);
         const activationBlockHeight =
-          block.height + CoreClient.ACTIVATION_DELAY - 1;
+          block.height + CoreModel.ACTIVATION_DELAY - 1;
         chain.mineEmptyBlockUntil(activationBlockHeight);
 
         // act
         chain.mineBlock([
-          clients.core.stackTokens(amountTokens, lockPeriod, stacker),
+          core.stackTokens(amountTokens, lockPeriod, stacker),
         ]);
 
         // assert
         const userId = 1;
 
         for (let rewardCycle = 1; rewardCycle <= lockPeriod; rewardCycle++) {
-          const result = clients.core.getStackerAtCycleOrDefault(
+          const result = core.getStackerAtCycleOrDefault(
             rewardCycle,
             userId
           ).result;
@@ -1892,7 +1908,7 @@ describe("[CityCoin Core]", () => {
         }
       });
 
-      it("remembers when tokens should be returned when stacking multiple times with different locking periods", (chain, accounts, clients) => {
+      it("remembers when tokens should be returned when stacking multiple times with different locking periods", () => {
         // arrange
         const stacker = accounts.get("wallet_2")!;
         const userId = 1;
@@ -1924,13 +1940,13 @@ describe("[CityCoin Core]", () => {
         );
 
         const block = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(stacker),
-          clients.token.ftMint(totalAmountTokens, stacker),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(stacker),
+          token.ftMint(totalAmountTokens, stacker),
         ]);
         const activationBlockHeight =
-          block.height + CoreClient.ACTIVATION_DELAY - 1;
+          block.height + CoreModel.ACTIVATION_DELAY - 1;
         chain.mineEmptyBlockUntil(activationBlockHeight);
 
         // act
@@ -1938,11 +1954,11 @@ describe("[CityCoin Core]", () => {
           // move chain tip to the beginning of specific cycle
           chain.mineEmptyBlockUntil(
             activationBlockHeight +
-              record.stackInCycle * CoreClient.REWARD_CYCLE_LENGTH
+              record.stackInCycle * CoreModel.REWARD_CYCLE_LENGTH
           );
 
           chain.mineBlock([
-            clients.core.stackTokens(
+            core.stackTokens(
               record.amountTokens,
               record.lockPeriod,
               stacker
@@ -1970,7 +1986,7 @@ describe("[CityCoin Core]", () => {
             }
           });
 
-          const result = clients.core.getStackerAtCycleOrDefault(
+          const result = core.getStackerAtCycleOrDefault(
             rewardCycle,
             userId
           ).result;
@@ -1996,156 +2012,156 @@ describe("[CityCoin Core]", () => {
 
   describe("STACKING REWARD CLAIMS", () => {
     describe("claim-stacking-reward()", () => {
-      it("throws ERR_STACKING_NOT_AVAILABLE when stacking is not yet available", (chain, accounts, clients) => {
+      it("throws ERR_STACKING_NOT_AVAILABLE when stacking is not yet available", () => {
         // arrange
         const stacker = accounts.get("wallet_1")!;
         const targetCycle = 1;
 
         // act
         const receipt = chain.mineBlock([
-          clients.core.claimStackingReward(targetCycle, stacker),
+          core.claimStackingReward(targetCycle, stacker),
         ]).receipts[0];
 
         // assert
         receipt.result
           .expectErr()
-          .expectUint(CoreClient.ErrCode.ERR_STACKING_NOT_AVAILABLE);
+          .expectUint(CoreModel.ErrCode.ERR_STACKING_NOT_AVAILABLE);
       });
 
-      it("throws ERR_USER_ID_NOT_FOUND when called by unknown user", (chain, accounts, clients) => {
+      it("throws ERR_USER_ID_NOT_FOUND when called by unknown user", () => {
         // arrange
         const stacker = accounts.get("wallet_1")!;
         const otherUser = accounts.get("wallet_2")!;
         const targetCycle = 1;
         const setupBlock = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(otherUser),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(otherUser),
         ]);
         chain.mineEmptyBlockUntil(
-          setupBlock.height + CoreClient.ACTIVATION_DELAY - 1
+          setupBlock.height + CoreModel.ACTIVATION_DELAY - 1
         );
 
         // act
         const receipt = chain.mineBlock([
-          clients.core.claimStackingReward(targetCycle, stacker),
+          core.claimStackingReward(targetCycle, stacker),
         ]).receipts[0];
 
         // assert
         receipt.result
           .expectErr()
-          .expectUint(CoreClient.ErrCode.ERR_USER_ID_NOT_FOUND);
+          .expectUint(CoreModel.ErrCode.ERR_USER_ID_NOT_FOUND);
       });
 
-      it("throws ERR_REWARD_CYCLE_NOT_COMPLETED when reward cycle is not completed", (chain, accounts, clients) => {
+      it("throws ERR_REWARD_CYCLE_NOT_COMPLETED when reward cycle is not completed", () => {
         // arrange
         const stacker = accounts.get("wallet_1")!;
         const targetCycle = 1;
         const setupBlock = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(stacker),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(stacker),
         ]);
         chain.mineEmptyBlockUntil(
-          setupBlock.height + CoreClient.ACTIVATION_DELAY - 1
+          setupBlock.height + CoreModel.ACTIVATION_DELAY - 1
         );
 
         // act
         const receipt = chain.mineBlock([
-          clients.core.claimStackingReward(targetCycle, stacker),
+          core.claimStackingReward(targetCycle, stacker),
         ]).receipts[0];
 
         // assert
         receipt.result
           .expectErr()
-          .expectUint(CoreClient.ErrCode.ERR_REWARD_CYCLE_NOT_COMPLETED);
+          .expectUint(CoreModel.ErrCode.ERR_REWARD_CYCLE_NOT_COMPLETED);
       });
 
-      it("throws ERR_NOTHING_TO_REDEEM when stacker didn't stack at all", (chain, accounts, clients) => {
+      it("throws ERR_NOTHING_TO_REDEEM when stacker didn't stack at all", () => {
         // arrange
         const stacker = accounts.get("wallet_1")!;
         const targetCycle = 1;
         const setupBlock = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(stacker),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(stacker),
         ]);
         chain.mineEmptyBlockUntil(
           setupBlock.height +
-            CoreClient.ACTIVATION_DELAY +
-            CoreClient.REWARD_CYCLE_LENGTH * 2 -
+            CoreModel.ACTIVATION_DELAY +
+            CoreModel.REWARD_CYCLE_LENGTH * 2 -
             1
         );
 
         // act
         const receipt = chain.mineBlock([
-          clients.core.claimStackingReward(targetCycle, stacker),
+          core.claimStackingReward(targetCycle, stacker),
         ]).receipts[0];
 
         // assert
         receipt.result
           .expectErr()
-          .expectUint(CoreClient.ErrCode.ERR_NOTHING_TO_REDEEM);
+          .expectUint(CoreModel.ErrCode.ERR_NOTHING_TO_REDEEM);
       });
 
-      it("throws ERR_NOTHING_TO_REDEEM when stacker stacked in a cycle but miners did not mine", (chain, accounts, clients) => {
+      it("throws ERR_NOTHING_TO_REDEEM when stacker stacked in a cycle but miners did not mine", () => {
         // arrange
         const stacker = accounts.get("wallet_1")!;
         const targetCycle = 1;
         const amount = 200;
         const setupBlock = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(stacker),
-          clients.token.ftMint(amount, stacker),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(stacker),
+          token.ftMint(amount, stacker),
         ]);
         chain.mineEmptyBlockUntil(
-          setupBlock.height + CoreClient.ACTIVATION_DELAY + 1
+          setupBlock.height + CoreModel.ACTIVATION_DELAY + 1
         );
-        chain.mineBlock([clients.core.stackTokens(amount, 4, stacker)]);
-        chain.mineEmptyBlock(CoreClient.REWARD_CYCLE_LENGTH * 2);
+        chain.mineBlock([core.stackTokens(amount, 4, stacker)]);
+        chain.mineEmptyBlock(CoreModel.REWARD_CYCLE_LENGTH * 2);
 
         // act
         const receipt = chain.mineBlock([
-          clients.core.claimStackingReward(targetCycle, stacker),
+          core.claimStackingReward(targetCycle, stacker),
         ]).receipts[0];
 
         // assert
         receipt.result
           .expectErr()
-          .expectUint(CoreClient.ErrCode.ERR_NOTHING_TO_REDEEM);
+          .expectUint(CoreModel.ErrCode.ERR_NOTHING_TO_REDEEM);
       });
 
-      it("throws ERR_NOTHING_TO_REDEEM while trying to claim reward 2nd time", (chain, accounts, clients) => {
+      it("throws ERR_NOTHING_TO_REDEEM while trying to claim reward 2nd time", () => {
         // arrange
         const stacker = accounts.get("wallet_1")!;
         const targetCycle = 1;
         const amount = 200;
         const setupBlock = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(stacker),
-          clients.token.ftMint(amount, stacker),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(stacker),
+          token.ftMint(amount, stacker),
         ]);
         chain.mineEmptyBlockUntil(
-          setupBlock.height + CoreClient.ACTIVATION_DELAY + 1
+          setupBlock.height + CoreModel.ACTIVATION_DELAY + 1
         );
-        chain.mineBlock([clients.core.stackTokens(amount, 1, stacker)]);
-        chain.mineEmptyBlock(CoreClient.REWARD_CYCLE_LENGTH * 2);
+        chain.mineBlock([core.stackTokens(amount, 1, stacker)]);
+        chain.mineEmptyBlock(CoreModel.REWARD_CYCLE_LENGTH * 2);
 
         // act
         const receipt = chain.mineBlock([
-          clients.core.claimStackingReward(targetCycle, stacker),
-          clients.core.claimStackingReward(targetCycle, stacker),
+          core.claimStackingReward(targetCycle, stacker),
+          core.claimStackingReward(targetCycle, stacker),
         ]).receipts[1];
 
         // assert
         receipt.result
           .expectErr()
-          .expectUint(CoreClient.ErrCode.ERR_NOTHING_TO_REDEEM);
+          .expectUint(CoreModel.ErrCode.ERR_NOTHING_TO_REDEEM);
       });
 
-      it("succeeds and cause stx_transfer and ft_transfer events", (chain, accounts, clients) => {
+      it("succeeds and cause stx_transfer and ft_transfer events", () => {
         // arrange
         const miner = accounts.get("wallet_1")!;
         const amountUstx = 1000;
@@ -2153,22 +2169,22 @@ describe("[CityCoin Core]", () => {
         const targetCycle = 1;
         const amountTokens = 200;
         const setupBlock = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(stacker),
-          clients.token.ftMint(amountTokens, stacker),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(stacker),
+          token.ftMint(amountTokens, stacker),
         ]);
         chain.mineEmptyBlockUntil(
-          setupBlock.height + CoreClient.ACTIVATION_DELAY + 1
+          setupBlock.height + CoreModel.ACTIVATION_DELAY + 1
         );
-        chain.mineBlock([clients.core.stackTokens(amountTokens, 1, stacker)]);
-        chain.mineEmptyBlock(CoreClient.REWARD_CYCLE_LENGTH);
-        chain.mineBlock([clients.core.mineTokens(amountUstx, miner)]);
-        chain.mineEmptyBlock(CoreClient.REWARD_CYCLE_LENGTH);
+        chain.mineBlock([core.stackTokens(amountTokens, 1, stacker)]);
+        chain.mineEmptyBlock(CoreModel.REWARD_CYCLE_LENGTH);
+        chain.mineBlock([core.mineTokens(amountUstx, miner)]);
+        chain.mineEmptyBlock(CoreModel.REWARD_CYCLE_LENGTH);
 
         // act
         const receipt = chain.mineBlock([
-          clients.core.claimStackingReward(targetCycle, stacker),
+          core.claimStackingReward(targetCycle, stacker),
         ]).receipts[0];
 
         // assert
@@ -2177,38 +2193,38 @@ describe("[CityCoin Core]", () => {
 
         receipt.events.expectFungibleTokenTransferEvent(
           amountTokens,
-          clients.core.getContractAddress(),
+          core.address,
           stacker.address,
           "citycoins"
         );
 
         receipt.events.expectSTXTransferEvent(
           amountUstx * 0.7,
-          clients.core.getContractAddress(),
+          core.address,
           stacker.address
         );
       });
 
-      it("succeeds and cause only ft_transfer event when there was no STX reward (ie. due to no miners)", (chain, accounts, clients) => {
+      it("succeeds and cause only ft_transfer event when there was no STX reward (ie. due to no miners)", () => {
         // arrange
         const stacker = accounts.get("wallet_1")!;
         const amountTokens = 20;
         const targetCycle = 1;
         const setupBlock = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(stacker),
-          clients.token.ftMint(amountTokens, stacker),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(stacker),
+          token.ftMint(amountTokens, stacker),
         ]);
         chain.mineEmptyBlockUntil(
-          setupBlock.height + CoreClient.ACTIVATION_DELAY + 1
+          setupBlock.height + CoreModel.ACTIVATION_DELAY + 1
         );
-        chain.mineBlock([clients.core.stackTokens(amountTokens, 1, stacker)]);
-        chain.mineEmptyBlock(CoreClient.REWARD_CYCLE_LENGTH * 2);
+        chain.mineBlock([core.stackTokens(amountTokens, 1, stacker)]);
+        chain.mineEmptyBlock(CoreModel.REWARD_CYCLE_LENGTH * 2);
 
         // act
         const receipt = chain.mineBlock([
-          clients.core.claimStackingReward(targetCycle, stacker),
+          core.claimStackingReward(targetCycle, stacker),
         ]).receipts[0];
 
         // assert
@@ -2218,13 +2234,13 @@ describe("[CityCoin Core]", () => {
 
         receipt.events.expectFungibleTokenTransferEvent(
           amountTokens,
-          clients.core.getContractAddress(),
+          core.address,
           stacker.address,
           "citycoins"
         );
       });
 
-      it("succeeds and release tokens only for last cycle in locked period", (chain, accounts, clients) => {
+      it("succeeds and release tokens only for last cycle in locked period", () => {
         // arrange
         const stacker = accounts.get("wallet_2")!;
         const userId = 1;
@@ -2256,24 +2272,24 @@ describe("[CityCoin Core]", () => {
         );
 
         const block = chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(stacker),
-          clients.token.ftMint(totalAmountTokens, stacker),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(stacker),
+          token.ftMint(totalAmountTokens, stacker),
         ]);
         const activationBlockHeight =
-          block.height + CoreClient.ACTIVATION_DELAY - 1;
+          block.height + CoreModel.ACTIVATION_DELAY - 1;
         chain.mineEmptyBlockUntil(activationBlockHeight);
 
         stackingRecords.forEach((record) => {
           // move chain tip to the beginning of specific cycle
           chain.mineEmptyBlockUntil(
             activationBlockHeight +
-              record.stackInCycle * CoreClient.REWARD_CYCLE_LENGTH
+              record.stackInCycle * CoreModel.REWARD_CYCLE_LENGTH
           );
 
           chain.mineBlock([
-            clients.core.stackTokens(
+            core.stackTokens(
               record.amountTokens,
               record.lockPeriod,
               stacker
@@ -2282,7 +2298,7 @@ describe("[CityCoin Core]", () => {
         });
 
         chain.mineEmptyBlockUntil(
-          CoreClient.REWARD_CYCLE_LENGTH * (maxCycle + 1)
+          CoreModel.REWARD_CYCLE_LENGTH * (maxCycle + 1)
         );
 
         // act + assert
@@ -2298,7 +2314,7 @@ describe("[CityCoin Core]", () => {
           });
 
           const receipt = chain.mineBlock([
-            clients.core.claimStackingReward(rewardCycle, stacker),
+            core.claimStackingReward(rewardCycle, stacker),
           ]).receipts[0];
 
           if (toReturn === 0) {
@@ -2309,7 +2325,7 @@ describe("[CityCoin Core]", () => {
 
             receipt.events.expectFungibleTokenTransferEvent(
               toReturn,
-              clients.core.getContractAddress(),
+              core.address,
               stacker.address,
               "citycoins"
             );
