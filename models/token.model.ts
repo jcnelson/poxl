@@ -1,5 +1,5 @@
 import { Account, ReadOnlyFn, Tx, types } from "../deps.ts";
-import { Client } from "./client.ts";
+import { Model } from "../src/model.ts";
 
 enum ErrCode {
   ERR_UNAUTHORIZED = 2000,
@@ -8,7 +8,8 @@ enum ErrCode {
   ERR_CORE_CONTRACT_NOT_FOUND = 6009,
 }
 
-export class TokenClient extends Client {
+export class TokenModel extends Model {
+  name = "citycoin-token";
   static readonly ErrCode = ErrCode;
 
   //////////////////////////////////////////////////
@@ -30,8 +31,7 @@ export class TokenClient extends Client {
       memoVal = types.some(types.buff(memo));
     }
 
-    return Tx.contractCall(
-      this.contractName,
+    return this.callPublic(
       "transfer",
       [
         types.uint(amount),
@@ -44,8 +44,7 @@ export class TokenClient extends Client {
   }
 
   burn(amount: number, sender: Account): Tx {
-    return Tx.contractCall(
-      this.contractName,
+    return this.callPublic(
       "burn",
       [types.uint(amount), types.principal(sender.address)],
       sender.address
@@ -53,27 +52,27 @@ export class TokenClient extends Client {
   }
 
   getName(): ReadOnlyFn {
-    return this.callReadOnlyFn("get-name");
+    return this.callReadOnly("get-name");
   }
 
   getSymbol(): ReadOnlyFn {
-    return this.callReadOnlyFn("get-symbol");
+    return this.callReadOnly("get-symbol");
   }
 
   getDecimals(): ReadOnlyFn {
-    return this.callReadOnlyFn("get-decimals");
+    return this.callReadOnly("get-decimals");
   }
 
   getBalance(user: Account): ReadOnlyFn {
-    return this.callReadOnlyFn("get-balance", [types.principal(user.address)]);
+    return this.callReadOnly("get-balance", [types.principal(user.address)]);
   }
 
   getTotalSupply(): ReadOnlyFn {
-    return this.callReadOnlyFn("get-total-supply");
+    return this.callReadOnly("get-total-supply");
   }
 
   getTokenUri(): ReadOnlyFn {
-    return this.callReadOnlyFn("get-token-uri");
+    return this.callReadOnly("get-token-uri");
   }
 
   //////////////////////////////////////////////////
@@ -81,8 +80,7 @@ export class TokenClient extends Client {
   //////////////////////////////////////////////////
 
   activateToken(sender: Account, stacksHeight: number): Tx {
-    return Tx.contractCall(
-      this.contractName,
+    return this.callPublic(
       "activate-token",
       [types.principal(sender.address), types.uint(stacksHeight)],
       sender.address
@@ -102,8 +100,7 @@ export class TokenClient extends Client {
       newUriVal = types.some(types.utf8(newUri));
     }
 
-    return Tx.contractCall(
-      this.contractName,
+    return this.callPublic(
       "set-token-uri",
       [newUriVal],
       sender.address
@@ -111,8 +108,7 @@ export class TokenClient extends Client {
   }
 
   mint(amount: number, recipient: Account, sender: Account): Tx {
-    return Tx.contractCall(
-      this.contractName,
+    return this.callPublic(
       "mint",
       [types.uint(amount), types.principal(recipient.address)],
       sender.address
@@ -130,8 +126,7 @@ export class TokenClient extends Client {
    * @param recipient
    */
   ftMint(amount: number, recipient: Account): Tx {
-    return Tx.contractCall(
-      this.contractName,
+    return this.callPublic(
       "test-mint",
       [types.uint(amount), types.principal(recipient.address)],
       this.deployer.address
@@ -139,8 +134,7 @@ export class TokenClient extends Client {
   }
 
   setTrustedCaller(newTrustedCaller: Account): Tx {
-    return Tx.contractCall(
-      this.contractName,
+    return this.callPublic(
       "test-set-trusted-caller",
       [types.principal(newTrustedCaller.address)],
       this.deployer.address
@@ -148,8 +142,7 @@ export class TokenClient extends Client {
   }
 
   setTokenActivation(): Tx {
-    return Tx.contractCall(
-      this.contractName,
+    return this.callPublic(
       "test-set-token-activation",
       [],
       this.deployer.address
@@ -161,8 +154,7 @@ export class TokenClient extends Client {
   //////////////////////////////////////////////////
 
   sendMany(recipients: Array<SendManyRecord>, sender: Account): Tx {
-    return Tx.contractCall(
-      this.contractName,
+    return this.callPublic(
       "send-many",
       [
         types.list(

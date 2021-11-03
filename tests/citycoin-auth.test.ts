@@ -1,8 +1,26 @@
-import { assertEquals, describe, Tx, types } from "../deps.ts";
-import { CoreClient } from "../src/core-client.ts";
-import { AuthClient } from "../src/auth-client.ts";
-import { TokenClient } from "../src/token-client.ts";
-import { it } from "../src/testutil.ts";
+import { assertEquals, describe, types, run, Chain, beforeEach, it} from "../deps.ts";
+import { AuthModel } from "../models/auth.model.ts";
+import { CoreModel } from "../models/core.model.ts";
+import { TokenModel } from "../models/token.model.ts";
+import { Accounts, Context } from "../src/context.ts";
+
+let ctx: Context;
+let chain: Chain;
+let accounts: Accounts;
+let core: CoreModel;
+let core2: CoreModel;
+let auth: AuthModel;
+let token: TokenModel;
+
+beforeEach(() => {
+  ctx = new Context();
+  chain = ctx.chain;
+  accounts = ctx.accounts;
+  auth = ctx.models.get(AuthModel);
+  core = ctx.models.get(CoreModel, "citycoin-core-v1");
+  core2 = ctx.models.get(CoreModel, "citycoin-core-v2")
+  token = ctx.models.get(TokenModel);
+})
 
 describe("[CityCoin Auth]", () => {
   //////////////////////////////////////////////////
@@ -10,23 +28,23 @@ describe("[CityCoin Auth]", () => {
   //////////////////////////////////////////////////
   describe("JOB MANAGEMENT", () => {
     describe("get-last-job-id()", () => {
-      it("returns u0 if no jobs have been created", (chain, accounts, clients) => {
+      it("returns u0 if no jobs have been created", () => {
         // act
-        const result = clients.auth.getLastJobId().result;
+        const result = auth.getLastJobId().result;
 
         // assert
         result.expectUint(0);
       });
-      it("returns u1 after a job has been created", (chain, accounts, clients) => {
+      it("returns u1 after a job has been created", () => {
         // arrange
         const name = "job_1";
-        const target = clients.core.getContractAddress();
+        const target = core.address;
         const sender = accounts.get("wallet_1")!;
 
         // act
-        chain.mineBlock([clients.auth.createJob(name, target, sender)]);
+        chain.mineBlock([auth.createJob(name, target, sender)]);
 
-        const result = clients.auth.getLastJobId().result;
+        const result = auth.getLastJobId().result;
 
         // assert
         result.expectUint(1);
@@ -34,31 +52,32 @@ describe("[CityCoin Auth]", () => {
     });
 
     describe("create-job()", () => {
-      it("throws ERR_UNAUTHORIZED if not called by an approver", (chain, accounts, clients) => {
+      it("throws ERR_UNAUTHORIZED if not called by an approver", () => {
         // arrange
         const name = "job_1";
-        const target = clients.core.getContractAddress();
+        const target = core.address;
         const sender = accounts.get("deployer")!;
 
         // act
         const block = chain.mineBlock([
-          clients.auth.createJob(name, target, sender),
+          auth.createJob(name, target, sender),
         ]);
 
         // assert
         block.receipts[0].result
           .expectErr()
-          .expectUint(AuthClient.ErrCode.ERR_UNAUTHORIZED);
+          .expectUint(AuthModel.ErrCode.ERR_UNAUTHORIZED);
       });
-      it("creates new job", (chain, accounts, clients) => {
+
+      it("creates new job", () => {
         // arrange
         const name = "job_1";
-        const target = clients.core.getContractAddress();
+        const target = core.address;
         const sender = accounts.get("wallet_1")!;
 
         // act
         const block = chain.mineBlock([
-          clients.auth.createJob(name, target, sender),
+          auth.createJob(name, target, sender),
         ]);
 
         // assert
@@ -67,26 +86,26 @@ describe("[CityCoin Auth]", () => {
     });
 
     describe("get-job()", () => {
-      it("returns 'none' for unknown jobId", (chain, accounts, clients) => {
+      it("returns 'none' for unknown jobId", () => {
         // arrange
         const jobId = 1;
 
         // act
-        const result = clients.auth.getJob(jobId).result;
+        const result = auth.getJob(jobId).result;
 
         // assert
         result.expectNone();
       });
 
-      it("returns 'some' with job details for known jobId", (chain, accounts, clients) => {
+      it("returns 'some' with job details for known jobId", () => {
         // arrange
         const name = "job123";
-        const target = clients.core.getContractAddress();
+        const target = core.address;
         const sender = accounts.get("wallet_1")!;
-        chain.mineBlock([clients.auth.createJob(name, target, sender)]);
+        chain.mineBlock([auth.createJob(name, target, sender)]);
 
         // act
-        const result = clients.auth.getJob(1).result;
+        const result = auth.getJob(1).result;
 
         // assert
         const expectedJob = {
@@ -104,76 +123,76 @@ describe("[CityCoin Auth]", () => {
     });
 
     describe("activate-job()", () => {
-      it("throws ERR_UNKNOWN_JOB while activating unknown job", (chain, accounts, clients) => {
+      it("throws ERR_UNKNOWN_JOB while activating unknown job", () => {
         // arrange
         const jobId = 10;
         const wallet = accounts.get("wallet_4")!;
 
         // act
         const block = chain.mineBlock([
-          clients.auth.activateJob(jobId, wallet),
+          auth.activateJob(jobId, wallet),
         ]);
 
         // assert
         block.receipts[0].result
           .expectErr()
-          .expectUint(AuthClient.ErrCode.ERR_UNKNOWN_JOB);
+          .expectUint(AuthModel.ErrCode.ERR_UNKNOWN_JOB);
       });
 
-      it("throws ERR_UNAUTHORIZED while activating job by someone who is not its creator", (chain, accounts, clients) => {
+      it("throws ERR_UNAUTHORIZED while activating job by someone who is not its creator", () => {
         // arrange
         const name = "job-123456";
-        const target = clients.core.getContractAddress();
+        const target = core.address;
         const creator = accounts.get("wallet_1")!;
         const jobId = 1;
         const wallet = accounts.get("wallet_4")!;
 
-        chain.mineBlock([clients.auth.createJob(name, target, creator)]);
+        chain.mineBlock([auth.createJob(name, target, creator)]);
 
         // act
         const block = chain.mineBlock([
-          clients.auth.activateJob(jobId, wallet),
+          auth.activateJob(jobId, wallet),
         ]);
 
         // assert
         block.receipts[0].result
           .expectErr()
-          .expectUint(AuthClient.ErrCode.ERR_UNAUTHORIZED);
+          .expectUint(AuthModel.ErrCode.ERR_UNAUTHORIZED);
       });
 
-      it("throws ERR_JOB_IS_ACTIVE while activating job that is already active", (chain, accounts, clients) => {
+      it("throws ERR_JOB_IS_ACTIVE while activating job that is already active", () => {
         // arrange
         const name = "job-123456";
-        const target = clients.core.getContractAddress();
+        const target = core.address;
         const creator = accounts.get("wallet_1")!;
         const jobId = 1;
         chain.mineBlock([
-          clients.auth.createJob(name, target, creator),
-          clients.auth.activateJob(1, creator),
+          auth.createJob(name, target, creator),
+          auth.activateJob(1, creator),
         ]);
 
         // act
         const block = chain.mineBlock([
-          clients.auth.activateJob(jobId, creator),
+          auth.activateJob(jobId, creator),
         ]);
 
         // assert
         block.receipts[0].result
           .expectErr()
-          .expectUint(AuthClient.ErrCode.ERR_JOB_IS_ACTIVE);
+          .expectUint(AuthModel.ErrCode.ERR_JOB_IS_ACTIVE);
       });
 
-      it("successfully activate job by its creator", (chain, accounts, clients) => {
+      it("successfully activate job by its creator", () => {
         // arrange
         const name = "job-123456";
-        const target = clients.core.getContractAddress();
+        const target = core.address;
         const creator = accounts.get("wallet_1")!;
         const jobId = 1;
-        chain.mineBlock([clients.auth.createJob(name, target, creator)]);
+        chain.mineBlock([auth.createJob(name, target, creator)]);
 
         // act
         const block = chain.mineBlock([
-          clients.auth.activateJob(jobId, creator),
+          auth.activateJob(jobId, creator),
         ]);
 
         // assert
@@ -189,7 +208,7 @@ describe("[CityCoin Auth]", () => {
           isExecuted: types.bool(false),
         };
 
-        const actualJob = clients.auth
+        const actualJob = auth
           .getJob(jobId)
           .result.expectSome()
           .expectTuple();
@@ -199,106 +218,106 @@ describe("[CityCoin Auth]", () => {
     });
 
     describe("approve-job()", () => {
-      it("throws ERR_UNKNOWN_JOB while approving unknown job", (chain, accounts, clients) => {
+      it("throws ERR_UNKNOWN_JOB while approving unknown job", () => {
         // arrange
         const approver = accounts.get("wallet_2")!;
         const jobId = 399;
 
         // act
         const block = chain.mineBlock([
-          clients.auth.approveJob(jobId, approver),
+          auth.approveJob(jobId, approver),
         ]);
 
         // assert
         block.receipts[0].result
           .expectErr()
-          .expectUint(AuthClient.ErrCode.ERR_UNKNOWN_JOB);
+          .expectUint(AuthModel.ErrCode.ERR_UNKNOWN_JOB);
       });
 
-      it("throws ERR_JOB_IS_NOT_ACTIVE while approving not active job", (chain, accounts, clients) => {
+      it("throws ERR_JOB_IS_NOT_ACTIVE while approving not active job", () => {
         // arrange
         const name = "job-123456";
-        const target = clients.core.getContractAddress();
+        const target = core.address;
         const creator = accounts.get("wallet_1")!;
         const approver = accounts.get("wallet_2")!;
         const jobId = 1;
-        chain.mineBlock([clients.auth.createJob(name, target, creator)]);
+        chain.mineBlock([auth.createJob(name, target, creator)]);
 
         // act
         const block = chain.mineBlock([
-          clients.auth.approveJob(jobId, approver),
+          auth.approveJob(jobId, approver),
         ]);
 
         // assert
         block.receipts[0].result
           .expectErr()
-          .expectUint(AuthClient.ErrCode.ERR_JOB_IS_NOT_ACTIVE);
+          .expectUint(AuthModel.ErrCode.ERR_JOB_IS_NOT_ACTIVE);
       });
 
-      it("throws ERR_ALREADY_VOTED_THIS_WAY while approving job previously approved", (chain, accounts, clients) => {
+      it("throws ERR_ALREADY_VOTED_THIS_WAY while approving job previously approved", () => {
         // arrange
         const name = "job-123456";
-        const target = clients.core.getContractAddress();
+        const target = core.address;
         const creator = accounts.get("wallet_1")!;
         const approver = accounts.get("wallet_2")!;
         const jobId = 1;
         chain.mineBlock([
-          clients.auth.createJob(name, target, creator),
-          clients.auth.activateJob(jobId, creator),
-          clients.auth.approveJob(jobId, approver),
+          auth.createJob(name, target, creator),
+          auth.activateJob(jobId, creator),
+          auth.approveJob(jobId, approver),
         ]);
 
         // act
         const block = chain.mineBlock([
-          clients.auth.approveJob(jobId, approver),
+          auth.approveJob(jobId, approver),
         ]);
 
         // assert
         block.receipts[0].result
           .expectErr()
-          .expectUint(AuthClient.ErrCode.ERR_ALREADY_VOTED_THIS_WAY);
+          .expectUint(AuthModel.ErrCode.ERR_ALREADY_VOTED_THIS_WAY);
       });
 
-      it("throws ERR_UNAUTHORIZED while approving job by user who is not approver", (chain, accounts, clients) => {
+      it("throws ERR_UNAUTHORIZED while approving job by user who is not approver", () => {
         // arrange
         const name = "job-123456";
-        const target = clients.core.getContractAddress();
+        const target = core.address;
         const creator = accounts.get("wallet_1")!;
         const approver = accounts.get("wallet_8")!;
         const jobId = 1;
         chain.mineBlock([
-          clients.auth.createJob(name, target, creator),
-          clients.auth.activateJob(jobId, creator),
+          auth.createJob(name, target, creator),
+          auth.activateJob(jobId, creator),
         ]);
 
         // act
         const block = chain.mineBlock([
-          clients.auth.approveJob(jobId, approver),
+          auth.approveJob(jobId, approver),
         ]);
 
         // assert
         block.receipts[0].result
           .expectErr()
-          .expectUint(AuthClient.ErrCode.ERR_UNAUTHORIZED);
+          .expectUint(AuthModel.ErrCode.ERR_UNAUTHORIZED);
       });
 
-      it("successfully saves approvals", (chain, accounts, clients) => {
+      it("successfully saves approvals", () => {
         // arrange
         const name = "job-123456";
-        const target = clients.core.getContractAddress();
+        const target = core.address;
         const creator = accounts.get("wallet_1")!;
         const approver1 = accounts.get("wallet_2")!;
         const approver2 = accounts.get("wallet_3")!;
         const jobId = 1;
         chain.mineBlock([
-          clients.auth.createJob(name, target, creator),
-          clients.auth.activateJob(jobId, creator),
+          auth.createJob(name, target, creator),
+          auth.activateJob(jobId, creator),
         ]);
 
         // act
         const block = chain.mineBlock([
-          clients.auth.approveJob(jobId, approver1),
-          clients.auth.approveJob(jobId, approver2),
+          auth.approveJob(jobId, approver1),
+          auth.approveJob(jobId, approver2),
         ]);
 
         // assert
@@ -315,7 +334,7 @@ describe("[CityCoin Auth]", () => {
           isExecuted: types.bool(false),
         };
 
-        const actualJob = clients.auth
+        const actualJob = auth
           .getJob(jobId)
           .result.expectSome()
           .expectTuple();
@@ -323,24 +342,24 @@ describe("[CityCoin Auth]", () => {
         assertEquals(actualJob, expectedJob);
       });
 
-      it("successfully approve previously disapproved job", (chain, accounts, clients) => {
+      it("successfully approve previously disapproved job", () => {
         // arrange
         const name = "job-123456";
-        const target = clients.core.getContractAddress();
+        const target = core.address;
         const creator = accounts.get("wallet_1")!;
         const approver1 = accounts.get("wallet_2")!;
         const approver2 = accounts.get("wallet_3")!;
         const jobId = 1;
         chain.mineBlock([
-          clients.auth.createJob(name, target, creator),
-          clients.auth.activateJob(jobId, creator),
-          clients.auth.disapproveJob(jobId, approver1),
+          auth.createJob(name, target, creator),
+          auth.activateJob(jobId, creator),
+          auth.disapproveJob(jobId, approver1),
         ]);
 
         // act
         const block = chain.mineBlock([
-          clients.auth.approveJob(jobId, approver1),
-          clients.auth.approveJob(jobId, approver2),
+          auth.approveJob(jobId, approver1),
+          auth.approveJob(jobId, approver2),
         ]);
 
         // assert
@@ -357,7 +376,7 @@ describe("[CityCoin Auth]", () => {
           isExecuted: types.bool(false),
         };
 
-        const actualJob = clients.auth
+        const actualJob = auth
           .getJob(jobId)
           .result.expectSome()
           .expectTuple();
@@ -367,106 +386,106 @@ describe("[CityCoin Auth]", () => {
     });
 
     describe("disapprove-job()", () => {
-      it("throws ERR_UNKNOWN_JOB while disapproving unknown job", (chain, accounts, clients) => {
+      it("throws ERR_UNKNOWN_JOB while disapproving unknown job", () => {
         // arrange
         const approver = accounts.get("wallet_2")!;
         const jobId = 399;
 
         // act
         const block = chain.mineBlock([
-          clients.auth.disapproveJob(jobId, approver),
+          auth.disapproveJob(jobId, approver),
         ]);
 
         // assert
         block.receipts[0].result
           .expectErr()
-          .expectUint(AuthClient.ErrCode.ERR_UNKNOWN_JOB);
+          .expectUint(AuthModel.ErrCode.ERR_UNKNOWN_JOB);
       });
 
-      it("throws ERR_JOB_IS_NOT_ACTIVE while disapproving not active job", (chain, accounts, clients) => {
+      it("throws ERR_JOB_IS_NOT_ACTIVE while disapproving not active job", () => {
         // arrange
         const name = "job-123456";
-        const target = clients.core.getContractAddress();
+        const target = core.address;
         const creator = accounts.get("wallet_1")!;
         const approver = accounts.get("wallet_2")!;
         const jobId = 1;
-        chain.mineBlock([clients.auth.createJob(name, target, creator)]);
+        chain.mineBlock([auth.createJob(name, target, creator)]);
 
         // act
         const block = chain.mineBlock([
-          clients.auth.disapproveJob(jobId, approver),
+          auth.disapproveJob(jobId, approver),
         ]);
 
         // assert
         block.receipts[0].result
           .expectErr()
-          .expectUint(AuthClient.ErrCode.ERR_JOB_IS_NOT_ACTIVE);
+          .expectUint(AuthModel.ErrCode.ERR_JOB_IS_NOT_ACTIVE);
       });
 
-      it("throws ERR_ALREADY_VOTED_THIS_WAY while disapproving job previously disapproved", (chain, accounts, clients) => {
+      it("throws ERR_ALREADY_VOTED_THIS_WAY while disapproving job previously disapproved", () => {
         // arrange
         const name = "job-123456";
-        const target = clients.core.getContractAddress();
+        const target = core.address;
         const creator = accounts.get("wallet_1")!;
         const approver = accounts.get("wallet_2")!;
         const jobId = 1;
         chain.mineBlock([
-          clients.auth.createJob(name, target, creator),
-          clients.auth.activateJob(jobId, creator),
-          clients.auth.disapproveJob(jobId, approver),
+          auth.createJob(name, target, creator),
+          auth.activateJob(jobId, creator),
+          auth.disapproveJob(jobId, approver),
         ]);
 
         // act
         const block = chain.mineBlock([
-          clients.auth.disapproveJob(jobId, approver),
+          auth.disapproveJob(jobId, approver),
         ]);
 
         // assert
         block.receipts[0].result
           .expectErr()
-          .expectUint(AuthClient.ErrCode.ERR_ALREADY_VOTED_THIS_WAY);
+          .expectUint(AuthModel.ErrCode.ERR_ALREADY_VOTED_THIS_WAY);
       });
 
-      it("throws ERR_UNAUTHORIZED while disapproving job by user who is not approver", (chain, accounts, clients) => {
+      it("throws ERR_UNAUTHORIZED while disapproving job by user who is not approver", () => {
         // arrange
         const name = "job-123456";
-        const target = clients.core.getContractAddress();
+        const target = core.address;
         const creator = accounts.get("wallet_1")!;
         const approver = accounts.get("wallet_8")!;
         const jobId = 1;
         chain.mineBlock([
-          clients.auth.createJob(name, target, creator),
-          clients.auth.activateJob(jobId, creator),
+          auth.createJob(name, target, creator),
+          auth.activateJob(jobId, creator),
         ]);
 
         // act
         const block = chain.mineBlock([
-          clients.auth.disapproveJob(jobId, approver),
+          auth.disapproveJob(jobId, approver),
         ]);
 
         // assert
         block.receipts[0].result
           .expectErr()
-          .expectUint(AuthClient.ErrCode.ERR_UNAUTHORIZED);
+          .expectUint(AuthModel.ErrCode.ERR_UNAUTHORIZED);
       });
 
-      it("successfully saves disapprovals", (chain, accounts, clients) => {
+      it("successfully saves disapprovals", () => {
         // arrange
         const name = "job-123456";
-        const target = clients.core.getContractAddress();
+        const target = core.address;
         const creator = accounts.get("wallet_1")!;
         const approver1 = accounts.get("wallet_2")!;
         const approver2 = accounts.get("wallet_3")!;
         const jobId = 1;
         chain.mineBlock([
-          clients.auth.createJob(name, target, creator),
-          clients.auth.activateJob(jobId, creator),
+          auth.createJob(name, target, creator),
+          auth.activateJob(jobId, creator),
         ]);
 
         // act
         const block = chain.mineBlock([
-          clients.auth.disapproveJob(jobId, approver1),
-          clients.auth.disapproveJob(jobId, approver2),
+          auth.disapproveJob(jobId, approver1),
+          auth.disapproveJob(jobId, approver2),
         ]);
 
         // assert
@@ -483,7 +502,7 @@ describe("[CityCoin Auth]", () => {
           isExecuted: types.bool(false),
         };
 
-        const actualJob = clients.auth
+        const actualJob = auth
           .getJob(jobId)
           .result.expectSome()
           .expectTuple();
@@ -491,24 +510,24 @@ describe("[CityCoin Auth]", () => {
         assertEquals(actualJob, expectedJob);
       });
 
-      it("successfully disapprove previously approved job", (chain, accounts, clients) => {
+      it("successfully disapprove previously approved job", () => {
         // arrange
         const name = "job-123456";
-        const target = clients.core.getContractAddress();
+        const target = core.address;
         const creator = accounts.get("wallet_1")!;
         const approver1 = accounts.get("wallet_2")!;
         const approver2 = accounts.get("wallet_3")!;
         const jobId = 1;
         chain.mineBlock([
-          clients.auth.createJob(name, target, creator),
-          clients.auth.activateJob(jobId, creator),
-          clients.auth.approveJob(jobId, approver1),
+          auth.createJob(name, target, creator),
+          auth.activateJob(jobId, creator),
+          auth.approveJob(jobId, approver1),
         ]);
 
         // act
         const block = chain.mineBlock([
-          clients.auth.disapproveJob(jobId, approver1),
-          clients.auth.disapproveJob(jobId, approver2),
+          auth.disapproveJob(jobId, approver1),
+          auth.disapproveJob(jobId, approver2),
         ]);
 
         // assert
@@ -525,7 +544,7 @@ describe("[CityCoin Auth]", () => {
           isExecuted: types.bool(false),
         };
 
-        const actualJob = clients.auth
+        const actualJob = auth
           .getJob(jobId)
           .result.expectSome()
           .expectTuple();
@@ -535,69 +554,69 @@ describe("[CityCoin Auth]", () => {
     });
 
     describe("is-job-approved()", () => {
-      it("returns false when asked about unknown job", (chain, accounts, clients) => {
+      it("returns false when asked about unknown job", () => {
         // arrange
         const jobId = 234234;
 
         // act
-        const result = clients.auth.isJobApproved(jobId).result;
+        const result = auth.isJobApproved(jobId).result;
 
         // assert
         result.expectBool(false);
       });
 
-      it("returns false when asked about inactive job", (chain, accounts, clients) => {
+      it("returns false when asked about inactive job", () => {
         // arrange
         const name = "job-123456";
-        const target = clients.core.getContractAddress();
+        const target = core.address;
         const creator = accounts.get("wallet_1")!;
         const jobId = 1;
-        chain.mineBlock([clients.auth.createJob(name, target, creator)]);
+        chain.mineBlock([auth.createJob(name, target, creator)]);
 
         // act
-        const result = clients.auth.isJobApproved(jobId).result;
+        const result = auth.isJobApproved(jobId).result;
 
         // assert
         result.expectBool(false);
       });
 
-      it("returns false when asked about active job without any approvals", (chain, accounts, clients) => {
+      it("returns false when asked about active job without any approvals", () => {
         // arrange
         const name = "job-123456";
-        const target = clients.core.getContractAddress();
+        const target = core.address;
         const creator = accounts.get("wallet_1")!;
         const jobId = 1;
         chain.mineBlock([
-          clients.auth.createJob(name, target, creator),
-          clients.auth.approveJob(jobId, creator),
+          auth.createJob(name, target, creator),
+          auth.approveJob(jobId, creator),
         ]);
 
         // act
-        const result = clients.auth.isJobApproved(jobId).result;
+        const result = auth.isJobApproved(jobId).result;
 
         // assert
         result.expectBool(false);
       });
 
-      it("returns when asked about active job with 3 or more approvals", (chain, accounts, clients) => {
+      it("returns when asked about active job with 3 or more approvals", () => {
         // arrange
         const name = "job-123456";
-        const target = clients.core.getContractAddress();
+        const target = core.address;
         const creator = accounts.get("wallet_1")!;
         const approver1 = accounts.get("wallet_2")!;
         const approver2 = accounts.get("wallet_3")!;
         const approver3 = accounts.get("wallet_4")!;
         const jobId = 1;
         chain.mineBlock([
-          clients.auth.createJob(name, target, creator),
-          clients.auth.activateJob(jobId, creator),
-          clients.auth.approveJob(jobId, approver1),
-          clients.auth.approveJob(jobId, approver2),
-          clients.auth.approveJob(jobId, approver3),
+          auth.createJob(name, target, creator),
+          auth.activateJob(jobId, creator),
+          auth.approveJob(jobId, approver1),
+          auth.approveJob(jobId, approver2),
+          auth.approveJob(jobId, approver3),
         ]);
 
         // act
-        const result = clients.auth.isJobApproved(jobId).result;
+        const result = auth.isJobApproved(jobId).result;
 
         // assert
         result.expectBool(true);
@@ -605,95 +624,95 @@ describe("[CityCoin Auth]", () => {
     });
 
     describe("mark-job-as-executed()", () => {
-      it("throws ERR_UNKNOWN_JOB when requested to mark unknown job", (chain, accounts, clients) => {
+      it("throws ERR_UNKNOWN_JOB when requested to mark unknown job", () => {
         // arrange
         const jobId = 123;
         const sender = accounts.get("wallet_1")!;
 
         // act
         const block = chain.mineBlock([
-          clients.auth.markJobAsExecuted(jobId, sender),
+          auth.markJobAsExecuted(jobId, sender),
         ]);
 
         // assert
         block.receipts[0].result
           .expectErr()
-          .expectUint(AuthClient.ErrCode.ERR_UNKNOWN_JOB);
+          .expectUint(AuthModel.ErrCode.ERR_UNKNOWN_JOB);
       });
 
-      it("throws ERR_JOB_IS_NOT_ACTIVE when requested to mark not active job", (chain, accounts, clients) => {
+      it("throws ERR_JOB_IS_NOT_ACTIVE when requested to mark not active job", () => {
         // arrange
         const name = "job-name";
         const creator = accounts.get("wallet_1")!;
-        const target = clients.core.getContractAddress();
+        const target = core.address;
         const jobId = 1;
         const sender = accounts.get("wallet_1")!;
-        chain.mineBlock([clients.auth.createJob(name, target, creator)]);
+        chain.mineBlock([auth.createJob(name, target, creator)]);
 
         // act
         const block = chain.mineBlock([
-          clients.auth.markJobAsExecuted(jobId, sender),
+          auth.markJobAsExecuted(jobId, sender),
         ]);
 
         // assert
         block.receipts[0].result
           .expectErr()
-          .expectUint(AuthClient.ErrCode.ERR_JOB_IS_NOT_ACTIVE);
+          .expectUint(AuthModel.ErrCode.ERR_JOB_IS_NOT_ACTIVE);
       });
 
-      it("throws ERR_JOB_IS_NOT_APPROVED when requested to mark not approved job", (chain, accounts, clients) => {
+      it("throws ERR_JOB_IS_NOT_APPROVED when requested to mark not approved job", () => {
         // arrange
         const name = "job-name";
         const creator = accounts.get("wallet_1")!;
-        const target = clients.core.getContractAddress();
+        const target = core.address;
         const jobId = 1;
         const sender = accounts.get("wallet_1")!;
         chain.mineBlock([
-          clients.auth.createJob(name, target, creator),
-          clients.auth.activateJob(jobId, creator),
+          auth.createJob(name, target, creator),
+          auth.activateJob(jobId, creator),
         ]);
 
         // act
         const block = chain.mineBlock([
-          clients.auth.markJobAsExecuted(jobId, sender),
+          auth.markJobAsExecuted(jobId, sender),
         ]);
 
         // assert
         block.receipts[0].result
           .expectErr()
-          .expectUint(AuthClient.ErrCode.ERR_JOB_IS_NOT_APPROVED);
+          .expectUint(AuthModel.ErrCode.ERR_JOB_IS_NOT_APPROVED);
       });
 
-      it("throws ERR_UNAUTHORIZED when requested to mark as approved not by target", (chain, accounts, clients) => {
+      it("throws ERR_UNAUTHORIZED when requested to mark as approved not by target", () => {
         // arrange
         const name = "job-name";
         const creator = accounts.get("wallet_1")!;
-        const target = clients.core.getContractAddress();
+        const target = core.address;
         const jobId = 1;
         const approver1 = accounts.get("wallet_2")!;
         const approver2 = accounts.get("wallet_3")!;
         const approver3 = accounts.get("wallet_4")!;
         const sender = accounts.get("wallet_1")!;
         chain.mineBlock([
-          clients.auth.createJob(name, target, creator),
-          clients.auth.activateJob(jobId, creator),
-          clients.auth.approveJob(jobId, approver1),
-          clients.auth.approveJob(jobId, approver2),
-          clients.auth.approveJob(jobId, approver3),
+          auth.createJob(name, target, creator),
+          auth.activateJob(jobId, creator),
+          auth.approveJob(jobId, approver1),
+          auth.approveJob(jobId, approver2),
+          auth.approveJob(jobId, approver3),
         ]);
 
         // act
         const block = chain.mineBlock([
-          clients.auth.markJobAsExecuted(jobId, sender),
+          auth.markJobAsExecuted(jobId, sender),
         ]);
 
         // assert
         block.receipts[0].result
           .expectErr()
-          .expectUint(AuthClient.ErrCode.ERR_UNAUTHORIZED);
+          .expectUint(AuthModel.ErrCode.ERR_UNAUTHORIZED);
       });
 
-      it("successfully marks job as executed when called by target", (chain, accounts, clients) => {
+      it("successfully marks job as executed when called by target", () => {
         // arrange
         const name = "job-name";
         const creator = accounts.get("wallet_1")!;
@@ -704,16 +723,16 @@ describe("[CityCoin Auth]", () => {
         const approver2 = accounts.get("wallet_3")!;
         const approver3 = accounts.get("wallet_4")!;
         chain.mineBlock([
-          clients.auth.createJob(name, target, creator),
-          clients.auth.activateJob(jobId, creator),
-          clients.auth.approveJob(jobId, approver1),
-          clients.auth.approveJob(jobId, approver2),
-          clients.auth.approveJob(jobId, approver3),
+          auth.createJob(name, target, creator),
+          auth.activateJob(jobId, creator),
+          auth.approveJob(jobId, approver1),
+          auth.approveJob(jobId, approver2),
+          auth.approveJob(jobId, approver3),
         ]);
 
         // act
         const block = chain.mineBlock([
-          clients.auth.markJobAsExecuted(jobId, sender),
+          auth.markJobAsExecuted(jobId, sender),
         ]);
 
         // assert
@@ -723,20 +742,20 @@ describe("[CityCoin Auth]", () => {
           creator: creator.address,
           name: types.ascii(name),
           target: target,
-          approvals: types.uint(AuthClient.REQUIRED_APPROVALS),
+          approvals: types.uint(AuthModel.REQUIRED_APPROVALS),
           disapprovals: types.uint(0),
           isActive: types.bool(true),
           isExecuted: types.bool(true),
         };
 
-        const actualJob = clients.auth
+        const actualJob = auth
           .getJob(jobId)
           .result.expectSome()
           .expectTuple();
         assertEquals(actualJob, expectedJob);
       });
 
-      it("throws ERR_JOB_IS_EXECUTED while trying to mark same job 2nd time", (chain, accounts, clients) => {
+      it("throws ERR_JOB_IS_EXECUTED while trying to mark same job 2nd time", () => {
         // arrange
         const name = "job-name";
         const creator = accounts.get("wallet_1")!;
@@ -747,28 +766,28 @@ describe("[CityCoin Auth]", () => {
         const approver2 = accounts.get("wallet_3")!;
         const approver3 = accounts.get("wallet_4")!;
         chain.mineBlock([
-          clients.auth.createJob(name, target, creator),
-          clients.auth.activateJob(jobId, creator),
-          clients.auth.approveJob(jobId, approver1),
-          clients.auth.approveJob(jobId, approver2),
-          clients.auth.approveJob(jobId, approver3),
-          clients.auth.markJobAsExecuted(jobId, sender),
+          auth.createJob(name, target, creator),
+          auth.activateJob(jobId, creator),
+          auth.approveJob(jobId, approver1),
+          auth.approveJob(jobId, approver2),
+          auth.approveJob(jobId, approver3),
+          auth.markJobAsExecuted(jobId, sender),
         ]);
 
         // act
         const block = chain.mineBlock([
-          clients.auth.markJobAsExecuted(jobId, sender),
+          auth.markJobAsExecuted(jobId, sender),
         ]);
 
         // assert
         block.receipts[0].result
           .expectErr()
-          .expectUint(AuthClient.ErrCode.ERR_JOB_IS_EXECUTED);
+          .expectUint(AuthModel.ErrCode.ERR_JOB_IS_EXECUTED);
       });
     });
 
     describe("add-uint-argument()", () => {
-      it("throws ERR_UNKNOWN_JOB while adding argument to unknown job", (chain, accounts, clients) => {
+      it("throws ERR_UNKNOWN_JOB while adding argument to unknown job", () => {
         // arrange
         const sender = accounts.get("wallet_1")!;
         const jobId = 1;
@@ -777,16 +796,16 @@ describe("[CityCoin Auth]", () => {
 
         // act
         const block = chain.mineBlock([
-          clients.auth.addUIntArgument(jobId, argumentName, value, sender),
+          auth.addUIntArgument(jobId, argumentName, value, sender),
         ]);
 
         // assert
         block.receipts[0].result
           .expectErr()
-          .expectUint(AuthClient.ErrCode.ERR_UNKNOWN_JOB);
+          .expectUint(AuthModel.ErrCode.ERR_UNKNOWN_JOB);
       });
 
-      it("throws ERR_JOB_IS_ACTIVE while adding argument to active job", (chain, accounts, clients) => {
+      it("throws ERR_JOB_IS_ACTIVE while adding argument to active job", () => {
         // arrange
         const sender = accounts.get("wallet_1")!;
         const jobId = 1;
@@ -795,22 +814,22 @@ describe("[CityCoin Auth]", () => {
         const jobName = "test-job";
         const target = sender.address;
         chain.mineBlock([
-          clients.auth.createJob(jobName, target, sender),
-          clients.auth.activateJob(jobId, sender),
+          auth.createJob(jobName, target, sender),
+          auth.activateJob(jobId, sender),
         ]);
 
         // act
         const block = chain.mineBlock([
-          clients.auth.addUIntArgument(jobId, argumentName, value, sender),
+          auth.addUIntArgument(jobId, argumentName, value, sender),
         ]);
 
         // assert
         block.receipts[0].result
           .expectErr()
-          .expectUint(AuthClient.ErrCode.ERR_JOB_IS_ACTIVE);
+          .expectUint(AuthModel.ErrCode.ERR_JOB_IS_ACTIVE);
       });
 
-      it("throws ERR_UNAUTHORIZED while adding argument by someone who is not job creator", (chain, accounts, clients) => {
+      it("throws ERR_UNAUTHORIZED while adding argument by someone who is not job creator", () => {
         // arrange
         const sender = accounts.get("wallet_1")!;
         const jobId = 1;
@@ -819,20 +838,20 @@ describe("[CityCoin Auth]", () => {
         const jobName = "test-job";
         const target = sender.address;
         const creator = accounts.get("wallet_2")!;
-        chain.mineBlock([clients.auth.createJob(jobName, target, creator)]);
+        chain.mineBlock([auth.createJob(jobName, target, creator)]);
 
         // act
         const block = chain.mineBlock([
-          clients.auth.addUIntArgument(jobId, argumentName, value, sender),
+          auth.addUIntArgument(jobId, argumentName, value, sender),
         ]);
 
         // assert
         block.receipts[0].result
           .expectErr()
-          .expectUint(AuthClient.ErrCode.ERR_UNAUTHORIZED);
+          .expectUint(AuthModel.ErrCode.ERR_UNAUTHORIZED);
       });
 
-      it("successfully save new argument", (chain, accounts, clients) => {
+      it("successfully save new argument", () => {
         // arrange
         const sender = accounts.get("wallet_1")!;
         const jobId = 1;
@@ -840,28 +859,28 @@ describe("[CityCoin Auth]", () => {
         const value = 123;
         const jobName = "test-job";
         const target = sender.address;
-        chain.mineBlock([clients.auth.createJob(jobName, target, sender)]);
+        chain.mineBlock([auth.createJob(jobName, target, sender)]);
 
         // act
         const block = chain.mineBlock([
-          clients.auth.addUIntArgument(jobId, argumentName, value, sender),
+          auth.addUIntArgument(jobId, argumentName, value, sender),
         ]);
 
         // assert
         block.receipts[0].result.expectOk().expectBool(true);
 
-        clients.auth
+        auth
           .getUIntValueByName(jobId, argumentName)
           .result.expectSome()
           .expectUint(value);
 
-        clients.auth
+        auth
           .getUIntValueById(jobId, 1)
           .result.expectSome()
           .expectUint(value);
       });
 
-      it("throws ERR_ARGUMENT_ALREADY_EXISTS while adding same argument 2nd time", (chain, accounts, clients) => {
+      it("throws ERR_ARGUMENT_ALREADY_EXISTS while adding same argument 2nd time", () => {
         // arrange
         const sender = accounts.get("wallet_1")!;
         const jobId = 1;
@@ -870,24 +889,24 @@ describe("[CityCoin Auth]", () => {
         const jobName = "test-job";
         const target = sender.address;
         chain.mineBlock([
-          clients.auth.createJob(jobName, target, sender),
-          clients.auth.addUIntArgument(jobId, argumentName, value, sender),
+          auth.createJob(jobName, target, sender),
+          auth.addUIntArgument(jobId, argumentName, value, sender),
         ]);
 
         // act
         const block = chain.mineBlock([
-          clients.auth.addUIntArgument(jobId, argumentName, value, sender),
+          auth.addUIntArgument(jobId, argumentName, value, sender),
         ]);
 
         // assert
         block.receipts[0].result
           .expectErr()
-          .expectUint(AuthClient.ErrCode.ERR_ARGUMENT_ALREADY_EXISTS);
+          .expectUint(AuthModel.ErrCode.ERR_ARGUMENT_ALREADY_EXISTS);
       });
     });
 
     describe("add-principal-argument()", () => {
-      it("throws ERR_UNKNOWN_JOB while adding argument to unknown job", (chain, accounts, clients) => {
+      it("throws ERR_UNKNOWN_JOB while adding argument to unknown job", () => {
         // arrange
         const sender = accounts.get("wallet_1")!;
         const jobId = 1;
@@ -896,16 +915,16 @@ describe("[CityCoin Auth]", () => {
 
         // act
         const block = chain.mineBlock([
-          clients.auth.addPrincipalArgument(jobId, argumentName, value, sender),
+          auth.addPrincipalArgument(jobId, argumentName, value, sender),
         ]);
 
         // assert
         block.receipts[0].result
           .expectErr()
-          .expectUint(AuthClient.ErrCode.ERR_UNKNOWN_JOB);
+          .expectUint(AuthModel.ErrCode.ERR_UNKNOWN_JOB);
       });
 
-      it("throws ERR_JOB_IS_ACTIVE while adding argument to active job", (chain, accounts, clients) => {
+      it("throws ERR_JOB_IS_ACTIVE while adding argument to active job", () => {
         // arrange
         const sender = accounts.get("wallet_1")!;
         const jobId = 1;
@@ -914,22 +933,22 @@ describe("[CityCoin Auth]", () => {
         const jobName = "test-job";
         const target = sender.address;
         chain.mineBlock([
-          clients.auth.createJob(jobName, target, sender),
-          clients.auth.activateJob(jobId, sender),
+          auth.createJob(jobName, target, sender),
+          auth.activateJob(jobId, sender),
         ]);
 
         // act
         const block = chain.mineBlock([
-          clients.auth.addPrincipalArgument(jobId, argumentName, value, sender),
+          auth.addPrincipalArgument(jobId, argumentName, value, sender),
         ]);
 
         // assert
         block.receipts[0].result
           .expectErr()
-          .expectUint(AuthClient.ErrCode.ERR_JOB_IS_ACTIVE);
+          .expectUint(AuthModel.ErrCode.ERR_JOB_IS_ACTIVE);
       });
 
-      it("throws ERR_UNAUTHORIZED while adding argument by someone who is not job creator", (chain, accounts, clients) => {
+      it("throws ERR_UNAUTHORIZED while adding argument by someone who is not job creator", () => {
         // arrange
         const sender = accounts.get("wallet_1")!;
         const jobId = 1;
@@ -938,20 +957,20 @@ describe("[CityCoin Auth]", () => {
         const jobName = "test-job";
         const target = sender.address;
         const creator = accounts.get("wallet_2")!;
-        chain.mineBlock([clients.auth.createJob(jobName, target, creator)]);
+        chain.mineBlock([auth.createJob(jobName, target, creator)]);
 
         // act
         const block = chain.mineBlock([
-          clients.auth.addPrincipalArgument(jobId, argumentName, value, sender),
+          auth.addPrincipalArgument(jobId, argumentName, value, sender),
         ]);
 
         // assert
         block.receipts[0].result
           .expectErr()
-          .expectUint(AuthClient.ErrCode.ERR_UNAUTHORIZED);
+          .expectUint(AuthModel.ErrCode.ERR_UNAUTHORIZED);
       });
 
-      it("successfully save new argument", (chain, accounts, clients) => {
+      it("successfully save new argument", () => {
         // arrange
         const sender = accounts.get("wallet_1")!;
         const jobId = 1;
@@ -959,28 +978,28 @@ describe("[CityCoin Auth]", () => {
         const value = sender.address;
         const jobName = "test-job";
         const target = sender.address;
-        chain.mineBlock([clients.auth.createJob(jobName, target, sender)]);
+        chain.mineBlock([auth.createJob(jobName, target, sender)]);
 
         // act
         const block = chain.mineBlock([
-          clients.auth.addPrincipalArgument(jobId, argumentName, value, sender),
+          auth.addPrincipalArgument(jobId, argumentName, value, sender),
         ]);
 
         // assert
         block.receipts[0].result.expectOk().expectBool(true);
 
-        clients.auth
+        auth
           .getPrincipalValueByName(jobId, argumentName)
           .result.expectSome()
           .expectPrincipal(value);
 
-        clients.auth
+        auth
           .getPrincipalValueById(jobId, 1)
           .result.expectSome()
           .expectPrincipal(value);
       });
 
-      it("throws ERR_ARGUMENT_ALREADY_EXISTS while adding same argument 2nd time", (chain, accounts, clients) => {
+      it("throws ERR_ARGUMENT_ALREADY_EXISTS while adding same argument 2nd time", () => {
         // arrange
         const sender = accounts.get("wallet_1")!;
         const jobId = 1;
@@ -989,19 +1008,19 @@ describe("[CityCoin Auth]", () => {
         const jobName = "test-job";
         const target = sender.address;
         chain.mineBlock([
-          clients.auth.createJob(jobName, target, sender),
-          clients.auth.addPrincipalArgument(jobId, argumentName, value, sender),
+          auth.createJob(jobName, target, sender),
+          auth.addPrincipalArgument(jobId, argumentName, value, sender),
         ]);
 
         // act
         const block = chain.mineBlock([
-          clients.auth.addPrincipalArgument(jobId, argumentName, value, sender),
+          auth.addPrincipalArgument(jobId, argumentName, value, sender),
         ]);
 
         // assert
         block.receipts[0].result
           .expectErr()
-          .expectUint(AuthClient.ErrCode.ERR_ARGUMENT_ALREADY_EXISTS);
+          .expectUint(AuthModel.ErrCode.ERR_ARGUMENT_ALREADY_EXISTS);
       });
     });
   });
@@ -1010,23 +1029,23 @@ describe("[CityCoin Auth]", () => {
   //////////////////////////////////////////////////
   describe("CONTRACT MANAGEMENT", () => {
     describe("get-active-core-contract()", () => {
-      it("throws ERR_NO_ACTIVE_CORE_CONTRACT if auth is not initialized", (chain, accounts, clients) => {
+      it("throws ERR_NO_ACTIVE_CORE_CONTRACT if auth is not initialized", () => {
         // act
-        const result = clients.auth.getActiveCoreContract().result;
+        const result = auth.getActiveCoreContract().result;
 
         // assert
         result
           .expectErr()
-          .expectUint(AuthClient.ErrCode.ERR_NO_ACTIVE_CORE_CONTRACT);
+          .expectUint(AuthModel.ErrCode.ERR_NO_ACTIVE_CORE_CONTRACT);
       });
-      it("returns correct value after auth is initialized", (chain, accounts, clients) => {
+      it("returns correct value after auth is initialized", () => {
         // arrange
         const sender = accounts.get("wallet_1")!;
-        const target = clients.core.getContractAddress();
-        chain.mineBlock([clients.auth.testSetActiveCoreContract(sender)]);
+        const target = core.address;
+        chain.mineBlock([auth.testSetActiveCoreContract(sender)]);
 
         // act
-        const result = clients.auth.getActiveCoreContract().result;
+        const result = auth.getActiveCoreContract().result;
 
         // assert
         result.expectOk().expectPrincipal(target);
@@ -1034,57 +1053,57 @@ describe("[CityCoin Auth]", () => {
     });
 
     describe("initialize-contracts()", () => {
-      it("throws ERR_UNAUTHORIZED if not called by CONTRACT_OWNER", (chain, accounts, clients) => {
+      it("throws ERR_UNAUTHORIZED if not called by CONTRACT_OWNER", () => {
         // arrange
         const sender = accounts.get("wallet_2")!;
-        const target = clients.core.getContractAddress();
+        const target = core.address;
 
         // act
         const receipt = chain.mineBlock([
-          clients.auth.initializeContracts(target, sender),
+          auth.initializeContracts(target, sender),
         ]).receipts[0];
 
         // assert
         receipt.result
           .expectErr()
-          .expectUint(AuthClient.ErrCode.ERR_UNAUTHORIZED);
+          .expectUint(AuthModel.ErrCode.ERR_UNAUTHORIZED);
       });
 
-      it("throws ERR_UNAUTHORIZED if auth is already initialized", (chain, accounts, clients) => {
+      it("throws ERR_UNAUTHORIZED if auth is already initialized", () => {
         // arrange
         const sender = accounts.get("deployer")!;
-        const target = clients.core.getContractAddress();
+        const target = core.address;
 
         // act
-        chain.mineBlock([clients.auth.initializeContracts(target, sender)]);
+        chain.mineBlock([auth.initializeContracts(target, sender)]);
 
         const receipt = chain.mineBlock([
-          clients.auth.initializeContracts(target, sender),
+          auth.initializeContracts(target, sender),
         ]).receipts[0];
 
         // assert
         receipt.result
           .expectErr()
-          .expectUint(AuthClient.ErrCode.ERR_UNAUTHORIZED);
+          .expectUint(AuthModel.ErrCode.ERR_UNAUTHORIZED);
       });
 
-      it("succeeds and updates core contract map", (chain, accounts, clients) => {
+      it("succeeds and updates core contract map", () => {
         // arrange
         const sender = accounts.get("deployer")!;
-        const target = clients.core.getContractAddress();
+        const target = core.address;
 
         // act
         const receipt = chain.mineBlock([
-          clients.auth.initializeContracts(target, sender),
+          auth.initializeContracts(target, sender),
         ]).receipts[0];
 
-        const result = clients.auth.getCoreContractInfo(target).result;
+        const result = auth.getCoreContractInfo(target).result;
 
         // assert
         receipt.result.expectOk();
 
         const expectedContractData = {
-          state: types.uint(AuthClient.ContractState.STATE_DEPLOYED),
+          state: types.uint(AuthModel.ContractState.STATE_DEPLOYED),
           startHeight: types.uint(0),
           endHeight: types.uint(0),
         };
@@ -1096,89 +1115,89 @@ describe("[CityCoin Auth]", () => {
     });
 
     describe("upgrade-core-contract()", () => {
-      it("throws ERR_CORE_CONTRACT_NOT_FOUND if principal not found in core contracts map", (chain, accounts, clients) => {
+      it("throws ERR_CORE_CONTRACT_NOT_FOUND if principal not found in core contracts map", () => {
         // arrange
         const sender = accounts.get("wallet_1")!;
-        const oldContract = clients.core.getContractAddress();
-        const newContract = clients.core.getContractAddress();
+        const oldContract = core.address;
+        const newContract = core.address;
 
         // act
         const receipt = chain.mineBlock([
-          clients.auth.upgradeCoreContract(oldContract, newContract, sender),
+          auth.upgradeCoreContract(oldContract, newContract, sender),
         ]).receipts[0];
 
         // assert
         receipt.result
           .expectErr()
-          .expectUint(AuthClient.ErrCode.ERR_CORE_CONTRACT_NOT_FOUND);
+          .expectUint(AuthModel.ErrCode.ERR_CORE_CONTRACT_NOT_FOUND);
       });
-      it("throws ERR_UNAUTHORIZED if old and new contract are the same", (chain, accounts, clients) => {
+      it("throws ERR_UNAUTHORIZED if old and new contract are the same", () => {
         // arrange
         const sender = accounts.get("wallet_1")!;
-        const oldContract = clients.core.getContractAddress();
-        const newContract = clients.core.getContractAddress();
+        const oldContract = core.address;
+        const newContract = core.address;
 
         chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(sender),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(sender),
         ]);
 
         // act
         const receipt = chain.mineBlock([
-          clients.auth.upgradeCoreContract(oldContract, newContract, sender),
+          auth.upgradeCoreContract(oldContract, newContract, sender),
         ]).receipts[0];
 
         // assert
         receipt.result
           .expectErr()
-          .expectUint(AuthClient.ErrCode.ERR_UNAUTHORIZED);
+          .expectUint(AuthModel.ErrCode.ERR_UNAUTHORIZED);
       });
-      it("throws ERR_UNAUTHORIZED if not called by city wallet", (chain, accounts, clients) => {
+      it("throws ERR_UNAUTHORIZED if not called by city wallet", () => {
         // arrange
         const sender = accounts.get("wallet_1")!;
-        const oldContract = clients.core.getContractAddress();
-        const newContract = clients.core2.getContractAddress();
+        const oldContract = core.address;
+        const newContract = core2.address;
 
         chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(sender),
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(sender),
         ]);
 
         // act
         const receipt = chain.mineBlock([
-          clients.auth.upgradeCoreContract(oldContract, newContract, sender),
+          auth.upgradeCoreContract(oldContract, newContract, sender),
         ]).receipts[0];
 
         // assert
         receipt.result
           .expectErr()
-          .expectUint(AuthClient.ErrCode.ERR_UNAUTHORIZED);
+          .expectUint(AuthModel.ErrCode.ERR_UNAUTHORIZED);
       });
-      it("succeeds and updates core contract map and active variable", (chain, accounts, clients) => {
+      it("succeeds and updates core contract map and active variable", () => {
         // arrange
         const sender = accounts.get("city_wallet")!;
-        const oldContract = clients.core.getContractAddress();
-        const newContract = clients.core2.getContractAddress();
+        const oldContract = core.address;
+        const newContract = core2.address;
 
         chain.mineBlock([
-          clients.core.testInitializeCore(oldContract),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(sender),
+          core.testInitializeCore(oldContract),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(sender),
         ]);
 
         // act
         const blockUpgrade = chain.mineBlock([
-          clients.auth.upgradeCoreContract(oldContract, newContract, sender),
+          auth.upgradeCoreContract(oldContract, newContract, sender),
         ]);
 
         // act
-        const activeContract = clients.auth.getActiveCoreContract().result;
+        const activeContract = auth.getActiveCoreContract().result;
         const oldContractData =
-          clients.auth.getCoreContractInfo(oldContract).result;
+          auth.getCoreContractInfo(oldContract).result;
         const newContractData =
-          clients.auth.getCoreContractInfo(newContract).result;
+          auth.getCoreContractInfo(newContract).result;
 
         // assert
         blockUpgrade.receipts[0].result.expectOk();
@@ -1187,12 +1206,12 @@ describe("[CityCoin Auth]", () => {
 
         // TODO: why the +1 and -1 here ??
         const expectedOldContractData = {
-          state: types.uint(AuthClient.ContractState.STATE_INACTIVE),
-          startHeight: types.uint(CoreClient.ACTIVATION_DELAY + 1),
+          state: types.uint(AuthModel.ContractState.STATE_INACTIVE),
+          startHeight: types.uint(CoreModel.ACTIVATION_DELAY + 1),
           endHeight: types.uint(blockUpgrade.height - 1),
         };
         const expectedNewContractData = {
-          state: types.uint(AuthClient.ContractState.STATE_DEPLOYED),
+          state: types.uint(AuthModel.ContractState.STATE_DEPLOYED),
           startHeight: types.uint(0),
           endHeight: types.uint(0),
         };
@@ -1204,46 +1223,46 @@ describe("[CityCoin Auth]", () => {
       });
     });
     describe("execute-upgrade-core-contract-job()", () => {
-      it("succeeds and updates core contract map and active variable", (chain, accounts, clients) => {
+      it("succeeds and updates core contract map and active variable", () => {
         // arrange
         const jobId = 1;
         const sender = accounts.get("wallet_1")!;
         const approver1 = accounts.get("wallet_2")!;
         const approver2 = accounts.get("wallet_3")!;
         const approver3 = accounts.get("wallet_4")!;
-        const oldContract = clients.core.getContractAddress();
-        const newContract = clients.core2.getContractAddress();
+        const oldContract = core.address;
+        const newContract = core2.address;
 
         chain.mineBlock([
-          clients.core.testInitializeCore(oldContract),
-          clients.core.unsafeSetActivationThreshold(1),
-          clients.core.registerUser(sender),
-          clients.auth.createJob(
+          core.testInitializeCore(oldContract),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(sender),
+          auth.createJob(
             "upgrade core",
-            clients.auth.getContractAddress(),
+            auth.address,
             sender
           ),
-          clients.auth.addPrincipalArgument(
+          auth.addPrincipalArgument(
             jobId,
             "oldContract",
             oldContract,
             sender
           ),
-          clients.auth.addPrincipalArgument(
+          auth.addPrincipalArgument(
             jobId,
             "newContract",
             newContract,
             sender
           ),
-          clients.auth.activateJob(jobId, sender),
-          clients.auth.approveJob(jobId, approver1),
-          clients.auth.approveJob(jobId, approver2),
-          clients.auth.approveJob(jobId, approver3),
+          auth.activateJob(jobId, sender),
+          auth.approveJob(jobId, approver1),
+          auth.approveJob(jobId, approver2),
+          auth.approveJob(jobId, approver3),
         ]);
 
         // act
         const blockUpgrade = chain.mineBlock([
-          clients.auth.executeUpgradeCoreContractJob(
+          auth.executeUpgradeCoreContractJob(
             jobId,
             oldContract,
             newContract,
@@ -1252,11 +1271,11 @@ describe("[CityCoin Auth]", () => {
         ]);
 
         // act
-        const activeContract = clients.auth.getActiveCoreContract().result;
+        const activeContract = auth.getActiveCoreContract().result;
         const oldContractData =
-          clients.auth.getCoreContractInfo(oldContract).result;
+          auth.getCoreContractInfo(oldContract).result;
         const newContractData =
-          clients.auth.getCoreContractInfo(newContract).result;
+          auth.getCoreContractInfo(newContract).result;
 
         // assert
         blockUpgrade.receipts[0].result.expectOk();
@@ -1265,12 +1284,12 @@ describe("[CityCoin Auth]", () => {
 
         // TODO: why the +1 and -1 here ??
         const expectedOldContractData = {
-          state: types.uint(AuthClient.ContractState.STATE_INACTIVE),
-          startHeight: types.uint(CoreClient.ACTIVATION_DELAY + 1),
+          state: types.uint(AuthModel.ContractState.STATE_INACTIVE),
+          startHeight: types.uint(CoreModel.ACTIVATION_DELAY + 1),
           endHeight: types.uint(blockUpgrade.height - 1),
         };
         const expectedNewContractData = {
-          state: types.uint(AuthClient.ContractState.STATE_DEPLOYED),
+          state: types.uint(AuthModel.ContractState.STATE_DEPLOYED),
           startHeight: types.uint(0),
           endHeight: types.uint(0),
         };
@@ -1288,24 +1307,24 @@ describe("[CityCoin Auth]", () => {
   //////////////////////////////////////////////////
   describe("CITY WALLET MANAGEMENT", () => {
     describe("get-city-wallet()", () => {
-      it("succeeds and returns city wallet", (chain, accounts, clients) => {
+      it("succeeds and returns city wallet", () => {
         // arrange
         const cityWallet = accounts.get("city_wallet")!;
         // act
-        const result = clients.auth.getCityWallet().result;
+        const result = auth.getCityWallet().result;
         // assert
         result.expectOk().expectPrincipal(cityWallet.address);
       });
     });
     describe("set-city-wallet()", () => {
-      it("throws ERR_CORE_CONTRACT_NOT_FOUND if principal not found in core contracts map", (chain, accounts, clients) => {
+      it("throws ERR_CORE_CONTRACT_NOT_FOUND if principal not found in core contracts map", () => {
         // arrange
         const cityWallet = accounts.get("city_wallet")!;
         const newCityWallet = accounts.get("wallet_2")!;
         // act
         const receipt = chain.mineBlock([
-          clients.auth.setCityWallet(
-            clients.core.getContractAddress(),
+          auth.setCityWallet(
+            core.address,
             newCityWallet,
             cityWallet
           ),
@@ -1313,20 +1332,20 @@ describe("[CityCoin Auth]", () => {
         // assert
         receipt.result
           .expectErr()
-          .expectUint(AuthClient.ErrCode.ERR_CORE_CONTRACT_NOT_FOUND);
+          .expectUint(AuthModel.ErrCode.ERR_CORE_CONTRACT_NOT_FOUND);
       });
 
-      it("throws ERR_UNAUTHORIZED if not called by city wallet", (chain, accounts, clients) => {
+      it("throws ERR_UNAUTHORIZED if not called by city wallet", () => {
         // arrange
         const sender = accounts.get("wallet_1")!;
         const newCityWallet = accounts.get("wallet_2")!;
         chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
+          core.testInitializeCore(core.address),
         ]);
         // act
         const receipt = chain.mineBlock([
-          clients.auth.setCityWallet(
-            clients.core.getContractAddress(),
+          auth.setCityWallet(
+            core.address,
             newCityWallet,
             sender
           ),
@@ -1334,20 +1353,20 @@ describe("[CityCoin Auth]", () => {
         // assert
         receipt.result
           .expectErr()
-          .expectUint(AuthClient.ErrCode.ERR_UNAUTHORIZED);
+          .expectUint(AuthModel.ErrCode.ERR_UNAUTHORIZED);
       });
 
-      it("throws ERR_UNAUTHORIZED if not called by the active core contract", (chain, accounts, clients) => {
+      it("throws ERR_UNAUTHORIZED if not called by the active core contract", () => {
         // arrange
         const cityWallet = accounts.get("city_wallet")!;
         const newCityWallet = accounts.get("wallet_2")!;
         chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
+          core.testInitializeCore(core.address),
         ]);
         // act
         const receipt = chain.mineBlock([
-          clients.auth.setCityWallet(
-            clients.core.getContractAddress(),
+          auth.setCityWallet(
+            core.address,
             newCityWallet,
             cityWallet
           ),
@@ -1355,22 +1374,22 @@ describe("[CityCoin Auth]", () => {
         // assert
         receipt.result
           .expectErr()
-          .expectUint(AuthClient.ErrCode.ERR_UNAUTHORIZED);
+          .expectUint(AuthModel.ErrCode.ERR_UNAUTHORIZED);
       });
 
-      it("successfully change city walled when called by current city wallet", (chain, accounts, clients) => {
+      it("successfully change city walled when called by current city wallet", () => {
         // arrange
         const cityWallet = accounts.get("city_wallet")!;
         const newCityWallet = accounts.get("wallet_2")!;
         chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.auth.testSetActiveCoreContract(cityWallet),
+          core.testInitializeCore(core.address),
+          auth.testSetActiveCoreContract(cityWallet),
         ]);
 
         // act
         const receipt = chain.mineBlock([
-          clients.auth.setCityWallet(
-            clients.core.getContractAddress(),
+          auth.setCityWallet(
+            core.address,
             newCityWallet,
             cityWallet
           ),
@@ -1378,17 +1397,17 @@ describe("[CityCoin Auth]", () => {
 
         // assert
         receipt.result.expectOk().expectBool(true);
-        clients.core
+        core
           .getCityWallet()
           .result.expectPrincipal(newCityWallet.address);
-        clients.auth
+        auth
           .getCityWallet()
           .result.expectOk()
           .expectPrincipal(newCityWallet.address);
       });
     });
     describe("execute-set-city-wallet-job()", () => {
-      it("successfully change city wallet when called by job approver", (chain, accounts, clients) => {
+      it("successfully change city wallet when called by job approver", () => {
         // arrange
         const jobId = 1;
         const sender = accounts.get("wallet_1")!;
@@ -1398,33 +1417,33 @@ describe("[CityCoin Auth]", () => {
         const cityWallet = accounts.get("city_wallet")!;
         const newCityWallet = accounts.get("wallet_2")!;
         chain.mineBlock([
-          clients.core.testInitializeCore(clients.core.getContractAddress()),
-          clients.auth.testSetActiveCoreContract(cityWallet),
+          core.testInitializeCore(core.address),
+          auth.testSetActiveCoreContract(cityWallet),
         ]);
 
         chain.mineBlock([
-          clients.auth.createJob(
+          auth.createJob(
             "update city wallet 1",
-            clients.auth.getContractAddress(),
+            auth.address,
             sender
           ),
-          clients.auth.addPrincipalArgument(
+          auth.addPrincipalArgument(
             jobId,
             "newCityWallet",
             newCityWallet.address,
             sender
           ),
-          clients.auth.activateJob(jobId, sender),
-          clients.auth.approveJob(jobId, approver1),
-          clients.auth.approveJob(jobId, approver2),
-          clients.auth.approveJob(jobId, approver3),
+          auth.activateJob(jobId, sender),
+          auth.approveJob(jobId, approver1),
+          auth.approveJob(jobId, approver2),
+          auth.approveJob(jobId, approver3),
         ]);
 
         // act
         const receipt = chain.mineBlock([
-          clients.auth.executeSetCityWalletJob(
+          auth.executeSetCityWalletJob(
             jobId,
-            clients.core.getContractAddress(),
+            core.address,
             approver1
           ),
         ]).receipts[0];
@@ -1432,7 +1451,7 @@ describe("[CityCoin Auth]", () => {
         // asserts
         receipt.result.expectOk().expectBool(true);
 
-        clients.core
+        core
           .getCityWallet()
           .result.expectPrincipal(newCityWallet.address);
       });
@@ -1444,14 +1463,14 @@ describe("[CityCoin Auth]", () => {
   //////////////////////////////////////////////////
   describe("TOKEN MANAGEMENT", () => {
     describe("set-token-uri()", () => {
-      it("fails with ERR_UNAUTHORIZED when called by someone who is not city wallet", (chain, accounts, clients) => {
+      it("fails with ERR_UNAUTHORIZED when called by someone who is not city wallet", () => {
         // arrange
         const sender = accounts.get("wallet_2")!;
         // act
         const block = chain.mineBlock([
-          clients.auth.setTokenUri(
+          auth.setTokenUri(
             sender,
-            clients.token.getContractAddress(),
+            token.address,
             "http://something-something.com"
           ),
         ]);
@@ -1460,46 +1479,46 @@ describe("[CityCoin Auth]", () => {
 
         receipt.result
           .expectErr()
-          .expectUint(AuthClient.ErrCode.ERR_UNAUTHORIZED);
+          .expectUint(AuthModel.ErrCode.ERR_UNAUTHORIZED);
       });
-      it("fails with ERR_UNAUTHORIZED when called by someone who is not auth contract", (chain, accounts, clients) => {
+      it("fails with ERR_UNAUTHORIZED when called by someone who is not auth contract", () => {
         // arrange
         const sender = accounts.get("wallet_2")!;
         // act
         const block = chain.mineBlock([
-          clients.token.setTokenUri(sender, "http://something-something.com"),
+          token.setTokenUri(sender, "http://something-something.com"),
         ]);
         // assert
         const receipt = block.receipts[0];
 
         receipt.result
           .expectErr()
-          .expectUint(TokenClient.ErrCode.ERR_UNAUTHORIZED);
+          .expectUint(TokenModel.ErrCode.ERR_UNAUTHORIZED);
       });
-      it("succeeds and changes token uri to none if no new value is provided", (chain, accounts, clients) => {
+      it("succeeds and changes token uri to none if no new value is provided", () => {
         // arrange
         const sender = accounts.get("city_wallet")!;
         // act
         const block = chain.mineBlock([
-          clients.auth.setTokenUri(sender, clients.token.getContractAddress()),
+          auth.setTokenUri(sender, token.address),
         ]);
         // assert
         const receipt = block.receipts[0];
 
         receipt.result.expectOk().expectBool(true);
 
-        const result = clients.token.getTokenUri().result;
+        const result = token.getTokenUri().result;
         result.expectOk().expectNone();
       });
-      it("succeeds and changes token uri to new value if provided", (chain, accounts, clients) => {
+      it("succeeds and changes token uri to new value if provided", () => {
         // arrange
         const sender = accounts.get("city_wallet")!;
         const newUri = "http://something-something.com";
         // act
         const block = chain.mineBlock([
-          clients.auth.setTokenUri(
+          auth.setTokenUri(
             sender,
-            clients.token.getContractAddress(),
+            token.address,
             newUri
           ),
         ]);
@@ -1508,7 +1527,7 @@ describe("[CityCoin Auth]", () => {
 
         receipt.result.expectOk().expectBool(true);
 
-        const result = clients.token.getTokenUri().result;
+        const result = token.getTokenUri().result;
         result.expectOk().expectSome().expectUtf8(newUri);
       });
     });
@@ -1516,7 +1535,7 @@ describe("[CityCoin Auth]", () => {
 
   describe("APPROVERS MANAGEMENT", () => {
     describe("execute-replace-approver-job()", () => {
-      it("successfully replace one approver with another one", (chain, accounts, clients) => {
+      it("successfully replace one approver with another one", () => {
         const jobId = 1;
         const approver1 = accounts.get("wallet_1")!;
         const approver2 = accounts.get("wallet_2")!;
@@ -1524,43 +1543,43 @@ describe("[CityCoin Auth]", () => {
         const approver4 = accounts.get("wallet_4")!;
         const newApprover = accounts.get("wallet_7")!;
 
-        clients.auth.isApprover(newApprover).result.expectBool(false);
+        auth.isApprover(newApprover).result.expectBool(false);
         chain.mineBlock([
-          clients.auth.createJob(
+          auth.createJob(
             "replace approver1",
-            clients.auth.getContractAddress(),
+            auth.address,
             approver1
           ),
-          clients.auth.addPrincipalArgument(
+          auth.addPrincipalArgument(
             jobId,
             "oldApprover",
             approver1.address,
             approver1
           ),
-          clients.auth.addPrincipalArgument(
+          auth.addPrincipalArgument(
             jobId,
             "newApprover",
             newApprover.address,
             approver1
           ),
-          clients.auth.activateJob(jobId, approver1),
-          clients.auth.approveJob(jobId, approver1),
-          clients.auth.approveJob(jobId, approver2),
-          clients.auth.approveJob(jobId, approver3),
-          clients.auth.approveJob(jobId, approver4),
+          auth.activateJob(jobId, approver1),
+          auth.approveJob(jobId, approver1),
+          auth.approveJob(jobId, approver2),
+          auth.approveJob(jobId, approver3),
+          auth.approveJob(jobId, approver4),
         ]);
 
         const receipt = chain.mineBlock([
-          clients.auth.executeReplaceApproverJob(jobId, approver1),
+          auth.executeReplaceApproverJob(jobId, approver1),
         ]).receipts[0];
 
         receipt.result.expectOk().expectBool(true);
 
-        clients.auth.isApprover(approver1).result.expectBool(false);
-        clients.auth.isApprover(newApprover).result.expectBool(true);
+        auth.isApprover(approver1).result.expectBool(false);
+        auth.isApprover(newApprover).result.expectBool(true);
       });
 
-      it("replaced approver is not allowed to create nor approve jobs", (chain, accounts, clients) => {
+      it("replaced approver is not allowed to create nor approve jobs", () => {
         const replaceApproverJobId = 1;
         const anotherJobId = 2;
         const oldApprover = accounts.get("wallet_1")!;
@@ -1569,60 +1588,62 @@ describe("[CityCoin Auth]", () => {
         const approver4 = accounts.get("wallet_4")!;
         const newApprover = accounts.get("wallet_7")!;
 
-        clients.auth.isApprover(newApprover).result.expectBool(false);
+        auth.isApprover(newApprover).result.expectBool(false);
         chain.mineBlock([
-          clients.auth.createJob(
+          auth.createJob(
             "replace oldApprover",
-            clients.auth.getContractAddress(),
+            auth.address,
             approver2
           ),
-          clients.auth.addPrincipalArgument(
+          auth.addPrincipalArgument(
             replaceApproverJobId,
             "oldApprover",
             oldApprover.address,
             approver2
           ),
-          clients.auth.addPrincipalArgument(
+          auth.addPrincipalArgument(
             replaceApproverJobId,
             "newApprover",
             newApprover.address,
             approver2
           ),
-          clients.auth.activateJob(replaceApproverJobId, approver2),
-          clients.auth.approveJob(replaceApproverJobId, oldApprover),
-          clients.auth.approveJob(replaceApproverJobId, approver2),
-          clients.auth.approveJob(replaceApproverJobId, approver3),
-          clients.auth.approveJob(replaceApproverJobId, approver4),
-          clients.auth.executeReplaceApproverJob(
+          auth.activateJob(replaceApproverJobId, approver2),
+          auth.approveJob(replaceApproverJobId, oldApprover),
+          auth.approveJob(replaceApproverJobId, approver2),
+          auth.approveJob(replaceApproverJobId, approver3),
+          auth.approveJob(replaceApproverJobId, approver4),
+          auth.executeReplaceApproverJob(
             replaceApproverJobId,
             oldApprover
           ),
-          clients.auth.createJob(
+          auth.createJob(
             "new job",
-            clients.auth.getContractAddress(),
+            auth.address,
             approver2
           ),
-          clients.auth.activateJob(anotherJobId, approver2),
+          auth.activateJob(anotherJobId, approver2),
         ]);
 
         // act
         const receipts = chain.mineBlock([
-          clients.auth.createJob(
+          auth.createJob(
             "test job",
-            clients.auth.getContractAddress(),
+            auth.address,
             oldApprover
           ),
-          clients.auth.approveJob(anotherJobId, oldApprover),
+          auth.approveJob(anotherJobId, oldApprover),
         ]).receipts;
 
         // assert
         receipts[0].result
           .expectErr()
-          .expectUint(AuthClient.ErrCode.ERR_UNAUTHORIZED);
+          .expectUint(AuthModel.ErrCode.ERR_UNAUTHORIZED);
         receipts[1].result
           .expectErr()
-          .expectUint(AuthClient.ErrCode.ERR_UNAUTHORIZED);
+          .expectUint(AuthModel.ErrCode.ERR_UNAUTHORIZED);
       });
     });
   });
 });
+
+run();

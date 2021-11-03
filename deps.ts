@@ -2,18 +2,23 @@ export type {
   Account,
   ReadOnlyFn,
   TxReceipt,
-} from "https://deno.land/x/clarinet@v0.14.2/index.ts";
+} from "https://deno.land/x/clarinet@v0.18.3/index.ts";
 
 export {
   Chain,
   Tx,
   types,
-} from "https://deno.land/x/clarinet@v0.14.2/index.ts";
+} from "https://deno.land/x/clarinet@v0.18.3/index.ts";
 
-export { assertEquals } from "https://deno.land/std@0.93.0/testing/asserts.ts";
+export { assertEquals } from "https://deno.land/std@0.113.0/testing/asserts.ts";
 
 export {
-  beforeEach,
   describe,
   it,
-} from "https://deno.land/x/test_suite@v0.7.0/mod.ts";
+  beforeAll,
+  beforeEach,
+  afterAll,
+  afterEach,
+  test,
+  run,
+} from "https://deno.land/x/dspec@v0.2.0/mod.ts";

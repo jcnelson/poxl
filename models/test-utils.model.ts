@@ -1,10 +1,11 @@
-import { Account, Tx, types } from "../deps.ts";
-import { Client } from "./client.ts";
+import { Account, Tx } from "../deps.ts";
+import { Model } from "../src/model.ts";
 
-export class TestUtilsClient extends Client {
+export class TestUtilsModel extends Model {
+  name = "test-utils";
+
   testWalletAttack(sender: Account) {
-    return Tx.contractCall(
-      this.contractName,
+    return this.callPublic(
       "test-wallet-attack",
       [],
       sender.address
@@ -12,8 +13,7 @@ export class TestUtilsClient extends Client {
   }
 
   testWalletAttackAsContract(sender: Account) {
-    return Tx.contractCall(
-      this.contractName,
+    return this.callPublic(
       "test-wallet-attack-as-contract",
       [],
       sender.address

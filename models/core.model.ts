@@ -1,5 +1,5 @@
 import { Account, ReadOnlyFn, Tx, types } from "../deps.ts";
-import { Client } from "./client.ts";
+import { Model } from "../src/model.ts";
 
 enum ErrCode {
   ERR_FT_INSUFFICIENT_BALANCE = 1,
@@ -24,7 +24,9 @@ enum ErrCode {
   ERR_NOTHING_TO_REDEEM,
 }
 
-export class CoreClient extends Client {
+export class CoreModel extends Model {
+  name = "citycoin-core-v1"
+
   static readonly ErrCode = ErrCode;
   static readonly ACTIVATION_DELAY = 150;
   static readonly ACTIVATION_THRESHOLD = 20;
@@ -39,8 +41,7 @@ export class CoreClient extends Client {
   //////////////////////////////////////////////////
 
   setCityWallet(newCityWallet: Account, sender: Account): Tx {
-    return Tx.contractCall(
-      this.contractName,
+    return this.callPublic(
       "set-city-wallet",
       [types.principal(newCityWallet.address)],
       sender.address
@@ -48,7 +49,7 @@ export class CoreClient extends Client {
   }
 
   getCityWallet(): ReadOnlyFn {
-    return this.callReadOnlyFn("get-city-wallet");
+    return this.callReadOnly("get-city-wallet");
   }
 
   //////////////////////////////////////////////////
@@ -56,24 +57,23 @@ export class CoreClient extends Client {
   //////////////////////////////////////////////////
 
   getActivationBlock(): ReadOnlyFn {
-    return this.callReadOnlyFn("get-activation-block");
+    return this.callReadOnly("get-activation-block");
   }
 
   getActivationDelay(): ReadOnlyFn {
-    return this.callReadOnlyFn("get-activation-delay");
+    return this.callReadOnly("get-activation-delay");
   }
 
   getActivationStatus(): ReadOnlyFn {
-    return this.callReadOnlyFn("get-activation-status");
+    return this.callReadOnly("get-activation-status");
   }
 
   getActivationThreshold(): ReadOnlyFn {
-    return this.callReadOnlyFn("get-activation-threshold");
+    return this.callReadOnly("get-activation-threshold");
   }
 
   registerUser(sender: Account, memo: string | undefined = undefined): Tx {
-    return Tx.contractCall(
-      this.contractName,
+    return this.callPublic(
       "register-user",
       [
         typeof memo == "undefined"
@@ -85,15 +85,15 @@ export class CoreClient extends Client {
   }
 
   getRegisteredUsersNonce(): ReadOnlyFn {
-    return this.callReadOnlyFn("get-registered-users-nonce");
+    return this.callReadOnly("get-registered-users-nonce");
   }
 
   getUserId(user: Account): ReadOnlyFn {
-    return this.callReadOnlyFn("get-user-id", [types.principal(user.address)]);
+    return this.callReadOnly("get-user-id", [types.principal(user.address)]);
   }
 
   getUser(userId: number): ReadOnlyFn {
-    return this.callReadOnlyFn("get-user", [types.uint(userId)]);
+    return this.callReadOnly("get-user", [types.uint(userId)]);
   }
 
   //////////////////////////////////////////////////
@@ -101,7 +101,7 @@ export class CoreClient extends Client {
   //////////////////////////////////////////////////
 
   getBlockWinnerId(stacksHeight: number): ReadOnlyFn {
-    return this.callReadOnlyFn("get-block-winner-id", [
+    return this.callReadOnly("get-block-winner-id", [
       types.uint(stacksHeight),
     ]);
   }
@@ -115,8 +115,7 @@ export class CoreClient extends Client {
     miner: Account,
     memo: ArrayBuffer | undefined = undefined
   ): Tx {
-    return Tx.contractCall(
-      this.contractName,
+    return this.callPublic(
       "mine-tokens",
       [
         types.uint(amountUstx),
@@ -129,8 +128,7 @@ export class CoreClient extends Client {
   }
 
   mineMany(amounts: number[], miner: Account): Tx {
-    return Tx.contractCall(
-      this.contractName,
+    return this.callPublic(
       "mine-many",
       [types.list(amounts.map((amount) => types.uint(amount)))],
       miner.address
@@ -138,7 +136,7 @@ export class CoreClient extends Client {
   }
 
   hasMinedAtBlock(stacksHeight: number, userId: number): ReadOnlyFn {
-    return this.callReadOnlyFn("has-mined-at-block", [
+    return this.callReadOnly("has-mined-at-block", [
       types.uint(stacksHeight),
       types.uint(userId),
     ]);
@@ -149,8 +147,7 @@ export class CoreClient extends Client {
   //////////////////////////////////////////////////
 
   claimMiningReward(minerBlockHeight: number, sender: Account): Tx {
-    return Tx.contractCall(
-      this.contractName,
+    return this.callPublic(
       "claim-mining-reward",
       [types.uint(minerBlockHeight)],
       sender.address
@@ -158,14 +155,14 @@ export class CoreClient extends Client {
   }
 
   isBlockWinner(user: Account, minerBlockHeight: number): ReadOnlyFn {
-    return this.callReadOnlyFn("is-block-winner", [
+    return this.callReadOnly("is-block-winner", [
       types.principal(user.address),
       types.uint(minerBlockHeight),
     ]);
   }
 
   canClaimMiningReward(user: Account, minerBlockHeight: number): ReadOnlyFn {
-    return this.callReadOnlyFn("can-claim-mining-reward", [
+    return this.callReadOnly("can-claim-mining-reward", [
       types.principal(user.address),
       types.uint(minerBlockHeight),
     ]);
@@ -176,7 +173,7 @@ export class CoreClient extends Client {
   //////////////////////////////////////////////////
 
   getStackerAtCycleOrDefault(rewardCycle: number, userId: number): ReadOnlyFn {
-    return this.callReadOnlyFn("get-stacker-at-cycle-or-default", [
+    return this.callReadOnly("get-stacker-at-cycle-or-default", [
       types.uint(rewardCycle),
       types.uint(userId),
     ]);
@@ -187,8 +184,7 @@ export class CoreClient extends Client {
   //////////////////////////////////////////////////
 
   stackTokens(amountTokens: number, lockPeriod: number, stacker: Account): Tx {
-    return Tx.contractCall(
-      this.contractName,
+    return this.callPublic(
       "stack-tokens",
       [types.uint(amountTokens), types.uint(lockPeriod)],
       stacker.address
@@ -200,8 +196,7 @@ export class CoreClient extends Client {
   //////////////////////////////////////////////////
 
   claimStackingReward(targetCycle: number, sender: Account): Tx {
-    return Tx.contractCall(
-      this.contractName,
+    return this.callPublic(
       "claim-stacking-reward",
       [types.uint(targetCycle)],
       sender.address
@@ -221,8 +216,7 @@ export class CoreClient extends Client {
   //////////////////////////////////////////////////
 
   unsafeSetCityWallet(newCityWallet: Account): Tx {
-    return Tx.contractCall(
-      this.contractName,
+    return this.callPublic(
       "test-unsafe-set-city-wallet",
       [types.principal(newCityWallet.address)],
       this.deployer.address
@@ -230,8 +224,7 @@ export class CoreClient extends Client {
   }
 
   unsafeSetActivationThreshold(newThreshold: number): Tx {
-    return Tx.contractCall(
-      this.contractName,
+    return this.callPublic(
       "test-set-activation-threshold",
       [types.uint(newThreshold)],
       this.deployer.address
@@ -239,8 +232,7 @@ export class CoreClient extends Client {
   }
 
   testInitializeCore(coreContract: string): Tx {
-    return Tx.contractCall(
-      this.contractName,
+    return this.callPublic(
       "test-initialize-core",
       [types.principal(coreContract)],
       this.deployer.address
@@ -248,8 +240,7 @@ export class CoreClient extends Client {
   }
 
   testMint(amount: number, recipient: Account, sender: Account): Tx {
-    return Tx.contractCall(
-      this.contractName,
+    return this.callPublic(
       "test-mint",
       [types.uint(amount), types.principal(recipient.address)],
       sender.address
@@ -257,8 +248,7 @@ export class CoreClient extends Client {
   }
 
   testBurn(amount: number, recipient: Account, sender: Account): Tx {
-    return Tx.contractCall(
-      this.contractName,
+    return this.callPublic(
       "test-burn",
       [types.uint(amount), types.principal(recipient.address)],
       sender.address
