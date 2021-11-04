@@ -246,12 +246,4 @@ export class CoreModel extends Model {
       sender.address
     );
   }
-
-  testBurn(amount: number, recipient: Account, sender: Account): Tx {
-    return this.callPublic(
-      "test-burn",
-      [types.uint(amount), types.principal(recipient.address)],
-      sender.address
-    );
-  }
 }

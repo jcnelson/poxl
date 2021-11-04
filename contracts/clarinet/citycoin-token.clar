@@ -136,13 +136,10 @@
   )
 )
 
-;; burn tokens, only accessible by a Core contract
-(define-public (burn (amount uint) (recipient principal))
-  (let
-    (
-      (coreContract (try! (contract-call? .citycoin-auth get-core-contract-info contract-caller)))
-    )
-    (ft-burn? citycoins amount recipient)
+(define-public (burn (amount uint) (owner principal))
+  (begin
+    (asserts! (is-eq tx-sender owner) (err ERR_UNAUTHORIZED))
+    (ft-burn? citycoins amount owner)
   )
 )
 

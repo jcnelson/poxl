@@ -43,10 +43,10 @@ export class TokenModel extends Model {
     );
   }
 
-  burn(amount: number, sender: Account): Tx {
+  burn(amount: number, owner: Account, sender: Account): Tx {
     return this.callPublic(
       "burn",
-      [types.uint(amount), types.principal(sender.address)],
+      [types.uint(amount), types.principal(owner.address)],
       sender.address
     );
   }
