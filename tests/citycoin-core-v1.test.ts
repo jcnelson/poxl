@@ -1788,7 +1788,7 @@ describe("[CityCoin Core]", () => {
         // assert
         receipt.result.expectOk().expectBool(true);
 
-        assertEquals(receipt.events.length, 1);
+        assertEquals(receipt.events.length, 2);
         receipt.events.expectFungibleTokenTransferEvent(
           amountTokens,
           stacker.address,
@@ -1827,7 +1827,7 @@ describe("[CityCoin Core]", () => {
         // assert
         receipts.forEach((receipt: TxReceipt) => {
           receipt.result.expectOk().expectBool(true);
-          assertEquals(receipt.events.length, 1);
+          assertEquals(receipt.events.length, 2);
 
           receipt.events.expectFungibleTokenTransferEvent(
             amountTokens,
@@ -2002,6 +2002,58 @@ describe("[CityCoin Core]", () => {
             toReturn: types.uint(expected.toReturn),
           });
         }
+      });
+
+      it("prints tuple with firstCycle and lastCycle when stacked only in one cycle", () => {
+        // arrange
+        const stacker = accounts.get("wallet_7")!;
+        const amountTokens = 20;
+        const lockPeriod = 1;
+        const stackDuringCycle = 3;
+        const block = chain.mineBlock([
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(stacker),
+          token.ftMint(amountTokens, stacker),
+        ]);
+        const activationBlockHeight = block.height + CoreModel.ACTIVATION_DELAY - 1;
+        chain.mineEmptyBlockUntil(activationBlockHeight + CoreModel.REWARD_CYCLE_LENGTH * stackDuringCycle);
+
+        // act
+        const receipt = chain.mineBlock([core.stackTokens(amountTokens, lockPeriod, stacker)]).receipts[0];
+
+        // assert
+        const firstCycle = stackDuringCycle + 1;
+        const lastCycle = firstCycle + (lockPeriod - 1);
+        const expectedPrintMsg = `{firstCycle: ${types.uint(firstCycle)}, lastCycle: ${types.uint(lastCycle)}}`;
+
+        receipt.events.expectPrintEvent(core.address, expectedPrintMsg);
+      });
+
+      it("prints tuple with firstCycle and lastCycle when stacked in multiple cycles", () => {
+        // arrange
+        const stacker = accounts.get("wallet_7")!;
+        const amountTokens = 20;
+        const lockPeriod = 9;
+        const stackDuringCycle = 8;
+        const block = chain.mineBlock([
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(stacker),
+          token.ftMint(amountTokens, stacker),
+        ]);
+        const activationBlockHeight = block.height + CoreModel.ACTIVATION_DELAY - 1;
+        chain.mineEmptyBlockUntil(activationBlockHeight + CoreModel.REWARD_CYCLE_LENGTH * stackDuringCycle);
+
+        // act
+        const receipt = chain.mineBlock([core.stackTokens(amountTokens, lockPeriod, stacker)]).receipts[0];
+
+        // assert
+        const firstCycle = stackDuringCycle + 1;
+        const lastCycle = firstCycle + (lockPeriod - 1);
+        const expectedPrintMsg = `{firstCycle: ${types.uint(firstCycle)}, lastCycle: ${types.uint(lastCycle)}}`;
+
+        receipt.events.expectPrintEvent(core.address, expectedPrintMsg);
       });
     });
   });
