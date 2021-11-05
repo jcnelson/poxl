@@ -301,7 +301,8 @@
         (try! (stx-transfer? (get toCity okReturn) tx-sender (var-get cityWallet)))
         (print { 
           firstBlock: block-height, 
-          lastBlock: (- (+ block-height (len amounts)) u1) })
+          lastBlock: (- (+ block-height (len amounts)) u1) 
+        })
         (ok true)
       )
       errReturn (err errReturn)
