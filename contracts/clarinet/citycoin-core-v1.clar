@@ -674,6 +674,10 @@
       (err ERR_CANNOT_STACK))
     (asserts! (> amountTokens u0) (err ERR_CANNOT_STACK))
     (try! (contract-call? .citycoin-token transfer amountTokens tx-sender (as-contract tx-sender) none))
+    (print {
+      firstCycle: targetCycle, 
+      lastCycle: (- (+ targetCycle lockPeriod) u1)
+    })
     (match (fold stack-tokens-closure REWARD_CYCLE_INDEXES (ok commitment))
       okValue (ok true)
       errValue (err errValue)
