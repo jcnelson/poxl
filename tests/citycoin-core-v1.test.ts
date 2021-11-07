@@ -693,7 +693,7 @@ describe("[CityCoin Core]", () => {
         // assert
         receipt.result.expectOk().expectBool(true);
 
-        assertEquals(receipt.events.length, 1);
+        assertEquals(receipt.events.length, 2);
 
         receipt.events.expectSTXTransferEvent(
           amounts.reduce((sum, amount) => sum + amount, 0),
@@ -723,7 +723,7 @@ describe("[CityCoin Core]", () => {
         // assert
         receipt.result.expectOk().expectBool(true);
 
-        assertEquals(receipt.events.length, 1);
+        assertEquals(receipt.events.length, 2);
 
         receipt.events.expectSTXTransferEvent(
           amounts.reduce((sum, amount) => sum + amount, 0),
@@ -762,7 +762,7 @@ describe("[CityCoin Core]", () => {
         // assert
         receipt.result.expectOk().expectBool(true);
 
-        assertEquals(receipt.events.length, 2);
+        assertEquals(receipt.events.length, 3);
 
         const totalAmount = amounts.reduce((sum, amount) => sum + amount, 0);
 
@@ -809,7 +809,7 @@ describe("[CityCoin Core]", () => {
         // assert
         receipt.result.expectOk().expectBool(true);
 
-        assertEquals(receipt.events.length, 2);
+        assertEquals(receipt.events.length, 3);
 
         const totalAmount = amounts.reduce((sum, amount) => sum + amount, 0);
 
@@ -850,6 +850,48 @@ describe("[CityCoin Core]", () => {
             .hasMinedAtBlock(block.height + idx - 1, userId)
             .result.expectBool(true);
         });
+      });
+
+      it("prints tuple with firstBlock and lastBlock when mined only one block", () => {
+        const miner = accounts.get("wallet_6")!;
+        const amounts = [123];
+        const setupBlock = chain.mineBlock([
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(miner),
+        ]);
+        chain.mineEmptyBlockUntil(setupBlock.height + CoreModel.ACTIVATION_DELAY - 1);
+
+        // act
+        const block = chain.mineBlock([core.mineMany(amounts, miner)]);
+
+        // assert
+        const firstBlock = block.height - 1;
+        const lastBlock = firstBlock + amounts.length - 1;
+        const expectedPrintMsg = `{firstBlock: ${types.uint(firstBlock)}, lastBlock: ${types.uint(lastBlock)}}`;
+
+        block.receipts[0].events.expectPrintEvent(core.address, expectedPrintMsg);
+      });
+
+      it("prints tuple with firstBlock and lastBlock when mined multiple blocks", () => {
+        const miner = accounts.get("wallet_6")!;
+        const amounts = [1, 2, 5, 60];
+        const setupBlock = chain.mineBlock([
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(miner),
+        ]);
+        chain.mineEmptyBlockUntil(setupBlock.height + CoreModel.ACTIVATION_DELAY + 145);
+
+        // act
+        const block = chain.mineBlock([core.mineMany(amounts, miner)]);
+
+        // assert
+        const firstBlock = block.height - 1;
+        const lastBlock = firstBlock + amounts.length - 1;
+        const expectedPrintMsg = `{firstBlock: ${types.uint(firstBlock)}, lastBlock: ${types.uint(lastBlock)}}`;
+
+        block.receipts[0].events.expectPrintEvent(core.address, expectedPrintMsg);
       });
     });
   });
