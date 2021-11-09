@@ -1,4 +1,5 @@
 ;; NEWYORKCITYCOIN AUTH CONTRACT
+;; CityCoins Protocol Version 1.0.1
 
 (define-constant CONTRACT_OWNER tx-sender)
 
