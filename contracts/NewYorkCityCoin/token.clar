@@ -1,4 +1,5 @@
 ;; NEWYORKCITYCOIN TOKEN CONTRACT
+;; CityCoins Protocol Version 1.0.1
 
 ;; CONTRACT OWNER
 
