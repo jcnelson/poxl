@@ -5,6 +5,9 @@
 
 (define-constant ERR_USER_NOT_FOUND u1000)
 (define-constant ERR_STACKER_NOT_FOUND u1001)
+(define-constant ERR_PROPOSAL_NOT_FOUND u1002)
+(define-constant ERR_PROPOSAL_NOT_ACTIVE u1003)
+(define-constant ERR_VOTE_ALREADY_RECORDED u1004)
 
 ;; PROPOSALS
 
@@ -82,10 +85,12 @@
   (ok true)
 )
 
-(define-public (vote-on-proposal (user principal) (proposal uint) (vote bool))
+(define-public (vote-on-proposal (user principal) (targetProposal uint) (vote bool))
   (let
     (
+      ;; get vote information
       (voterId (get-or-create-user-id user))
+      (voterRecord (map-get? UserVotes { userId: voterId, proposalId: targetProposal }))
       (userIdMia (unwrap!
         (contract-call? .citycoin-core-v1 get-user-id user)
         (err ERR_USER_NOT_FOUND)))
@@ -100,10 +105,20 @@
         (contract-call? .citycoin-core-v1 get-stacker-at-cycle u3 userIdNyc)
         (err ERR_STACKER_NOT_FOUND)))
       (stackedNycAmount (get amountStacked stackedNyc))
+      ;; get proposal information - what happens if map-get fails?
+      (proposal (unwrap! (map-get? Proposals targetProposal) (err ERR_PROPOSAL_NOT_FOUND)))
+      (startBlock (get startBlock proposal))
+      (endBlock (get endBlock proposal))
     )
-    ;; TODO: assert proposal is found
-    ;; TODO: assert proposal is in active voting window
-    ;; TODO: assert vote isn't the same as previous vote
+    (asserts! (and (<= startBlock block-height) (>= endBlock block-height)) (err ERR_PROPOSAL_NOT_ACTIVE))
+    ;;(match previousVote approved
+      ;; previous vote exists
+    ;;  (begin
+    ;;    (asserts! (not approved) (err ERR_VOTE_ALREADY_RECORDED))
+        
+    ;;  )
+      ;; no previous vote
+    ;;)
 
     ;; SET MAPS
 
