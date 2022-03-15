@@ -86,7 +86,7 @@
 
 (define-public (add-proposal (user principal))
   ;; TODO: check CityCoin balance or stacked status
-  ;; allow for adding a proposal
+  ;; allow for adding a proposal - or just stacked status?
   (ok true)
 )
 
@@ -108,6 +108,9 @@
         (contract-call? .citycoin-core-v1 get-stacker-at-cycle u2 userIdMia)
         (err ERR_STACKER_NOT_FOUND)))
       (stackedMiaAmount (get amountStacked stackedMia))
+      ;; get total supply of MIA at start block
+        ;; at-block startBlock
+        ;; unwrap total supply of token
       ;; get stacked NYC balance
       (userIdNyc (unwrap!
         (contract-call? .citycoin-core-v1 get-user-id user)
@@ -116,6 +119,9 @@
         (contract-call? .citycoin-core-v1 get-stacker-at-cycle u3 userIdNyc)
         (err ERR_STACKER_NOT_FOUND)))
       (stackedNycAmount (get amountStacked stackedNyc))
+      ;; get total supply of NYC at start block
+        ;; at-block startBlock
+        ;; unwrap total supply of token
     )
     (asserts! (and
       (<= (get startBlock proposal) block-height)
