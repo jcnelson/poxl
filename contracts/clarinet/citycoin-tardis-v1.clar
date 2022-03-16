@@ -50,10 +50,11 @@
 ;; get-stacking-stats-at-cycle MIA
 ;; Mainnet: SP466FNC0P7JWTNM2R9T199QRZN1MYEDTAR0KP27.miamicoin-core-v1
 
-(define-read-only (get-historical-stacking-stats-mia (blockHeight uint) (cycleId uint))
+(define-read-only (get-historical-stacking-stats-mia (blockHeight uint))
   (let 
     (
       (blockHash (unwrap! (get-block-hash blockHeight) (err ERR_INVALID_BLOCK)))
+      (cycleId (unwrap! (contract-call? .citycoin-core-v1 get-reward-cycle blockHeight) (err ERR_CYCLE_NOT_FOUND)))
       (stats (unwrap! (at-block blockHash (contract-call? .citycoin-core-v1 get-stacking-stats-at-cycle cycleId)) (err ERR_CYCLE_NOT_FOUND)))
     )
     (ok stats)
@@ -66,11 +67,12 @@
 ;; get-stacker-at-cycle MIA
 ;; Mainnet: SP466FNC0P7JWTNM2R9T199QRZN1MYEDTAR0KP27.miamicoin-core-v1
 
-(define-read-only (get-historical-stacking-stats-mia (blockHeight uint) (cycleId uint) (address principal))
+(define-read-only (get-historical-stacker-stats-mia (blockHeight uint) (address principal))
   (let 
     (
       (blockHash (unwrap! (get-block-hash blockHeight) (err ERR_INVALID_BLOCK)))
       (userId (unwrap! (contract-call? .citycoin-core-v1 get-user-id address) (err ERR_USER_NOT_FOUND)))
+      (cycleId (unwrap! (contract-call? .citycoin-core-v1 get-reward-cycle blockHeight) (err ERR_CYCLE_NOT_FOUND)))
       (stacker (unwrap! (at-block blockHash (contract-call? .citycoin-core-v1 get-stacker-at-cycle cycleId userId)) (err ERR_CYCLE_NOT_FOUND)))
     )
     (ok stacker)
