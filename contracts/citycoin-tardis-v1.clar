@@ -8,6 +8,8 @@
 (define-constant ERR_INVALID_BLOCK u7000)
 (define-constant ERR_CYCLE_NOT_FOUND u7001)
 (define-constant ERR_USER_NOT_FOUND u7002)
+(define-constant ERR_SUPPLY_NOT_FOUND u7003)
+(define-constant ERR_BALANCE_NOT_FOUND u7004)
 
 ;; get block hash by height
 
@@ -22,7 +24,7 @@
   (let 
     (
       (blockHash (unwrap! (get-block-hash blockHeight) (err ERR_INVALID_BLOCK)))
-      (balance (at-block blockHash (contract-call? .citycoin-token get-balance address)))
+      (balance (unwrap! (at-block blockHash (contract-call? .citycoin-token get-balance address)) (err ERR_BALANCE_NOT_FOUND)))
     )
     (ok balance)
   )
@@ -38,7 +40,7 @@
   (let 
     (
       (blockHash (unwrap! (get-block-hash blockHeight) (err ERR_INVALID_BLOCK)))
-      (supply (at-block blockHash (contract-call? .citycoin-token get-total-supply)))
+      (supply (unwrap! (at-block blockHash (contract-call? .citycoin-token get-total-supply)) (err ERR_SUPPLY_NOT_FOUND)))
     )
     (ok supply)
   )
