@@ -3,11 +3,11 @@
 
 ;; ERRORS
 
-(define-constant ERR_USER_NOT_FOUND u1000)
-(define-constant ERR_STACKER_NOT_FOUND u1001)
-(define-constant ERR_PROPOSAL_NOT_FOUND u1002)
-(define-constant ERR_PROPOSAL_NOT_ACTIVE u1003)
-(define-constant ERR_VOTE_ALREADY_RECORDED u1004)
+(define-constant ERR_USER_NOT_FOUND u8000)
+(define-constant ERR_STACKER_NOT_FOUND u8001)
+(define-constant ERR_PROPOSAL_NOT_FOUND u8002)
+(define-constant ERR_PROPOSAL_NOT_ACTIVE u8003)
+(define-constant ERR_VOTE_ALREADY_RECORDED u8004)
 
 ;; PROPOSALS
 
