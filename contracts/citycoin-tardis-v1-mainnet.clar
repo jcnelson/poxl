@@ -98,8 +98,6 @@
 )
 
 ;; get-stacker-at-cycle NYC
-;; Mainnet: 
-
 (define-read-only (get-historical-stacker-stats-nyc (blockHeight uint) (address principal))
   (let
     (
