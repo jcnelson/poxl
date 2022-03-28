@@ -1,5 +1,7 @@
-;; CityCoins vote-v1
-;; A voting mechanism inspired by SIP-012 for Stacks.
+;; CityCoins Vote V1
+;; A voting mechanism inspired by SIP-012 for Stacks,
+;; defined in CCIP-011 and used to vote on ratifying
+;; CCIP-008, CCIP-009, and CCIP-010.
 
 ;; ERRORS
 
@@ -11,19 +13,32 @@
 
 ;; PROPOSALS
 
-(define-data-var proposalId uint u0)
+(define-constant CCIP-008 {
+  name: "CityCoins SIP-010 Token v2",
+  link: "TODO",
+  hash: "TODO"
+})
 
-(define-map Proposals
-  uint ;; proposalId
-  {
-    creator: principal,
-    name: (string-ascii 255),
-    link: (string-ascii 255),
-    hash: (string-ascii 255),
-    startBlock: uint,
-    endBlock: uint
-  }
-)
+(define-constant CCIP-009 {
+  name: "CityCoins VRF v2",
+  link: "TODO",
+  hash: "TODO"
+})
+
+(define-constant CCIP-010 {
+  name: "CityCoins Auth v2",
+  link: "TODO",
+  hash: "TODO"
+})
+
+;; TODO: update block heights
+(define-constant VOTE_START_BLOCK u0)
+(define-constant VOTE_END_BLOCK u0)
+(define-constant VOTE_PROPOSAL_KEY u0)
+(define-constant VOTE_SCALE_FACTOR u1000000000)
+
+;; define constants for total supply
+;; and for the MIA scale factor?
 
 (define-map ProposalVotes
   uint ;; proposalId
@@ -41,7 +56,7 @@
 
 ;; VOTERS
 
-(define-data-var userIndex uint u0)
+(define-data-var voterIndex uint u0)
 
 (define-map Voters
   uint
@@ -54,10 +69,7 @@
 )
 
 (define-map Votes
-  {
-    userId: uint,
-    proposalId: uint
-  }
+  uint ;; voter ID
   {
     vote: bool,
     mia: uint,
@@ -66,91 +78,80 @@
   }
 )
 
-(define-private (get-or-create-user-id (user principal))
+(define-private (get-or-create-voter-id (user principal))
   (match
     (map-get? VoterIds user)
     value value
     (let
       (
-        (newId (+ u1 (var-get userIndex)))
+        (newId (+ u1 (var-get voterIndex)))
       )
       (map-set Voters newId user)
       (map-set VoterIds user newId)
-      (var-set userIndex newId)
+      (var-set voterIndex newId)
       newId
     )
   )
 )
 
-;; TESTING COSTS
+;; VOTE FUNCTIONS
 
-(define-public (add-proposal (user principal))
-  ;; TODO: check CityCoin balance or stacked status
-  ;; allow for adding a proposal - or just stacked status?
-  (ok true)
-)
-
-(define-public (vote-on-proposal (user principal) (targetProposal uint) (vote bool))
+(define-public (vote-on-proposal (vote bool))
   (let
     (
-      ;; get proposal from map
-      (proposal (unwrap! (map-get? Proposals targetProposal) ERR_PROPOSAL_NOT_FOUND))
-      (startBlock (get startBlock proposal))
-      (endBlock (get endBlock proposal))
-      ;; get voter record if it exists
-      (voterId (get-or-create-user-id user))
-      (voterRecord (map-get? Votes { userId: voterId, proposalId: targetProposal }))
-      ;; get stacked MIA balance
-      (userIdMia (unwrap!
-        (contract-call? .citycoin-core-v1 get-user-id user)
-        ERR_USER_NOT_FOUND))
-      (stackedMia (unwrap!
-        (contract-call? .citycoin-core-v1 get-stacker-at-cycle u2 userIdMia)
-        ERR_STACKER_NOT_FOUND))
-      (stackedMiaAmount (get amountStacked stackedMia))
-      ;; get total supply of MIA at start block
-        ;; at-block startBlock
-        ;; unwrap total supply of token
-      ;; get stacked NYC balance
-      (userIdNyc (unwrap!
-        (contract-call? .citycoin-core-v1 get-user-id user)
-        ERR_USER_NOT_FOUND))
-      (stackedNyc (unwrap!
-        (contract-call? .citycoin-core-v1 get-stacker-at-cycle u3 userIdNyc)
-        ERR_STACKER_NOT_FOUND))
-      (stackedNycAmount (get amountStacked stackedNyc))
-      ;; get total supply of NYC at start block
-        ;; at-block startBlock
-        ;; unwrap total supply of token
+      (voterId (get-or-create-voter-id contract-caller))
+      (voterRecord (map-get? Votes voterId))
+      (voteMia (get-vote-mia contract-caller voterId))
+      ;; TODO: get avgStackedNyc
     )
-    (asserts! (and
-      (<= (get startBlock proposal) block-height)
-      (>= (get endBlock proposal) block-height))
+    ;; assert proposal is active
+    (asserts! (and 
+      (>= block-height VOTE_START_BLOCK)
+      (<= block-height VOTE_END_BLOCK))
       ERR_PROPOSAL_NOT_ACTIVE)
-
-    ;; (if (is-some voterRecord) true false)
-
-    ;;(match voterRecord voteExists
-      ;; found previous vote
-    ;;  (begin
-    ;;    (asserts! (not (is-eq (get vote voteExists) vote)) (ERR_VOTE_ALREADY_RECORDED))
-    ;;  )
-      ;; no previous vote
-    ;; )
-
     ;; print all information
-    (print {
-      user: user,
-      proposal: proposal,
-      startBlock: startBlock,
-      endBlock: endBlock,
-      voterId: voterId,
-      voterRecord: voterRecord,
-      userIdMia: userIdMia,
-      stackedMia: stackedMiaAmount,
-      userIdNyc: userIdNyc,
-      stackedNyc: stackedNycAmount
-    })
     (ok true)
-  ) 
+  )
+)
+
+;; MIA HELPERS
+
+(define-map AvgStackedMia
+  uint ;; user ID
+  uint ;; amount
+)
+
+(define-private (get-vote-mia (user principal) (voterId uint))
+  ;; returns (some uint) or (none)
+  (let
+    (
+      (userIdMia (default-to u0 (contract-call? .citycoin-core-v1 get-user-id user)))
+      ;; TODO: update to mainnet cycles
+      (userCycle12 (contract-call? .citycoin-core-v1 get-stacker-at-cycle-or-default u2 userIdMia))
+      (stackedCycle12 (get amountStacked userCycle12))
+      (userCycle13 (contract-call? .citycoin-core-v1 get-stacker-at-cycle-or-default u3 userIdMia))
+      (stackedCycle13 (get amountStacked userCycle13))
+    )
+    ;; check if user was found
+    (asserts! (> userIdMia u0) none)
+    ;; check if there is a positive value
+    (asserts! (or (>= stackedCycle12 u0) (>= stackedCycle13 u0)) none)
+    ;; check if the amount is already saved and return it
+    ;; or calculate it, save it, and return it
+    (match 
+      (map-get? AvgStackedMia voterId)
+      value (some value)
+      (let
+        (
+          ;; ((stackedCycle12 * SCALE) + (stackedCycle13 * SCALE)) / 2
+          ;; TODO: apply MIA scale factor here and return total vote?
+          (scaledCycle12 (* stackedCycle12 VOTE_SCALE_FACTOR))
+          (scaledCycle13 (* stackedCycle13 VOTE_SCALE_FACTOR))
+          (scaledAvgMia (/ (+ scaledCycle12 scaledCycle13) u2))
+          (avgStackedMia (/ scaledAvgMia VOTE_SCALE_FACTOR))
+        )
+        (some avgStackedMia)
+      )
+    )
+  )
 )
