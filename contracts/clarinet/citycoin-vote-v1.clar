@@ -55,6 +55,18 @@
   }
 )
 
+;; intialize ProposalVotes
+(map-insert ProposalVotes VOTE_PROPOSAL_KEY {
+  yesCount: u0,
+  yesMia: u0,
+  yesNyc: u0,
+  yesTotal: u0,
+  noCount: u0,
+  noMia: u0,
+  noNyc: u0,
+  noTotal: u0
+})
+
 ;; VOTERS
 
 (define-data-var voterIndex uint u0)
@@ -102,20 +114,81 @@
     (
       (voterId (get-or-create-voter-id contract-caller))
       (voterRecord (map-get? Votes voterId))
-      (scaledVoteMia (get-mia-vote contract-caller voterId))
-      (scaledVoteNyc (get-nyc-vote contract-caller voterId))
+      (proposalRecord (unwrap! (map-get? ProposalVotes VOTE_PROPOSAL_KEY) ERR_PROPOSAL_NOT_FOUND))
     )
     ;; assert proposal is active
     (asserts! (and 
       (>= block-height VOTE_START_BLOCK)
       (<= block-height VOTE_END_BLOCK))
       ERR_PROPOSAL_NOT_ACTIVE)
-    
-    ;; TODO: check if vote exists already
-    ;; TODO: update ProposalVotes map
-    ;; TODO: update Votes map
-    ;; TODO: print all information
+    ;; determine if vote record exists already
+    (match voterRecord record
+      ;; vote record exists
+      (begin
+        ;; check if vote is the same as what's recorded
+        (asserts! (not (is-eq (get vote record) vote)) ERR_VOTE_ALREADY_RECORDED)
+        ;; record the new vote
+        (merge record { vote: vote })
+        ;; update the vote totals
+        (if vote
+          (merge proposalRecord {
+            yesCount: (+ (get yesCount proposalRecord) u1),
+            yesMia: (+ (get yesMia proposalRecord) (get mia record)),
+            yesNyc: (+ (get yesNyc proposalRecord) (get nyc record)),
+            yesTotal: (+ (get yesTotal proposalRecord) (get total record)),
+            noCount: (- (get noCount proposalRecord) u1),
+            noMia: (- (get noMia proposalRecord) (get mia record)),
+            noNyc: (- (get noNyc proposalRecord) (get nyc record)),
+            noTotal: (- (get noTotal proposalRecord) (get total record))
+          })
+          (merge proposalRecord {
+            yesCount: (- (get yesCount proposalRecord) u1),
+            yesMia: (- (get yesMia proposalRecord) (get mia record)),
+            yesNyc: (- (get yesNyc proposalRecord) (get nyc record)),
+            yesTotal: (- (get yesTotal proposalRecord) (get total record)),
+            noCount: (+ (get noCount proposalRecord) u1),
+            noMia: (+ (get noMia proposalRecord) (get mia record)),
+            noNyc: (+ (get noNyc proposalRecord) (get nyc record)),
+            noTotal: (+ (get noTotal proposalRecord) (get total record))
+          })
+        )
+      )
+      ;; vote record doesn't exist
+      (let
+        (
+          (scaledVoteMia (default-to u0 (get-mia-vote-amount contract-caller voterId)))
+          (scaledVoteNyc (default-to u0 (get-nyc-vote-amount contract-caller voterId)))
+          (scaledVoteTotal (/ (+ scaledVoteMia scaledVoteNyc) u2))
+          (voteMia (scale-down scaledVoteMia))
+          (voteNyc (scale-down scaledVoteNyc))
+          (voteTotal (+ voteMia voteNyc))
+        )
+        (map-insert Votes voterId {
+          vote: vote,
+          mia: voteMia,
+          nyc: voteNyc,
+          total: voteTotal
+        })
+        ;; update the vote totals
+        (if vote
+          (merge proposalRecord {
+            yesCount: (+ (get yesCount proposalRecord) u1),
+            yesMia: (+ (get yesMia proposalRecord) voteMia),
+            yesNyc: (+ (get yesNyc proposalRecord) voteNyc),
+            yesTotal: (+ (get yesTotal proposalRecord) voteTotal),
+          })
+          (merge proposalRecord {
+            noCount: (+ (get noCount proposalRecord) u1),
+            noMia: (+ (get noMia proposalRecord) voteMia),
+            noNyc: (+ (get noNyc proposalRecord) voteNyc),
+            noTotal: (+ (get noTotal proposalRecord) voteTotal)
+          })
+        )
+      )
+      
+    )
     (ok true)
+    ;; TODO: print all information
   )
 )
 
@@ -126,7 +199,7 @@
   uint ;; amount
 )
 
-(define-private (get-mia-vote (user principal) (voterId uint))
+(define-private (get-mia-vote-amount (user principal) (voterId uint))
   ;; returns (some uint) or (none)
   (let
     (
@@ -143,9 +216,8 @@
     (asserts! (or (>= stackedCycle12 u0) (>= stackedCycle13 u0)) none)
     ;; check if the amount is already saved and return it
     ;; or calculate it, save it, and return it
-    (match 
-      (map-get? MiaVote voterId)
-      value (some value)
+    (match (map-get? MiaVote voterId) value
+      (some value)
       (let
         (
           (avgStackedMia (/ (+ (scale-up stackedCycle12) (scale-up stackedCycle13))))
@@ -165,7 +237,7 @@
   uint ;; amount
 )
 
-(define-private (get-nyc-vote (user principal) (voterId uint))
+(define-private (get-nyc-vote-amount (user principal) (voterId uint))
   ;; returns (some uint) or (none)
   (let
     (
@@ -196,8 +268,6 @@
   )
 )
 
-;; TODO: add NYC helpers
-
 ;; UTILITIES
 ;; CREDIT: math functions taken from Alex math-fixed-point-16.clar
 
@@ -208,5 +278,3 @@
 (define-private (scale-down (a uint))
   (/ a VOTE_SCALE_FACTOR)
 )
-
-
