@@ -36,10 +36,9 @@
 ;; TODO: update block heights
 (define-constant VOTE_START_BLOCK u0)
 (define-constant VOTE_END_BLOCK u0)
-(define-constant VOTE_PROPOSAL_KEY u0)
+(define-constant VOTE_PROPOSAL_ID u0)
 (define-constant VOTE_SCALE_FACTOR (pow u10 u16)) ;; 16 decimal places
-(define-constant MIA_SCALE_FACTOR u70) ;; 70 percent
-;; TODO: define constants for total supply
+(define-constant MIA_SCALE_FACTOR u70) ;; 70 percent?
 
 (define-map ProposalVotes
   uint ;; proposalId
@@ -56,7 +55,7 @@
 )
 
 ;; intialize ProposalVotes
-(map-insert ProposalVotes VOTE_PROPOSAL_KEY {
+(map-insert ProposalVotes VOTE_PROPOSAL_ID {
   yesCount: u0,
   yesMia: u0,
   yesNyc: u0,
@@ -92,9 +91,8 @@
 )
 
 (define-private (get-or-create-voter-id (user principal))
-  (match
-    (map-get? VoterIds user)
-    value value
+  (match (map-get? VoterIds user) value
+    value
     (let
       (
         (newId (+ u1 (var-get voterIndex)))
@@ -114,7 +112,7 @@
     (
       (voterId (get-or-create-voter-id contract-caller))
       (voterRecord (map-get? Votes voterId))
-      (proposalRecord (unwrap! (map-get? ProposalVotes VOTE_PROPOSAL_KEY) ERR_PROPOSAL_NOT_FOUND))
+      (proposalRecord (unwrap! (get-proposal-votes) ERR_PROPOSAL_NOT_FOUND))
     )
     ;; assert proposal is active
     (asserts! (and 
@@ -253,9 +251,8 @@
     (asserts! (or (>= stackedCycle6 u0) (>= stackedCycle7 u0)) none)
     ;; check if the amount is already saved and return it
     ;; or calculate it, save it, and return it
-    (match 
-      (map-get? NycVote voterId)
-      value (some value)
+    (match (map-get? NycVote voterId) value
+      (some value)
       (let
         (
           (nycVote (/ (+ (scale-up stackedCycle6) (scale-up stackedCycle7))))
@@ -265,6 +262,24 @@
       )
     )
   )
+)
+
+;; GETTERS
+
+(define-read-only (get-proposal-votes)
+  (map-get? ProposalVotes VOTE_PROPOSAL_ID)
+)
+
+(define-read-only (get-voter (voterId uint))
+  (map-get? Voters voterId)
+)
+
+(define-read-only (get-voter-id (voter principal))
+  (map-get? VoterIds voter)
+)
+
+(define-read-only (get-voter-info (voter principal))
+  (ok (map-get? Votes (unwrap! (get-voter-id voter) ERR_USER_NOT_FOUND)))
 )
 
 ;; UTILITIES
