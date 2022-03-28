@@ -3,11 +3,11 @@
 
 ;; ERRORS
 
-(define-constant ERR_USER_NOT_FOUND u8000)
-(define-constant ERR_STACKER_NOT_FOUND u8001)
-(define-constant ERR_PROPOSAL_NOT_FOUND u8002)
-(define-constant ERR_PROPOSAL_NOT_ACTIVE u8003)
-(define-constant ERR_VOTE_ALREADY_RECORDED u8004)
+(define-constant ERR_USER_NOT_FOUND (err u8000))
+(define-constant ERR_STACKER_NOT_FOUND (err u8001))
+(define-constant ERR_PROPOSAL_NOT_FOUND (err u8002))
+(define-constant ERR_PROPOSAL_NOT_ACTIVE (err u8003))
+(define-constant ERR_VOTE_ALREADY_RECORDED (err u8004))
 
 ;; PROPOSALS
 
@@ -94,7 +94,7 @@
   (let
     (
       ;; get proposal from map
-      (proposal (unwrap! (map-get? Proposals targetProposal) (err ERR_PROPOSAL_NOT_FOUND)))
+      (proposal (unwrap! (map-get? Proposals targetProposal) ERR_PROPOSAL_NOT_FOUND))
       (startBlock (get startBlock proposal))
       (endBlock (get endBlock proposal))
       ;; get voter record if it exists
@@ -103,10 +103,10 @@
       ;; get stacked MIA balance
       (userIdMia (unwrap!
         (contract-call? .citycoin-core-v1 get-user-id user)
-        (err ERR_USER_NOT_FOUND)))
+        ERR_USER_NOT_FOUND))
       (stackedMia (unwrap!
         (contract-call? .citycoin-core-v1 get-stacker-at-cycle u2 userIdMia)
-        (err ERR_STACKER_NOT_FOUND)))
+        ERR_STACKER_NOT_FOUND))
       (stackedMiaAmount (get amountStacked stackedMia))
       ;; get total supply of MIA at start block
         ;; at-block startBlock
@@ -114,10 +114,10 @@
       ;; get stacked NYC balance
       (userIdNyc (unwrap!
         (contract-call? .citycoin-core-v1 get-user-id user)
-        (err ERR_USER_NOT_FOUND)))
+        ERR_USER_NOT_FOUND))
       (stackedNyc (unwrap!
         (contract-call? .citycoin-core-v1 get-stacker-at-cycle u3 userIdNyc)
-        (err ERR_STACKER_NOT_FOUND)))
+        ERR_STACKER_NOT_FOUND))
       (stackedNycAmount (get amountStacked stackedNyc))
       ;; get total supply of NYC at start block
         ;; at-block startBlock
@@ -126,14 +126,14 @@
     (asserts! (and
       (<= (get startBlock proposal) block-height)
       (>= (get endBlock proposal) block-height))
-      (err ERR_PROPOSAL_NOT_ACTIVE))
+      ERR_PROPOSAL_NOT_ACTIVE)
 
     ;; (if (is-some voterRecord) true false)
 
     ;;(match voterRecord voteExists
       ;; found previous vote
     ;;  (begin
-    ;;    (asserts! (not (is-eq (get vote voteExists) vote)) (err ERR_VOTE_ALREADY_RECORDED))
+    ;;    (asserts! (not (is-eq (get vote voteExists) vote)) (ERR_VOTE_ALREADY_RECORDED))
     ;;  )
       ;; no previous vote
     ;; )
