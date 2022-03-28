@@ -31,14 +31,15 @@
   hash: "TODO"
 })
 
+;; CONSTANTS
+
 ;; TODO: update block heights
 (define-constant VOTE_START_BLOCK u0)
 (define-constant VOTE_END_BLOCK u0)
 (define-constant VOTE_PROPOSAL_KEY u0)
-(define-constant VOTE_SCALE_FACTOR u1000000000)
-
-;; define constants for total supply
-;; and for the MIA scale factor?
+(define-constant VOTE_SCALE_FACTOR (pow u10 u16)) ;; 16 decimal places
+(define-constant MIA_SCALE_FACTOR u70) ;; 70 percent
+;; TODO: define constants for total supply
 
 (define-map ProposalVotes
   uint ;; proposalId
@@ -101,27 +102,31 @@
     (
       (voterId (get-or-create-voter-id contract-caller))
       (voterRecord (map-get? Votes voterId))
-      (voteMia (get-vote-mia contract-caller voterId))
-      ;; TODO: get avgStackedNyc
+      (scaledVoteMia (get-mia-vote contract-caller voterId))
+      (scaledVoteNyc (get-nyc-vote contract-caller voterId))
     )
     ;; assert proposal is active
     (asserts! (and 
       (>= block-height VOTE_START_BLOCK)
       (<= block-height VOTE_END_BLOCK))
       ERR_PROPOSAL_NOT_ACTIVE)
-    ;; print all information
+    
+    ;; TODO: check if vote exists already
+    ;; TODO: update ProposalVotes map
+    ;; TODO: update Votes map
+    ;; TODO: print all information
     (ok true)
   )
 )
 
 ;; MIA HELPERS
 
-(define-map AvgStackedMia
+(define-map MiaVote
   uint ;; user ID
   uint ;; amount
 )
 
-(define-private (get-vote-mia (user principal) (voterId uint))
+(define-private (get-mia-vote (user principal) (voterId uint))
   ;; returns (some uint) or (none)
   (let
     (
@@ -139,19 +144,69 @@
     ;; check if the amount is already saved and return it
     ;; or calculate it, save it, and return it
     (match 
-      (map-get? AvgStackedMia voterId)
+      (map-get? MiaVote voterId)
       value (some value)
       (let
         (
-          ;; ((stackedCycle12 * SCALE) + (stackedCycle13 * SCALE)) / 2
-          ;; TODO: apply MIA scale factor here and return total vote?
-          (scaledCycle12 (* stackedCycle12 VOTE_SCALE_FACTOR))
-          (scaledCycle13 (* stackedCycle13 VOTE_SCALE_FACTOR))
-          (scaledAvgMia (/ (+ scaledCycle12 scaledCycle13) u2))
-          (avgStackedMia (/ scaledAvgMia VOTE_SCALE_FACTOR))
+          (avgStackedMia (/ (+ (scale-up stackedCycle12) (scale-up stackedCycle13))))
+          (scaledMiaVote (/ (* avgStackedMia MIA_SCALE_FACTOR) u100))
         )
-        (some avgStackedMia)
+        (map-insert MiaVote voterId scaledMiaVote)
+        (some scaledMiaVote)
       )
     )
   )
 )
+
+;; NYC HELPERS
+
+(define-map NycVote
+  uint ;; user ID
+  uint ;; amount
+)
+
+(define-private (get-nyc-vote (user principal) (voterId uint))
+  ;; returns (some uint) or (none)
+  (let
+    (
+      (userIdNyc (default-to u0 (contract-call? .citycoin-core-v1 get-user-id user)))
+      ;; TODO: update to mainnet cycles
+      (userCycle6 (contract-call? .citycoin-core-v1 get-stacker-at-cycle-or-default u2 userIdNyc))
+      (stackedCycle6 (get amountStacked userCycle6))
+      (userCycle7 (contract-call? .citycoin-core-v1 get-stacker-at-cycle-or-default u3 userIdNyc))
+      (stackedCycle7 (get amountStacked userCycle7))
+    )
+    ;; check if user was found
+    (asserts! (> userIdNyc u0) none)
+    ;; check if there is a positive value
+    (asserts! (or (>= stackedCycle6 u0) (>= stackedCycle7 u0)) none)
+    ;; check if the amount is already saved and return it
+    ;; or calculate it, save it, and return it
+    (match 
+      (map-get? NycVote voterId)
+      value (some value)
+      (let
+        (
+          (nycVote (/ (+ (scale-up stackedCycle6) (scale-up stackedCycle7))))
+        )
+        (map-insert NycVote voterId nycVote)
+        (some nycVote)
+      )
+    )
+  )
+)
+
+;; TODO: add NYC helpers
+
+;; UTILITIES
+;; CREDIT: math functions taken from Alex math-fixed-point-16.clar
+
+(define-private (scale-up (a uint))
+  (* a VOTE_SCALE_FACTOR)
+)
+
+(define-private (scale-down (a uint))
+  (/ a VOTE_SCALE_FACTOR)
+)
+
+
