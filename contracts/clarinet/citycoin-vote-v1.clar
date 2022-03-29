@@ -9,7 +9,7 @@
 (define-constant ERR_STACKER_NOT_FOUND (err u8001))
 (define-constant ERR_PROPOSAL_NOT_FOUND (err u8002))
 (define-constant ERR_PROPOSAL_NOT_ACTIVE (err u8003))
-(define-constant ERR_VOTE_ALREADY_RECORDED (err u8004))
+(define-constant ERR_VOTE_ALREADY_CAST (err u8004))
 (define-constant ERR_NOTHING_STACKED (err u8005))
 
 ;; PROPOSALS
@@ -35,8 +35,8 @@
 ;; CONSTANTS
 
 ;; TODO: update block heights
-(define-constant VOTE_START_BLOCK u100)
-(define-constant VOTE_END_BLOCK u2100) ;; test voting period: 2000 blocks
+(define-constant VOTE_START_BLOCK u6500)
+(define-constant VOTE_END_BLOCK u8500) ;; test voting period: 2000 blocks
 (define-constant VOTE_PROPOSAL_ID u0)
 (define-constant VOTE_SCALE_FACTOR (pow u10 u16)) ;; 16 decimal places
 
@@ -130,7 +130,7 @@
       ;; vote record exists
       (begin
         ;; check if vote is the same as what's recorded
-        (asserts! (not (is-eq (get vote record) vote)) ERR_VOTE_ALREADY_RECORDED)
+        (asserts! (not (is-eq (get vote record) vote)) ERR_VOTE_ALREADY_CAST)
         ;; record the new vote
         (merge record { vote: vote })
         ;; update the vote totals

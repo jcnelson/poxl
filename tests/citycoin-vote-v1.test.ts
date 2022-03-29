@@ -1,39 +1,113 @@
 import { describe, assertEquals, types, Account, run, Chain, it, beforeEach} from "../deps.ts";
 import { CoreModel } from "../models/core.model.ts";
+import { TokenModel } from "../models/token.model.ts";
 import { VoteModel } from "../models/vote.model.ts";
 import { Accounts, Context } from "../src/context.ts";
 
 let ctx: Context;
 let chain: Chain;
 let accounts: Accounts;
-let vote: VoteModel;
 let core: CoreModel;
+let token: TokenModel;
+let vote: VoteModel;
 
 beforeEach(() => {
   ctx = new Context();
   chain = ctx.chain;
   accounts = ctx.accounts;
-  vote = ctx.models.get(VoteModel);
   core = ctx.models.get(CoreModel);
+  token = ctx.models.get(TokenModel);
+  vote = ctx.models.get(VoteModel);
 })
 
 describe("[CityCoin Vote v1]", () => {
   // vote-on-proposal
-    // fails when called before proposal is active
-    // fails when called after proposal is active
-    // fails if user doesn't have any stacked tokens
-    // succeeds when called by a new voter
+    // succeeds with yes vote when called by a new voter
       // check proposal record values
       // check voter record values
       // check with MIA, with NYC, with both
+    // succeeds with no vote when called by a new voter
     // fails when called by an existing voter with same vote
     // succeeds when called by an existing voter with different vote
       // check proposal record values
       // check voter record values
       // check with MIA, with NYC, with both
-  //describe("vote-on-proposal()", () => {
-  //  
-  //}
+  describe("vote-on-proposal()", () => {
+    it("fails when called before proposal is active", () => {
+      // arrange
+      const wallet = accounts.get("wallet_1")!;
+      // act
+      const receipt = chain.mineBlock([
+        vote.voteOnProposal(true, wallet)
+      ]).receipts[0];
+      // assert
+      receipt.result.expectErr().expectUint(VoteModel.ErrCode.ERR_PROPOSAL_NOT_ACTIVE);
+    });
+    it("fails when called after proposal is active", () => {
+      // arrange
+      const wallet = accounts.get("wallet_1")!;
+      chain.mineEmptyBlock(VoteModel.VOTE_START_BLOCK + VoteModel.VOTE_END_BLOCK + 1);
+      // act
+      const receipt = chain.mineBlock([
+        vote.voteOnProposal(true, wallet)
+      ]).receipts[0];
+      // assert
+      receipt.result.expectErr().expectUint(VoteModel.ErrCode.ERR_PROPOSAL_NOT_ACTIVE);
+    });
+    it("fails when user has no stacked tokens", () => {
+      // arrange
+      const wallet = accounts.get("wallet_1")!;
+      chain.mineEmptyBlock(VoteModel.VOTE_START_BLOCK + 1);
+      // act
+      const receipt = chain.mineBlock([
+        vote.voteOnProposal(true, wallet)
+      ]).receipts[0];
+      // assert
+      receipt.result.expectErr().expectUint(VoteModel.ErrCode.ERR_NOTHING_STACKED);
+    });
+    it("succeeds with yes vote when called by a new voter", () => {
+      // arrange
+      const stacker = accounts.get("wallet_1")!;
+      const amountTokens = 900;
+      const lockPeriod = 5;
+      const block = chain.mineBlock([
+        core.testInitializeCore(core.address),
+        core.unsafeSetActivationThreshold(1),
+        core.registerUser(stacker),
+        token.ftMint(amountTokens, stacker),
+      ]);
+      const activationBlockHeight =
+        block.height + CoreModel.ACTIVATION_DELAY - 1;
+      chain.mineEmptyBlockUntil(activationBlockHeight);
+
+      // stack in cycles 1-3
+      chain.mineBlock([
+        core.stackTokens(amountTokens / 3, lockPeriod, stacker),
+      ]);
+      chain.mineEmptyBlock(CoreModel.REWARD_CYCLE_LENGTH);
+
+      chain.mineBlock([
+        core.stackTokens(amountTokens / 3, lockPeriod, stacker),
+      ]);
+      chain.mineEmptyBlock(CoreModel.REWARD_CYCLE_LENGTH);
+
+      console.info(chain.mineBlock([
+        core.stackTokens(amountTokens / 3, lockPeriod, stacker),
+      ]));
+      console.info(chain.mineEmptyBlock(CoreModel.REWARD_CYCLE_LENGTH));
+
+      chain.mineEmptyBlockUntil(VoteModel.VOTE_START_BLOCK + 1);
+
+      // act
+      const receipt = chain.mineBlock([
+        vote.voteOnProposal(true, stacker)
+      ]).receipts[0];
+
+      // assert
+      receipt.result.expectOk();
+
+    });
+  });
   
   describe("get-proposal-votes()", () => {
     it("succeeds with base proposal record with no voters", () => {

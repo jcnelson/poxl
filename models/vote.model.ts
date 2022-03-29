@@ -13,6 +13,11 @@ enum ErrCode {
 export class VoteModel extends Model {
   name = "citycoin-vote-v1";
   static readonly ErrCode = ErrCode;
+  static readonly VOTE_START_BLOCK = 6500;
+  static readonly VOTE_END_BLOCK = 8500;
+  static readonly VOTE_PROPOSAL_ID = 0;
+  static readonly VOTE_SCALE_FACTOR = 10 ** 16; // 16 decimal places
+  static readonly MIA_SCALE_FACTOR = 0.6987; // 0.6987 or 69.87%
 
   voteOnProposal(vote: boolean, sender: Account): Tx {
     return this.callPublic(
