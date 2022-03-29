@@ -68,8 +68,10 @@ describe("[CityCoin Vote v1]", () => {
     it("succeeds with yes vote when called by a new voter", () => {
       // arrange
       const stacker = accounts.get("wallet_1")!;
-      const amountTokens = 900;
+      const amountTokens = 1000;
       const lockPeriod = 5;
+      const avgStacked = (amountTokens + (amountTokens * 2) ) / 2;
+      const scaledMia = Math.round(avgStacked * VoteModel.MIA_SCALE_FACTOR);
       const block = chain.mineBlock([
         core.testInitializeCore(core.address),
         core.unsafeSetActivationThreshold(1),
@@ -80,21 +82,16 @@ describe("[CityCoin Vote v1]", () => {
         block.height + CoreModel.ACTIVATION_DELAY - 1;
       chain.mineEmptyBlockUntil(activationBlockHeight);
 
-      // stack in cycles 1-3
+      // stack in cycles 2-3
+      chain.mineEmptyBlock(CoreModel.REWARD_CYCLE_LENGTH);
       chain.mineBlock([
-        core.stackTokens(amountTokens / 3, lockPeriod, stacker),
+        core.stackTokens(amountTokens / 2, lockPeriod, stacker),
       ]);
       chain.mineEmptyBlock(CoreModel.REWARD_CYCLE_LENGTH);
-
       chain.mineBlock([
-        core.stackTokens(amountTokens / 3, lockPeriod, stacker),
+        core.stackTokens(amountTokens / 2, lockPeriod, stacker),
       ]);
       chain.mineEmptyBlock(CoreModel.REWARD_CYCLE_LENGTH);
-
-      console.info(chain.mineBlock([
-        core.stackTokens(amountTokens / 3, lockPeriod, stacker),
-      ]));
-      console.info(chain.mineEmptyBlock(CoreModel.REWARD_CYCLE_LENGTH));
 
       chain.mineEmptyBlockUntil(VoteModel.VOTE_START_BLOCK + 1);
 
@@ -102,9 +99,29 @@ describe("[CityCoin Vote v1]", () => {
       const receipt = chain.mineBlock([
         vote.voteOnProposal(true, stacker)
       ]).receipts[0];
+      console.log(receipt);
+
+      // get vote information to verify
+      const expectedProposalRecord = {
+        noCount: types.uint(0),
+        noMia: types.uint(0),
+        noNyc: types.uint(0),
+        noTotal: types.uint(0),
+        yesCount: types.uint(1),
+        yesMia: types.uint(scaledMia),
+        yesNyc: types.uint(avgStacked),
+        yesTotal: types.uint(scaledMia + avgStacked)
+      }
+
+      const proposalRecord = vote.getProposalVotes().result;
+      const voterRecord = vote.getVoterInfo(stacker).result;
+
+      console.log(proposalRecord, voterRecord);
 
       // assert
       receipt.result.expectOk();
+
+      assertEquals(proposalRecord.expectSome().expectTuple(), expectedProposalRecord);
 
     });
   });
