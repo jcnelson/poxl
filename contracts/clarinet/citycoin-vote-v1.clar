@@ -304,7 +304,10 @@
 )
 
 (define-read-only (get-voter-info (voter principal))
-  (ok (map-get? Votes (unwrap! (get-voter-id voter) ERR_USER_NOT_FOUND)))
+  (ok (unwrap!
+    (map-get? Votes (unwrap! (get-voter-id voter) ERR_USER_NOT_FOUND))
+    ERR_USER_NOT_FOUND
+  ))
 )
 
 ;; UTILITIES

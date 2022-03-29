@@ -99,9 +99,8 @@ describe("[CityCoin Vote v1]", () => {
       const receipt = chain.mineBlock([
         vote.voteOnProposal(true, stacker)
       ]).receipts[0];
-      console.log(receipt);
 
-      // get vote information to verify
+      // set vote information to verify
       const expectedProposalRecord = {
         noCount: types.uint(0),
         noMia: types.uint(0),
@@ -113,15 +112,21 @@ describe("[CityCoin Vote v1]", () => {
         yesTotal: types.uint(scaledMia + avgStacked)
       }
 
+      // set voter information to verify
+      const expectedVoterRecord = {
+        mia: types.uint(scaledMia),
+        nyc: types.uint(avgStacked),
+        total: types.uint(scaledMia + avgStacked),
+        vote: types.bool(true)
+      }
+
       const proposalRecord = vote.getProposalVotes().result;
       const voterRecord = vote.getVoterInfo(stacker).result;
 
-      console.log(proposalRecord, voterRecord);
-
       // assert
       receipt.result.expectOk();
-
       assertEquals(proposalRecord.expectSome().expectTuple(), expectedProposalRecord);
+      assertEquals(voterRecord.expectOk().expectTuple(), expectedVoterRecord);
 
     });
   });
