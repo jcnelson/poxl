@@ -135,26 +135,33 @@
         (merge record { vote: vote })
         ;; update the vote totals
         (if vote
-          (merge proposalRecord {
-            yesCount: (+ (get yesCount proposalRecord) u1),
-            yesMia: (+ (get yesMia proposalRecord) (get mia record)),
-            yesNyc: (+ (get yesNyc proposalRecord) (get nyc record)),
-            yesTotal: (+ (get yesTotal proposalRecord) (get total record)),
-            noCount: (- (get noCount proposalRecord) u1),
-            noMia: (- (get noMia proposalRecord) (get mia record)),
-            noNyc: (- (get noNyc proposalRecord) (get nyc record)),
-            noTotal: (- (get noTotal proposalRecord) (get total record))
-          })
-          (merge proposalRecord {
-            yesCount: (- (get yesCount proposalRecord) u1),
-            yesMia: (- (get yesMia proposalRecord) (get mia record)),
-            yesNyc: (- (get yesNyc proposalRecord) (get nyc record)),
-            yesTotal: (- (get yesTotal proposalRecord) (get total record)),
-            noCount: (+ (get noCount proposalRecord) u1),
-            noMia: (+ (get noMia proposalRecord) (get mia record)),
-            noNyc: (+ (get noNyc proposalRecord) (get nyc record)),
-            noTotal: (+ (get noTotal proposalRecord) (get total record))
-          })
+          (map-set ProposalVotes
+            VOTE_PROPOSAL_ID
+            (merge proposalRecord {
+              yesCount: (+ (get yesCount proposalRecord) u1),
+              yesMia: (+ (get yesMia proposalRecord) (get mia record)),
+              yesNyc: (+ (get yesNyc proposalRecord) (get nyc record)),
+              yesTotal: (+ (get yesTotal proposalRecord) (get total record)),
+              noCount: (- (get noCount proposalRecord) u1),
+              noMia: (- (get noMia proposalRecord) (get mia record)),
+              noNyc: (- (get noNyc proposalRecord) (get nyc record)),
+              noTotal: (- (get noTotal proposalRecord) (get total record))
+            })
+          )
+          (map-set ProposalVotes
+            VOTE_PROPOSAL_ID
+            (merge proposalRecord {
+              yesCount: (- (get yesCount proposalRecord) u1),
+              yesMia: (- (get yesMia proposalRecord) (get mia record)),
+              yesNyc: (- (get yesNyc proposalRecord) (get nyc record)),
+              yesTotal: (- (get yesTotal proposalRecord) (get total record)),
+              noCount: (+ (get noCount proposalRecord) u1),
+              noMia: (+ (get noMia proposalRecord) (get mia record)),
+              noNyc: (+ (get noNyc proposalRecord) (get nyc record)),
+              noTotal: (+ (get noTotal proposalRecord) (get total record))
+            })
+          )
+          
         )
       )
       ;; vote record doesn't exist
@@ -179,18 +186,24 @@
         })
         ;; update the proposal record
         (if vote
-          (merge proposalRecord {
-            yesCount: (+ (get yesCount proposalRecord) u1),
-            yesMia: (+ (get yesMia proposalRecord) voteMia),
-            yesNyc: (+ (get yesNyc proposalRecord) voteNyc),
-            yesTotal: (+ (get yesTotal proposalRecord) voteTotal),
-          })
-          (merge proposalRecord {
-            noCount: (+ (get noCount proposalRecord) u1),
-            noMia: (+ (get noMia proposalRecord) voteMia),
-            noNyc: (+ (get noNyc proposalRecord) voteNyc),
-            noTotal: (+ (get noTotal proposalRecord) voteTotal)
-          })
+          (map-set ProposalVotes
+            VOTE_PROPOSAL_ID
+            (merge proposalRecord {
+              yesCount: (+ (get yesCount proposalRecord) u1),
+              yesMia: (+ (get yesMia proposalRecord) voteMia),
+              yesNyc: (+ (get yesNyc proposalRecord) voteNyc),
+              yesTotal: (+ (get yesTotal proposalRecord) voteTotal),
+            })
+          )
+          (map-set ProposalVotes
+            VOTE_PROPOSAL_ID
+            (merge proposalRecord {
+              noCount: (+ (get noCount proposalRecord) u1),
+              noMia: (+ (get noMia proposalRecord) voteMia),
+              noNyc: (+ (get noNyc proposalRecord) voteNyc),
+              noTotal: (+ (get noTotal proposalRecord) voteTotal)
+            })
+          )
         )
       )
     )
