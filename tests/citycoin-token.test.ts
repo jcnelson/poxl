@@ -17,7 +17,6 @@ beforeEach(() => {
   core = ctx.models.get(CoreModel);
 })
 
-
 describe("[CityCoin Token]", () => {
   describe("SIP-010 FUNCTIONS", () => {
     describe("transfer()", () => {

@@ -10,6 +10,7 @@
 (define-constant ERR_PROPOSAL_NOT_FOUND (err u8002))
 (define-constant ERR_PROPOSAL_NOT_ACTIVE (err u8003))
 (define-constant ERR_VOTE_ALREADY_RECORDED (err u8004))
+(define-constant ERR_NOTHING_STACKED (err u8005))
 
 ;; PROPOSALS
 
@@ -34,8 +35,8 @@
 ;; CONSTANTS
 
 ;; TODO: update block heights
-(define-constant VOTE_START_BLOCK u0)
-(define-constant VOTE_END_BLOCK u0)
+(define-constant VOTE_START_BLOCK u100)
+(define-constant VOTE_END_BLOCK u2100) ;; test voting period: 2000 blocks
 (define-constant VOTE_PROPOSAL_ID u0)
 (define-constant VOTE_SCALE_FACTOR (pow u10 u16)) ;; 16 decimal places
 
@@ -114,6 +115,7 @@
 (define-public (vote-on-proposal (vote bool))
   (let
     (
+      ;; TODO: allow tx-sender instead?
       (voterId (get-or-create-voter-id contract-caller))
       (voterRecord (map-get? Votes voterId))
       (proposalRecord (unwrap! (get-proposal-votes) ERR_PROPOSAL_NOT_FOUND))
@@ -158,6 +160,7 @@
       ;; vote record doesn't exist
       (let
         (
+          ;; TODO: allow tx-sender instead?
           (scaledVoteMia (default-to u0 (get-mia-vote-amount contract-caller voterId)))
           (scaledVoteNyc (default-to u0 (get-nyc-vote-amount contract-caller voterId)))
           (scaledVoteTotal (/ (+ scaledVoteMia scaledVoteNyc) u2))
@@ -165,13 +168,16 @@
           (voteNyc (scale-down scaledVoteNyc))
           (voteTotal (+ voteMia voteNyc))
         )
+        ;; make sure there is a positive value
+        (asserts! (or (> scaledVoteMia u0) (> scaledVoteNyc u0)) ERR_NOTHING_STACKED)
+        ;; update the voter record
         (map-insert Votes voterId {
           vote: vote,
           mia: voteMia,
           nyc: voteNyc,
           total: voteTotal
         })
-        ;; update the vote totals
+        ;; update the proposal record
         (if vote
           (merge proposalRecord {
             yesCount: (+ (get yesCount proposalRecord) u1),
@@ -200,6 +206,7 @@
   uint ;; amount
 )
 
+;; TODO: make read only?
 (define-private (get-mia-vote-amount (user principal) (voterId uint))
   ;; returns (some uint) or (none)
   (let
@@ -238,6 +245,7 @@
   uint ;; amount
 )
 
+;; TODO: make read only?
 (define-private (get-nyc-vote-amount (user principal) (voterId uint))
   ;; returns (some uint) or (none)
   (let
