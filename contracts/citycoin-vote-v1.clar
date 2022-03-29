@@ -212,13 +212,7 @@
   )
 )
 
-;; MIA HELPERS
-
-(define-map MiaVote
-  uint ;; user ID
-  uint ;; amount
-)
-
+;; MIA HELPER
 ;; TODO: make read only?
 (define-private (get-mia-vote-amount (user principal) (voterId uint))
   ;; returns (some uint) or (none)
@@ -230,34 +224,19 @@
       (stackedCycle12 (get amountStacked userCycle12))
       (userCycle13 (contract-call? .citycoin-core-v1 get-stacker-at-cycle-or-default u3 userIdMia))
       (stackedCycle13 (get amountStacked userCycle13))
+      (avgStackedMia (/ (+ (scale-up stackedCycle12) (scale-up stackedCycle13))))
+      (scaledMiaVote (/ (* avgStackedMia MIA_SCALE_FACTOR) MIA_SCALE_BASE))
     )
     ;; check if user was found
     (asserts! (> userIdMia u0) none)
     ;; check if there is a positive value
     (asserts! (or (>= stackedCycle12 u0) (>= stackedCycle13 u0)) none)
-    ;; check if the amount is already saved and return it
-    ;; or calculate it, save it, and return it
-    (match (map-get? MiaVote voterId) value
-      (some value)
-      (let
-        (
-          (avgStackedMia (/ (+ (scale-up stackedCycle12) (scale-up stackedCycle13))))
-          (scaledMiaVote (/ (* avgStackedMia MIA_SCALE_FACTOR) MIA_SCALE_BASE))
-        )
-        (map-insert MiaVote voterId scaledMiaVote)
-        (some scaledMiaVote)
-      )
-    )
+    ;; return the value
+    (some scaledMiaVote)
   )
 )
 
 ;; NYC HELPERS
-
-(define-map NycVote
-  uint ;; user ID
-  uint ;; amount
-)
-
 ;; TODO: make read only?
 (define-private (get-nyc-vote-amount (user principal) (voterId uint))
   ;; returns (some uint) or (none)
@@ -269,23 +248,14 @@
       (stackedCycle6 (get amountStacked userCycle6))
       (userCycle7 (contract-call? .citycoin-core-v1 get-stacker-at-cycle-or-default u3 userIdNyc))
       (stackedCycle7 (get amountStacked userCycle7))
+      (nycVote (/ (+ (scale-up stackedCycle6) (scale-up stackedCycle7))))
     )
     ;; check if user was found
     (asserts! (> userIdNyc u0) none)
     ;; check if there is a positive value
     (asserts! (or (>= stackedCycle6 u0) (>= stackedCycle7 u0)) none)
-    ;; check if the amount is already saved and return it
-    ;; or calculate it, save it, and return it
-    (match (map-get? NycVote voterId) value
-      (some value)
-      (let
-        (
-          (nycVote (/ (+ (scale-up stackedCycle6) (scale-up stackedCycle7))))
-        )
-        (map-insert NycVote voterId nycVote)
-        (some nycVote)
-      )
-    )
+    ;; return the value
+    (some nycVote)
   )
 )
 
