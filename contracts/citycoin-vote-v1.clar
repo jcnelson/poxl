@@ -132,11 +132,12 @@
         ;; check if vote is the same as what's recorded
         (asserts! (not (is-eq (get vote record) vote)) ERR_VOTE_ALREADY_CAST)
         ;; record the new vote
-        (merge record { vote: vote })
+        (map-set Votes voterId
+          (merge record { vote: vote })
+        )
         ;; update the vote totals
         (if vote
-          (map-set ProposalVotes
-            VOTE_PROPOSAL_ID
+          (map-set ProposalVotes VOTE_PROPOSAL_ID
             (merge proposalRecord {
               yesCount: (+ (get yesCount proposalRecord) u1),
               yesMia: (+ (get yesMia proposalRecord) (get mia record)),
@@ -148,8 +149,7 @@
               noTotal: (- (get noTotal proposalRecord) (get total record))
             })
           )
-          (map-set ProposalVotes
-            VOTE_PROPOSAL_ID
+          (map-set ProposalVotes VOTE_PROPOSAL_ID
             (merge proposalRecord {
               yesCount: (- (get yesCount proposalRecord) u1),
               yesMia: (- (get yesMia proposalRecord) (get mia record)),
