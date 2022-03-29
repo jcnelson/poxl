@@ -38,7 +38,11 @@
 (define-constant VOTE_END_BLOCK u0)
 (define-constant VOTE_PROPOSAL_ID u0)
 (define-constant VOTE_SCALE_FACTOR (pow u10 u16)) ;; 16 decimal places
-(define-constant MIA_SCALE_FACTOR u70) ;; 70 percent?
+
+;; scale MIA votes to make 1 MIA = 1 NYC
+;; full calculation available in CCIP-011
+(define-constant MIA_SCALE_FACTOR u6987) ;; 0.6987 or 69.87%
+(define-constant MIA_SCALE_BASE u10000)
 
 (define-map ProposalVotes
   uint ;; proposalId
@@ -218,7 +222,7 @@
       (let
         (
           (avgStackedMia (/ (+ (scale-up stackedCycle12) (scale-up stackedCycle13))))
-          (scaledMiaVote (/ (* avgStackedMia MIA_SCALE_FACTOR) u100))
+          (scaledMiaVote (/ (* avgStackedMia MIA_SCALE_FACTOR) MIA_SCALE_BASE))
         )
         (map-insert MiaVote voterId scaledMiaVote)
         (some scaledMiaVote)
