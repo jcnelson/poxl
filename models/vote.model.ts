@@ -27,8 +27,8 @@ export class VoteModel extends Model {
     );
   }
 
-  getVoteAmount(voterId: number): ReadOnlyFn {
-    return this.callReadOnly("get-vote-amount", [types.uint(voterId)]);
+  getVoteAmount(voter: Account): ReadOnlyFn {
+    return this.callReadOnly("get-vote-amount", [types.principal(voter.address)]);
   }
 
   getProposalVotes(): ReadOnlyFn {

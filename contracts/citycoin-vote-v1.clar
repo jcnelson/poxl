@@ -259,12 +259,12 @@
 
 ;; GETTERS
 
-(define-read-only (get-vote-amount (voterId uint))
+(define-read-only (get-vote-amount (voter principal))
   (let
     (
-      ;; TODO: allow tx-sender instead?
-      (scaledVoteMia (default-to u0 (get-mia-vote-amount contract-caller voterId)))
-      (scaledVoteNyc (default-to u0 (get-nyc-vote-amount contract-caller voterId)))
+      (voterId (default-to u0 (get-voter-id voter)))
+      (scaledVoteMia (default-to u0 (get-mia-vote-amount voter voterId)))
+      (scaledVoteNyc (default-to u0 (get-nyc-vote-amount voter voterId)))
       (scaledVoteTotal (/ (+ scaledVoteMia scaledVoteNyc) u2))
       (voteMia (scale-down scaledVoteMia))
       (voteNyc (scale-down scaledVoteNyc))
