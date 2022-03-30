@@ -22,7 +22,6 @@ beforeEach(() => {
 
 describe("[CityCoin Tardis]", () => {
   describe("HISTORICAL ACTIONS", () => {
-
     describe("get-historical-balance()", () => {
       it("succeeds and returns the CityCoin balance at a prior block height", () => {
         // arrange

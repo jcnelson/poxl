@@ -69,11 +69,11 @@
 (define-read-only (get-historical-stacking-stats-or-default (blockHeight uint))
   (let 
     (
-      (blockHash (unwrap! (get-block-hash blockHeight) (err ERR_INVALID_BLOCK)))
-      (cycleId (unwrap! (contract-call? .citycoin-core-v1 get-reward-cycle blockHeight) (err ERR_CYCLE_NOT_FOUND)))
+      (blockHash (unwrap! (get-block-hash blockHeight) none))
+      (cycleId (unwrap! (contract-call? .citycoin-core-v1 get-reward-cycle blockHeight) none))
       (stats (at-block blockHash (contract-call? .citycoin-core-v1 get-stacking-stats-at-cycle-or-default cycleId)))
     )
-    (ok stats)
+    (some stats)
   )
 )
 
@@ -98,12 +98,12 @@
 (define-read-only (get-historical-stacker-stats-or-default (blockHeight uint) (address principal))
   (let 
     (
-      (blockHash (unwrap! (get-block-hash blockHeight) (err ERR_INVALID_BLOCK)))
+      (blockHash (unwrap! (get-block-hash blockHeight) none))
       (userId (default-to u0 (contract-call? .citycoin-core-v1 get-user-id address)))
-      (cycleId (unwrap! (contract-call? .citycoin-core-v1 get-reward-cycle blockHeight) (err ERR_CYCLE_NOT_FOUND)))
+      (cycleId (unwrap! (contract-call? .citycoin-core-v1 get-reward-cycle blockHeight) none))
       (stacker (at-block blockHash (contract-call? .citycoin-core-v1 get-stacker-at-cycle-or-default cycleId userId)))
     )
-    (ok stacker)
+    (some stacker)
   )
 )
 
