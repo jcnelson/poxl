@@ -213,7 +213,6 @@
 )
 
 ;; MIA HELPER
-;; TODO: make read only?
 (define-private (get-mia-vote-amount (user principal) (voterId uint))
   ;; returns (some uint) or (none)
   (let
@@ -224,7 +223,7 @@
       (stackedCycle12 (get amountStacked userCycle12))
       (userCycle13 (contract-call? .citycoin-core-v1 get-stacker-at-cycle-or-default u3 userIdMia))
       (stackedCycle13 (get amountStacked userCycle13))
-      (avgStackedMia (/ (+ (scale-up stackedCycle12) (scale-up stackedCycle13))))
+      (avgStackedMia (/ (+ (scale-up stackedCycle12) (scale-up stackedCycle13)) u2))
       (scaledMiaVote (/ (* avgStackedMia MIA_SCALE_FACTOR) MIA_SCALE_BASE))
     )
     ;; check if user was found
@@ -237,7 +236,6 @@
 )
 
 ;; NYC HELPERS
-;; TODO: make read only?
 (define-private (get-nyc-vote-amount (user principal) (voterId uint))
   ;; returns (some uint) or (none)
   (let
@@ -248,7 +246,7 @@
       (stackedCycle6 (get amountStacked userCycle6))
       (userCycle7 (contract-call? .citycoin-core-v1 get-stacker-at-cycle-or-default u3 userIdNyc))
       (stackedCycle7 (get amountStacked userCycle7))
-      (nycVote (/ (+ (scale-up stackedCycle6) (scale-up stackedCycle7))))
+      (nycVote (/ (+ (scale-up stackedCycle6) (scale-up stackedCycle7)) u2))
     )
     ;; check if user was found
     (asserts! (> userIdNyc u0) none)
@@ -260,6 +258,21 @@
 )
 
 ;; GETTERS
+
+(define-read-only (get-vote-amount (voterId uint))
+  (let
+    (
+      ;; TODO: allow tx-sender instead?
+      (scaledVoteMia (default-to u0 (get-mia-vote-amount contract-caller voterId)))
+      (scaledVoteNyc (default-to u0 (get-nyc-vote-amount contract-caller voterId)))
+      (scaledVoteTotal (/ (+ scaledVoteMia scaledVoteNyc) u2))
+      (voteMia (scale-down scaledVoteMia))
+      (voteNyc (scale-down scaledVoteNyc))
+      (voteTotal (+ voteMia voteNyc))
+    )
+    voteTotal
+  )
+)
 
 (define-read-only (get-proposal-votes)
   (map-get? ProposalVotes VOTE_PROPOSAL_ID)

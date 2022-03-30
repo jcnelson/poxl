@@ -437,6 +437,67 @@ describe("[CityCoin Vote]", () => {
       });
     });
     
+    describe("get-vote-amount()", () => {
+      it("succeeds and returns u0 if voter ID is not found", () => {
+        // arrange
+        const voterId = 12345
+        const result = vote.getVoteAmount(voterId).result;
+        // assert
+        result.expectUint(0);
+      });
+      it("succeeds and returns correct vote amount for stacked MIA and NYC", () => {
+        // arrange
+        const wallet = accounts.get("wallet_1")!;
+        const voterId = 1;
+        const amountTokens = 1000;
+        const lockPeriod = 5;
+        const singleVote = (amountTokens + (amountTokens * 2)) / 2;
+        const scaledMia = Math.round(singleVote * VoteModel.MIA_SCALE_FACTOR);
+        const totalVote = singleVote + scaledMia;
+        const block = chain.mineBlock([
+          core.testInitializeCore(core.address),
+          core.unsafeSetActivationThreshold(1),
+          core.registerUser(wallet),
+          token.ftMint(amountTokens, wallet),
+        ]);
+        const activationBlockHeight =
+          block.height + CoreModel.ACTIVATION_DELAY - 1;
+        chain.mineEmptyBlockUntil(activationBlockHeight);
+  
+        // stack in cycles 2-3
+        chain.mineEmptyBlock(CoreModel.REWARD_CYCLE_LENGTH);
+        chain.mineBlock([
+          core.stackTokens(amountTokens / 2, lockPeriod, wallet),
+        ]);
+        chain.mineEmptyBlock(CoreModel.REWARD_CYCLE_LENGTH);
+        chain.mineBlock([
+          core.stackTokens(amountTokens / 2, lockPeriod, wallet),
+        ]);
+        chain.mineEmptyBlock(CoreModel.REWARD_CYCLE_LENGTH);
+  
+        chain.mineEmptyBlockUntil(VoteModel.VOTE_START_BLOCK + 1);
+
+        // act
+        
+        // vote yes
+        chain.mineBlock([
+          vote.voteOnProposal(true, wallet)
+        ]);
+
+        // get vote amount
+        const fnCall = vote.getVoteAmount(voterId);
+        const result = fnCall.result;
+        console.log(`vote amount: ${result}`);
+        console.log(`expected vote: ${totalVote}`)
+
+        // assert
+        result.expectUint(totalVote);
+      });
+      //it("succeeds and returns u69 with only stacked u100 MIA");
+      //it("succeeds and returns u100 with only stacked u100 NYC");
+      //it("succeeds and returns u169 with stacked u100 MIA and u100 NYC");
+    });
+
     describe("get-proposal-votes()", () => {
       it("succeeds and returns base proposal record with no voters", () => {
         // arrange

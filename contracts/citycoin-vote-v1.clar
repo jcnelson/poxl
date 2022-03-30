@@ -213,7 +213,6 @@
 )
 
 ;; MIA HELPER
-;; TODO: make read only?
 (define-private (get-mia-vote-amount (user principal) (voterId uint))
   ;; returns (some uint) or (none)
   (let
@@ -237,7 +236,6 @@
 )
 
 ;; NYC HELPERS
-;; TODO: make read only?
 (define-private (get-nyc-vote-amount (user principal) (voterId uint))
   ;; returns (some uint) or (none)
   (let
@@ -260,6 +258,21 @@
 )
 
 ;; GETTERS
+
+(define-read-only (get-vote-amount (voterId uint))
+  (let
+    (
+      ;; TODO: allow tx-sender instead?
+      (scaledVoteMia (default-to u0 (get-mia-vote-amount contract-caller voterId)))
+      (scaledVoteNyc (default-to u0 (get-nyc-vote-amount contract-caller voterId)))
+      (scaledVoteTotal (/ (+ scaledVoteMia scaledVoteNyc) u2))
+      (voteMia (scale-down scaledVoteMia))
+      (voteNyc (scale-down scaledVoteNyc))
+      (voteTotal (+ voteMia voteNyc))
+    )
+    voteTotal
+  )
+)
 
 (define-read-only (get-proposal-votes)
   (map-get? ProposalVotes VOTE_PROPOSAL_ID)
