@@ -99,7 +99,7 @@
   (let 
     (
       (blockHash (unwrap! (get-block-hash blockHeight) (err ERR_INVALID_BLOCK)))
-      (userId (unwrap! (contract-call? .citycoin-core-v1 get-user-id address) (err ERR_USER_NOT_FOUND)))
+      (userId (default-to u0 (contract-call? .citycoin-core-v1 get-user-id address)))
       (cycleId (unwrap! (contract-call? .citycoin-core-v1 get-reward-cycle blockHeight) (err ERR_CYCLE_NOT_FOUND)))
       (stacker (at-block blockHash (contract-call? .citycoin-core-v1 get-stacker-at-cycle-or-default cycleId userId)))
     )
