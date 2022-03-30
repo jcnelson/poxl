@@ -223,7 +223,7 @@
       (stackedCycle12 (get amountStacked userCycle12))
       (userCycle13 (contract-call? .citycoin-core-v1 get-stacker-at-cycle-or-default u3 userIdMia))
       (stackedCycle13 (get amountStacked userCycle13))
-      (avgStackedMia (/ (+ (scale-up stackedCycle12) (scale-up stackedCycle13))))
+      (avgStackedMia (/ (+ (scale-up stackedCycle12) (scale-up stackedCycle13)) u2))
       (scaledMiaVote (/ (* avgStackedMia MIA_SCALE_FACTOR) MIA_SCALE_BASE))
     )
     ;; check if user was found
@@ -246,7 +246,7 @@
       (stackedCycle6 (get amountStacked userCycle6))
       (userCycle7 (contract-call? .citycoin-core-v1 get-stacker-at-cycle-or-default u3 userIdNyc))
       (stackedCycle7 (get amountStacked userCycle7))
-      (nycVote (/ (+ (scale-up stackedCycle6) (scale-up stackedCycle7))))
+      (nycVote (/ (+ (scale-up stackedCycle6) (scale-up stackedCycle7)) u2))
     )
     ;; check if user was found
     (asserts! (> userIdNyc u0) none)

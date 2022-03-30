@@ -58,15 +58,19 @@ describe("[CityCoin Vote]", () => {
       it("succeeds with one yes vote when called by a new voter", () => {
         // arrange
         const wallet = accounts.get("wallet_1")!;
-        const amountTokens = 1000;
+        const amountCycle1 = 1000;
+        const amountCycle2 = 2000;
         const lockPeriod = 5;
-        const avgStacked = (amountTokens + (amountTokens * 2)) / 2;
-        const scaledMia = Math.round(avgStacked * VoteModel.MIA_SCALE_FACTOR);
+        const miaVote = Math.round(
+          ((amountCycle1 * 2 + amountCycle2) / 2) * VoteModel.MIA_SCALE_FACTOR
+        );
+        const nycVote = (amountCycle1 * 2 + amountCycle2) / 2;
+        
         const block = chain.mineBlock([
           core.testInitializeCore(core.address),
           core.unsafeSetActivationThreshold(1),
           core.registerUser(wallet),
-          token.ftMint(amountTokens, wallet),
+          token.ftMint(amountCycle1 + amountCycle2, wallet),
         ]);
         const activationBlockHeight =
           block.height + CoreModel.ACTIVATION_DELAY - 1;
@@ -75,11 +79,11 @@ describe("[CityCoin Vote]", () => {
         // stack in cycles 2-3
         chain.mineEmptyBlock(CoreModel.REWARD_CYCLE_LENGTH);
         chain.mineBlock([
-          core.stackTokens(amountTokens / 2, lockPeriod, wallet),
+          core.stackTokens(amountCycle1, lockPeriod, wallet),
         ]);
         chain.mineEmptyBlock(CoreModel.REWARD_CYCLE_LENGTH);
         chain.mineBlock([
-          core.stackTokens(amountTokens / 2, lockPeriod, wallet),
+          core.stackTokens(amountCycle2, lockPeriod, wallet),
         ]);
         chain.mineEmptyBlock(CoreModel.REWARD_CYCLE_LENGTH);
   
@@ -97,16 +101,16 @@ describe("[CityCoin Vote]", () => {
           noNyc: types.uint(0),
           noTotal: types.uint(0),
           yesCount: types.uint(1),
-          yesMia: types.uint(scaledMia),
-          yesNyc: types.uint(avgStacked),
-          yesTotal: types.uint(scaledMia + avgStacked)
+          yesMia: types.uint(miaVote),
+          yesNyc: types.uint(nycVote),
+          yesTotal: types.uint(miaVote + nycVote)
         }
   
         // set voter information to verify
         const expectedVoterRecord = {
-          mia: types.uint(scaledMia),
-          nyc: types.uint(avgStacked),
-          total: types.uint(scaledMia + avgStacked),
+          mia: types.uint(miaVote),
+          nyc: types.uint(nycVote),
+          total: types.uint(miaVote + nycVote),
           vote: types.bool(true)
         }
   
@@ -123,17 +127,21 @@ describe("[CityCoin Vote]", () => {
         const wallet_1 = accounts.get("wallet_1")!;
         const wallet_2 = accounts.get("wallet_2")!;
         const wallet_3 = accounts.get("wallet_3")!;
-        const amountTokens = 1000;
+        const amountCycle1 = 1000;
+        const amountCycle2 = 2000;
         const lockPeriod = 5;
-        const singleVote = (amountTokens + (amountTokens * 2)) / 2;
-        const singleMiaVote = Math.round(singleVote * VoteModel.MIA_SCALE_FACTOR);
+        const miaVote = Math.round(
+          ((amountCycle1 * 2 + amountCycle2) / 2) * VoteModel.MIA_SCALE_FACTOR
+        );
+        const nycVote = (amountCycle1 * 2 + amountCycle2) / 2;
+        
         const setupBlock = chain.mineBlock([
           core.testInitializeCore(core.address),
           core.unsafeSetActivationThreshold(1),
           core.registerUser(wallet_1),
-          token.ftMint(amountTokens, wallet_1),
-          token.ftMint(amountTokens, wallet_2),
-          token.ftMint(amountTokens, wallet_3)
+          token.ftMint(amountCycle1 + amountCycle2, wallet_1),
+          token.ftMint(amountCycle1 + amountCycle2, wallet_2),
+          token.ftMint(amountCycle1 + amountCycle2, wallet_3)
         ]);
         const activationBlockHeight =
           setupBlock.height + CoreModel.ACTIVATION_DELAY - 1;
@@ -142,15 +150,15 @@ describe("[CityCoin Vote]", () => {
         // stack in cycles 2-3
         chain.mineEmptyBlock(CoreModel.REWARD_CYCLE_LENGTH);
         chain.mineBlock([
-          core.stackTokens(amountTokens / 2, lockPeriod, wallet_1),
-          core.stackTokens(amountTokens / 2, lockPeriod, wallet_2),
-          core.stackTokens(amountTokens / 2, lockPeriod, wallet_3)
+          core.stackTokens(amountCycle1, lockPeriod, wallet_1),
+          core.stackTokens(amountCycle1, lockPeriod, wallet_2),
+          core.stackTokens(amountCycle1, lockPeriod, wallet_3)
         ]);
         chain.mineEmptyBlock(CoreModel.REWARD_CYCLE_LENGTH);
         chain.mineBlock([
-          core.stackTokens(amountTokens / 2, lockPeriod, wallet_1),
-          core.stackTokens(amountTokens / 2, lockPeriod, wallet_2),
-          core.stackTokens(amountTokens / 2, lockPeriod, wallet_3)
+          core.stackTokens(amountCycle2, lockPeriod, wallet_1),
+          core.stackTokens(amountCycle2, lockPeriod, wallet_2),
+          core.stackTokens(amountCycle2, lockPeriod, wallet_3)
         ]);
         chain.mineEmptyBlock(CoreModel.REWARD_CYCLE_LENGTH);
   
@@ -170,32 +178,32 @@ describe("[CityCoin Vote]", () => {
         // set vote information to verify
         const expectedProposalRecord = {
           noCount: types.uint(1),
-          noMia: types.uint(singleMiaVote),
-          noNyc: types.uint(singleVote),
-          noTotal: types.uint(singleMiaVote + singleVote),
+          noMia: types.uint(miaVote),
+          noNyc: types.uint(nycVote),
+          noTotal: types.uint(miaVote + nycVote),
           yesCount: types.uint(2),
-          yesMia: types.uint(singleMiaVote * 2),
-          yesNyc: types.uint(singleVote * 2),
-          yesTotal: types.uint((singleMiaVote * 2) + (singleVote * 2))
+          yesMia: types.uint(miaVote * 2),
+          yesNyc: types.uint(nycVote * 2),
+          yesTotal: types.uint((miaVote + nycVote) * 2)
         }
   
         // set voter information to verify
         const expectedVoterRecord_1 = {
-          mia: types.uint(singleMiaVote),
-          nyc: types.uint(singleVote),
-          total: types.uint(singleMiaVote + singleVote),
+          mia: types.uint(miaVote),
+          nyc: types.uint(nycVote),
+          total: types.uint(miaVote + nycVote),
           vote: types.bool(true)
         }
         const expectedVoterRecord_2 = {
-          mia: types.uint(singleMiaVote),
-          nyc: types.uint(singleVote),
-          total: types.uint(singleMiaVote + singleVote),
+          mia: types.uint(miaVote),
+          nyc: types.uint(nycVote),
+          total: types.uint(miaVote + nycVote),
           vote: types.bool(true)
         }
         const expectedVoterRecord_3 = {
-          mia: types.uint(singleMiaVote),
-          nyc: types.uint(singleVote),
-          total: types.uint(singleMiaVote + singleVote),
+          mia: types.uint(miaVote),
+          nyc: types.uint(nycVote),
+          total: types.uint(miaVote + nycVote),
           vote: types.bool(false)
         }
   
@@ -217,15 +225,15 @@ describe("[CityCoin Vote]", () => {
       it("fails with ERR_VOTE_ALREADY_CAST when called by an existing voter with the same vote", () => {
         // arrange
         const wallet = accounts.get("wallet_1")!;
-        const amountTokens = 1000;
+        const amountCycle1 = 1000;
+        const amountCycle2 = 2000;
         const lockPeriod = 5;
-        const avgStacked = (amountTokens + (amountTokens * 2)) / 2;
-        const scaledMia = Math.round(avgStacked * VoteModel.MIA_SCALE_FACTOR);
+
         const block = chain.mineBlock([
           core.testInitializeCore(core.address),
           core.unsafeSetActivationThreshold(1),
           core.registerUser(wallet),
-          token.ftMint(amountTokens, wallet),
+          token.ftMint(amountCycle1 + amountCycle2, wallet),
         ]);
         const activationBlockHeight =
           block.height + CoreModel.ACTIVATION_DELAY - 1;
@@ -234,11 +242,11 @@ describe("[CityCoin Vote]", () => {
         // stack in cycles 2-3
         chain.mineEmptyBlock(CoreModel.REWARD_CYCLE_LENGTH);
         chain.mineBlock([
-          core.stackTokens(amountTokens / 2, lockPeriod, wallet),
+          core.stackTokens(amountCycle1, lockPeriod, wallet),
         ]);
         chain.mineEmptyBlock(CoreModel.REWARD_CYCLE_LENGTH);
         chain.mineBlock([
-          core.stackTokens(amountTokens / 2, lockPeriod, wallet),
+          core.stackTokens(amountCycle2, lockPeriod, wallet),
         ]);
         chain.mineEmptyBlock(CoreModel.REWARD_CYCLE_LENGTH);
   
@@ -251,7 +259,7 @@ describe("[CityCoin Vote]", () => {
           vote.voteOnProposal(false, wallet)
         ]);
   
-        // switch vote to yes
+        // vote no again
         const receipt = chain.mineBlock([
           vote.voteOnProposal(false, wallet)
         ]).receipts[0];
@@ -262,15 +270,19 @@ describe("[CityCoin Vote]", () => {
       it("succeeds when called by an existing voter with the a different vote", () => {
         // arrange
         const wallet = accounts.get("wallet_1")!;
-        const amountTokens = 1000;
+        const amountCycle1 = 1000;
+        const amountCycle2 = 2000;
         const lockPeriod = 5;
-        const avgStacked = (amountTokens + (amountTokens * 2)) / 2;
-        const scaledMia = Math.round(avgStacked * VoteModel.MIA_SCALE_FACTOR);
+        const miaVote = Math.round(
+          ((amountCycle1 * 2 + amountCycle2) / 2) * VoteModel.MIA_SCALE_FACTOR
+        );
+        const nycVote = (amountCycle1 * 2 + amountCycle2) / 2;
+
         const block = chain.mineBlock([
           core.testInitializeCore(core.address),
           core.unsafeSetActivationThreshold(1),
           core.registerUser(wallet),
-          token.ftMint(amountTokens, wallet),
+          token.ftMint(amountCycle1 + amountCycle2, wallet),
         ]);
         const activationBlockHeight =
           block.height + CoreModel.ACTIVATION_DELAY - 1;
@@ -279,11 +291,11 @@ describe("[CityCoin Vote]", () => {
         // stack in cycles 2-3
         chain.mineEmptyBlock(CoreModel.REWARD_CYCLE_LENGTH);
         chain.mineBlock([
-          core.stackTokens(amountTokens / 2, lockPeriod, wallet),
+          core.stackTokens(amountCycle1, lockPeriod, wallet),
         ]);
         chain.mineEmptyBlock(CoreModel.REWARD_CYCLE_LENGTH);
         chain.mineBlock([
-          core.stackTokens(amountTokens / 2, lockPeriod, wallet),
+          core.stackTokens(amountCycle2, lockPeriod, wallet),
         ]);
         chain.mineEmptyBlock(CoreModel.REWARD_CYCLE_LENGTH);
   
@@ -308,16 +320,16 @@ describe("[CityCoin Vote]", () => {
           noNyc: types.uint(0),
           noTotal: types.uint(0),
           yesCount: types.uint(1),
-          yesMia: types.uint(scaledMia),
-          yesNyc: types.uint(avgStacked),
-          yesTotal: types.uint(scaledMia + avgStacked)
+          yesMia: types.uint(miaVote),
+          yesNyc: types.uint(nycVote),
+          yesTotal: types.uint(miaVote + nycVote)
         }
   
         // set voter information to verify
         const expectedVoterRecord = {
-          mia: types.uint(scaledMia),
-          nyc: types.uint(avgStacked),
-          total: types.uint(scaledMia + avgStacked),
+          mia: types.uint(miaVote),
+          nyc: types.uint(nycVote),
+          total: types.uint(miaVote + nycVote),
           vote: types.bool(true)
         }
   
@@ -335,17 +347,21 @@ describe("[CityCoin Vote]", () => {
         const wallet_1 = accounts.get("wallet_1")!;
         const wallet_2 = accounts.get("wallet_2")!;
         const wallet_3 = accounts.get("wallet_3")!;
-        const amountTokens = 1000;
+        const amountCycle1 = 1000;
+        const amountCycle2 = 2000;
         const lockPeriod = 5;
-        const singleVote = (amountTokens + (amountTokens * 2)) / 2;
-        const singleMiaVote = Math.round(singleVote * VoteModel.MIA_SCALE_FACTOR);
+        const miaVote = Math.round(
+          ((amountCycle1 * 2 + amountCycle2) / 2) * VoteModel.MIA_SCALE_FACTOR
+        );
+        const nycVote = (amountCycle1 * 2 + amountCycle2) / 2;
+        
         const setupBlock = chain.mineBlock([
           core.testInitializeCore(core.address),
           core.unsafeSetActivationThreshold(1),
           core.registerUser(wallet_1),
-          token.ftMint(amountTokens, wallet_1),
-          token.ftMint(amountTokens, wallet_2),
-          token.ftMint(amountTokens, wallet_3)
+          token.ftMint(amountCycle1 + amountCycle2, wallet_1),
+          token.ftMint(amountCycle1 + amountCycle2, wallet_2),
+          token.ftMint(amountCycle1 + amountCycle2, wallet_3)
         ]);
         const activationBlockHeight =
           setupBlock.height + CoreModel.ACTIVATION_DELAY - 1;
@@ -354,15 +370,15 @@ describe("[CityCoin Vote]", () => {
         // stack in cycles 2-3
         chain.mineEmptyBlock(CoreModel.REWARD_CYCLE_LENGTH);
         chain.mineBlock([
-          core.stackTokens(amountTokens / 2, lockPeriod, wallet_1),
-          core.stackTokens(amountTokens / 2, lockPeriod, wallet_2),
-          core.stackTokens(amountTokens / 2, lockPeriod, wallet_3)
+          core.stackTokens(amountCycle1, lockPeriod, wallet_1),
+          core.stackTokens(amountCycle1, lockPeriod, wallet_2),
+          core.stackTokens(amountCycle1, lockPeriod, wallet_3)
         ]);
         chain.mineEmptyBlock(CoreModel.REWARD_CYCLE_LENGTH);
         chain.mineBlock([
-          core.stackTokens(amountTokens / 2, lockPeriod, wallet_1),
-          core.stackTokens(amountTokens / 2, lockPeriod, wallet_2),
-          core.stackTokens(amountTokens / 2, lockPeriod, wallet_3)
+          core.stackTokens(amountCycle2, lockPeriod, wallet_1),
+          core.stackTokens(amountCycle2, lockPeriod, wallet_2),
+          core.stackTokens(amountCycle2, lockPeriod, wallet_3)
         ]);
         chain.mineEmptyBlock(CoreModel.REWARD_CYCLE_LENGTH);
   
@@ -391,32 +407,32 @@ describe("[CityCoin Vote]", () => {
         // set vote information to verify
         const expectedProposalRecord = {
           noCount: types.uint(1),
-          noMia: types.uint(singleMiaVote),
-          noNyc: types.uint(singleVote),
-          noTotal: types.uint(singleMiaVote + singleVote),
+          noMia: types.uint(miaVote),
+          noNyc: types.uint(nycVote),
+          noTotal: types.uint(miaVote + nycVote),
           yesCount: types.uint(2),
-          yesMia: types.uint(singleMiaVote * 2),
-          yesNyc: types.uint(singleVote * 2),
-          yesTotal: types.uint((singleMiaVote * 2) + (singleVote * 2))
+          yesMia: types.uint(miaVote * 2),
+          yesNyc: types.uint(nycVote * 2),
+          yesTotal: types.uint((miaVote + nycVote) * 2)
         }
   
         // set voter information to verify
         const expectedVoterRecord_1 = {
-          mia: types.uint(singleMiaVote),
-          nyc: types.uint(singleVote),
-          total: types.uint(singleMiaVote + singleVote),
+          mia: types.uint(miaVote),
+          nyc: types.uint(nycVote),
+          total: types.uint(miaVote + nycVote),
           vote: types.bool(true)
         }
         const expectedVoterRecord_2 = {
-          mia: types.uint(singleMiaVote),
-          nyc: types.uint(singleVote),
-          total: types.uint(singleMiaVote + singleVote),
+          mia: types.uint(miaVote),
+          nyc: types.uint(nycVote),
+          total: types.uint(miaVote + nycVote),
           vote: types.bool(true)
         }
         const expectedVoterRecord_3 = {
-          mia: types.uint(singleMiaVote),
-          nyc: types.uint(singleVote),
-          total: types.uint(singleMiaVote + singleVote),
+          mia: types.uint(miaVote),
+          nyc: types.uint(nycVote),
+          total: types.uint(miaVote + nycVote),
           vote: types.bool(false)
         }
   
