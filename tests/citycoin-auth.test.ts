@@ -28,14 +28,14 @@ describe("[CityCoin Auth]", () => {
   //////////////////////////////////////////////////
   describe("JOB MANAGEMENT", () => {
     describe("get-last-job-id()", () => {
-      it("returns u0 if no jobs have been created", () => {
+      it("succeeds and returns u0 if no jobs have been created", () => {
         // act
         const result = auth.getLastJobId().result;
 
         // assert
         result.expectUint(0);
       });
-      it("returns u1 after a job has been created", () => {
+      it("succeeds and returns u1 after a job has been created", () => {
         // arrange
         const name = "job_1";
         const target = core.address;
@@ -52,7 +52,7 @@ describe("[CityCoin Auth]", () => {
     });
 
     describe("create-job()", () => {
-      it("throws ERR_UNAUTHORIZED if not called by an approver", () => {
+      it("fails with ERR_UNAUTHORIZED if not called by an approver", () => {
         // arrange
         const name = "job_1";
         const target = core.address;
@@ -69,7 +69,7 @@ describe("[CityCoin Auth]", () => {
           .expectUint(AuthModel.ErrCode.ERR_UNAUTHORIZED);
       });
 
-      it("creates new job", () => {
+      it("succeeds and creates new job if called by an approver", () => {
         // arrange
         const name = "job_1";
         const target = core.address;
@@ -86,7 +86,7 @@ describe("[CityCoin Auth]", () => {
     });
 
     describe("get-job()", () => {
-      it("returns 'none' for unknown jobId", () => {
+      it("succeeds and returns none for unknown job ID", () => {
         // arrange
         const jobId = 1;
 
@@ -97,7 +97,7 @@ describe("[CityCoin Auth]", () => {
         result.expectNone();
       });
 
-      it("returns 'some' with job details for known jobId", () => {
+      it("succeeds and returns some with job details for known job ID", () => {
         // arrange
         const name = "job123";
         const target = core.address;
@@ -123,7 +123,7 @@ describe("[CityCoin Auth]", () => {
     });
 
     describe("activate-job()", () => {
-      it("throws ERR_UNKNOWN_JOB while activating unknown job", () => {
+      it("fails with ERR_UNKNOWN_JOB while activating unknown job ID", () => {
         // arrange
         const jobId = 10;
         const wallet = accounts.get("wallet_4")!;
@@ -139,7 +139,7 @@ describe("[CityCoin Auth]", () => {
           .expectUint(AuthModel.ErrCode.ERR_UNKNOWN_JOB);
       });
 
-      it("throws ERR_UNAUTHORIZED while activating job by someone who is not its creator", () => {
+      it("fails with ERR_UNAUTHORIZED while activating job by someone who is not its creator", () => {
         // arrange
         const name = "job-123456";
         const target = core.address;
@@ -160,7 +160,7 @@ describe("[CityCoin Auth]", () => {
           .expectUint(AuthModel.ErrCode.ERR_UNAUTHORIZED);
       });
 
-      it("throws ERR_JOB_IS_ACTIVE while activating job that is already active", () => {
+      it("fails with ERR_JOB_IS_ACTIVE while activating job that is already active", () => {
         // arrange
         const name = "job-123456";
         const target = core.address;
@@ -182,7 +182,7 @@ describe("[CityCoin Auth]", () => {
           .expectUint(AuthModel.ErrCode.ERR_JOB_IS_ACTIVE);
       });
 
-      it("successfully activate job by its creator", () => {
+      it("succeeds and activates job if called by its creator", () => {
         // arrange
         const name = "job-123456";
         const target = core.address;
@@ -218,7 +218,7 @@ describe("[CityCoin Auth]", () => {
     });
 
     describe("approve-job()", () => {
-      it("throws ERR_UNKNOWN_JOB while approving unknown job", () => {
+      it("fails with ERR_UNKNOWN_JOB while approving unknown job ID", () => {
         // arrange
         const approver = accounts.get("wallet_2")!;
         const jobId = 399;
@@ -234,7 +234,7 @@ describe("[CityCoin Auth]", () => {
           .expectUint(AuthModel.ErrCode.ERR_UNKNOWN_JOB);
       });
 
-      it("throws ERR_JOB_IS_NOT_ACTIVE while approving not active job", () => {
+      it("fails with ERR_JOB_IS_NOT_ACTIVE while approving inactive job ID", () => {
         // arrange
         const name = "job-123456";
         const target = core.address;
@@ -254,7 +254,7 @@ describe("[CityCoin Auth]", () => {
           .expectUint(AuthModel.ErrCode.ERR_JOB_IS_NOT_ACTIVE);
       });
 
-      it("throws ERR_ALREADY_VOTED_THIS_WAY while approving job previously approved", () => {
+      it("fails with ERR_ALREADY_VOTED_THIS_WAY while approving job previously approved", () => {
         // arrange
         const name = "job-123456";
         const target = core.address;
@@ -278,7 +278,7 @@ describe("[CityCoin Auth]", () => {
           .expectUint(AuthModel.ErrCode.ERR_ALREADY_VOTED_THIS_WAY);
       });
 
-      it("throws ERR_UNAUTHORIZED while approving job by user who is not approver", () => {
+      it("fails with ERR_UNAUTHORIZED while approving job by user who is not an approver", () => {
         // arrange
         const name = "job-123456";
         const target = core.address;
@@ -301,7 +301,7 @@ describe("[CityCoin Auth]", () => {
           .expectUint(AuthModel.ErrCode.ERR_UNAUTHORIZED);
       });
 
-      it("successfully saves approvals", () => {
+      it("succeeds and saves approvals", () => {
         // arrange
         const name = "job-123456";
         const target = core.address;
@@ -342,7 +342,7 @@ describe("[CityCoin Auth]", () => {
         assertEquals(actualJob, expectedJob);
       });
 
-      it("successfully approve previously disapproved job", () => {
+      it("succeeds and approves previously disapproved job", () => {
         // arrange
         const name = "job-123456";
         const target = core.address;
@@ -386,7 +386,7 @@ describe("[CityCoin Auth]", () => {
     });
 
     describe("disapprove-job()", () => {
-      it("throws ERR_UNKNOWN_JOB while disapproving unknown job", () => {
+      it("fails with ERR_UNKNOWN_JOB while disapproving unknown job ID", () => {
         // arrange
         const approver = accounts.get("wallet_2")!;
         const jobId = 399;
@@ -402,7 +402,7 @@ describe("[CityCoin Auth]", () => {
           .expectUint(AuthModel.ErrCode.ERR_UNKNOWN_JOB);
       });
 
-      it("throws ERR_JOB_IS_NOT_ACTIVE while disapproving not active job", () => {
+      it("fails with ERR_JOB_IS_NOT_ACTIVE while disapproving inactive job ID", () => {
         // arrange
         const name = "job-123456";
         const target = core.address;
@@ -422,7 +422,7 @@ describe("[CityCoin Auth]", () => {
           .expectUint(AuthModel.ErrCode.ERR_JOB_IS_NOT_ACTIVE);
       });
 
-      it("throws ERR_ALREADY_VOTED_THIS_WAY while disapproving job previously disapproved", () => {
+      it("fails with ERR_ALREADY_VOTED_THIS_WAY while disapproving job previously disapproved", () => {
         // arrange
         const name = "job-123456";
         const target = core.address;
@@ -446,7 +446,7 @@ describe("[CityCoin Auth]", () => {
           .expectUint(AuthModel.ErrCode.ERR_ALREADY_VOTED_THIS_WAY);
       });
 
-      it("throws ERR_UNAUTHORIZED while disapproving job by user who is not approver", () => {
+      it("fails with ERR_UNAUTHORIZED while disapproving job by user who is not an approver", () => {
         // arrange
         const name = "job-123456";
         const target = core.address;
@@ -469,7 +469,7 @@ describe("[CityCoin Auth]", () => {
           .expectUint(AuthModel.ErrCode.ERR_UNAUTHORIZED);
       });
 
-      it("successfully saves disapprovals", () => {
+      it("succeeds and saves disapprovals", () => {
         // arrange
         const name = "job-123456";
         const target = core.address;
@@ -510,7 +510,7 @@ describe("[CityCoin Auth]", () => {
         assertEquals(actualJob, expectedJob);
       });
 
-      it("successfully disapprove previously approved job", () => {
+      it("succeeds and disapproves previously approved job", () => {
         // arrange
         const name = "job-123456";
         const target = core.address;
@@ -554,7 +554,7 @@ describe("[CityCoin Auth]", () => {
     });
 
     describe("is-job-approved()", () => {
-      it("returns false when asked about unknown job", () => {
+      it("succeeds and returns false when called with unknown job ID", () => {
         // arrange
         const jobId = 234234;
 
@@ -565,7 +565,7 @@ describe("[CityCoin Auth]", () => {
         result.expectBool(false);
       });
 
-      it("returns false when asked about inactive job", () => {
+      it("succeeds and returns false when called with inactive job ID", () => {
         // arrange
         const name = "job-123456";
         const target = core.address;
@@ -580,7 +580,7 @@ describe("[CityCoin Auth]", () => {
         result.expectBool(false);
       });
 
-      it("returns false when asked about active job without any approvals", () => {
+      it("succeeds and returns false when called with an active job without any approvals", () => {
         // arrange
         const name = "job-123456";
         const target = core.address;
@@ -598,7 +598,7 @@ describe("[CityCoin Auth]", () => {
         result.expectBool(false);
       });
 
-      it("returns when asked about active job with 3 or more approvals", () => {
+      it("succeeds and returns true when asked about an active job with 3 or more approvals", () => {
         // arrange
         const name = "job-123456";
         const target = core.address;
@@ -624,7 +624,7 @@ describe("[CityCoin Auth]", () => {
     });
 
     describe("mark-job-as-executed()", () => {
-      it("throws ERR_UNKNOWN_JOB when requested to mark unknown job", () => {
+      it("fails with ERR_UNKNOWN_JOB when called with unknown job ID", () => {
         // arrange
         const jobId = 123;
         const sender = accounts.get("wallet_1")!;
@@ -640,7 +640,7 @@ describe("[CityCoin Auth]", () => {
           .expectUint(AuthModel.ErrCode.ERR_UNKNOWN_JOB);
       });
 
-      it("throws ERR_JOB_IS_NOT_ACTIVE when requested to mark not active job", () => {
+      it("fails with ERR_JOB_IS_NOT_ACTIVE when called with inactive job ID", () => {
         // arrange
         const name = "job-name";
         const creator = accounts.get("wallet_1")!;
@@ -660,7 +660,7 @@ describe("[CityCoin Auth]", () => {
           .expectUint(AuthModel.ErrCode.ERR_JOB_IS_NOT_ACTIVE);
       });
 
-      it("throws ERR_JOB_IS_NOT_APPROVED when requested to mark not approved job", () => {
+      it("fails with ERR_JOB_IS_NOT_APPROVED when called with unapproved job ID", () => {
         // arrange
         const name = "job-name";
         const creator = accounts.get("wallet_1")!;
@@ -683,7 +683,7 @@ describe("[CityCoin Auth]", () => {
           .expectUint(AuthModel.ErrCode.ERR_JOB_IS_NOT_APPROVED);
       });
 
-      it("throws ERR_UNAUTHORIZED when requested to mark as approved not by target", () => {
+      it("fails with ERR_UNAUTHORIZED when called by sender that is not the target", () => {
         // arrange
         const name = "job-name";
         const creator = accounts.get("wallet_1")!;
@@ -712,7 +712,7 @@ describe("[CityCoin Auth]", () => {
           .expectUint(AuthModel.ErrCode.ERR_UNAUTHORIZED);
       });
 
-      it("successfully marks job as executed when called by target", () => {
+      it("succeeds and marks job as executed when called by target", () => {
         // arrange
         const name = "job-name";
         const creator = accounts.get("wallet_1")!;
@@ -755,7 +755,7 @@ describe("[CityCoin Auth]", () => {
         assertEquals(actualJob, expectedJob);
       });
 
-      it("throws ERR_JOB_IS_EXECUTED while trying to mark same job 2nd time", () => {
+      it("fails with ERR_JOB_IS_EXECUTED while trying to mark same job executed 2nd time", () => {
         // arrange
         const name = "job-name";
         const creator = accounts.get("wallet_1")!;
@@ -787,7 +787,7 @@ describe("[CityCoin Auth]", () => {
     });
 
     describe("add-uint-argument()", () => {
-      it("throws ERR_UNKNOWN_JOB while adding argument to unknown job", () => {
+      it("fails with ERR_UNKNOWN_JOB while adding argument to unknown job ID", () => {
         // arrange
         const sender = accounts.get("wallet_1")!;
         const jobId = 1;
@@ -805,7 +805,7 @@ describe("[CityCoin Auth]", () => {
           .expectUint(AuthModel.ErrCode.ERR_UNKNOWN_JOB);
       });
 
-      it("throws ERR_JOB_IS_ACTIVE while adding argument to active job", () => {
+      it("fails with ERR_JOB_IS_ACTIVE while adding argument to active job ID", () => {
         // arrange
         const sender = accounts.get("wallet_1")!;
         const jobId = 1;
@@ -829,7 +829,7 @@ describe("[CityCoin Auth]", () => {
           .expectUint(AuthModel.ErrCode.ERR_JOB_IS_ACTIVE);
       });
 
-      it("throws ERR_UNAUTHORIZED while adding argument by someone who is not job creator", () => {
+      it("fails with ERR_UNAUTHORIZED while adding argument by someone who is not the job creator", () => {
         // arrange
         const sender = accounts.get("wallet_1")!;
         const jobId = 1;
@@ -851,7 +851,7 @@ describe("[CityCoin Auth]", () => {
           .expectUint(AuthModel.ErrCode.ERR_UNAUTHORIZED);
       });
 
-      it("successfully save new argument", () => {
+      it("succeeds and saves new argument", () => {
         // arrange
         const sender = accounts.get("wallet_1")!;
         const jobId = 1;
@@ -880,7 +880,7 @@ describe("[CityCoin Auth]", () => {
           .expectUint(value);
       });
 
-      it("throws ERR_ARGUMENT_ALREADY_EXISTS while adding same argument 2nd time", () => {
+      it("fails with ERR_ARGUMENT_ALREADY_EXISTS while adding same argument 2nd time", () => {
         // arrange
         const sender = accounts.get("wallet_1")!;
         const jobId = 1;
@@ -906,7 +906,7 @@ describe("[CityCoin Auth]", () => {
     });
 
     describe("add-principal-argument()", () => {
-      it("throws ERR_UNKNOWN_JOB while adding argument to unknown job", () => {
+      it("fails with ERR_UNKNOWN_JOB while adding argument to unknown job ID", () => {
         // arrange
         const sender = accounts.get("wallet_1")!;
         const jobId = 1;
@@ -924,7 +924,7 @@ describe("[CityCoin Auth]", () => {
           .expectUint(AuthModel.ErrCode.ERR_UNKNOWN_JOB);
       });
 
-      it("throws ERR_JOB_IS_ACTIVE while adding argument to active job", () => {
+      it("fails with ERR_JOB_IS_ACTIVE while adding argument to active job ID", () => {
         // arrange
         const sender = accounts.get("wallet_1")!;
         const jobId = 1;
@@ -948,7 +948,7 @@ describe("[CityCoin Auth]", () => {
           .expectUint(AuthModel.ErrCode.ERR_JOB_IS_ACTIVE);
       });
 
-      it("throws ERR_UNAUTHORIZED while adding argument by someone who is not job creator", () => {
+      it("fails with ERR_UNAUTHORIZED while adding argument by someone who is not job creator", () => {
         // arrange
         const sender = accounts.get("wallet_1")!;
         const jobId = 1;
@@ -999,7 +999,7 @@ describe("[CityCoin Auth]", () => {
           .expectPrincipal(value);
       });
 
-      it("throws ERR_ARGUMENT_ALREADY_EXISTS while adding same argument 2nd time", () => {
+      it("fails with ERR_ARGUMENT_ALREADY_EXISTS while adding same argument 2nd time", () => {
         // arrange
         const sender = accounts.get("wallet_1")!;
         const jobId = 1;
@@ -1029,7 +1029,7 @@ describe("[CityCoin Auth]", () => {
   //////////////////////////////////////////////////
   describe("CONTRACT MANAGEMENT", () => {
     describe("get-active-core-contract()", () => {
-      it("throws ERR_NO_ACTIVE_CORE_CONTRACT if auth is not initialized", () => {
+      it("fails with ERR_NO_ACTIVE_CORE_CONTRACT if auth contract is not initialized", () => {
         // act
         const result = auth.getActiveCoreContract().result;
 
@@ -1038,7 +1038,7 @@ describe("[CityCoin Auth]", () => {
           .expectErr()
           .expectUint(AuthModel.ErrCode.ERR_NO_ACTIVE_CORE_CONTRACT);
       });
-      it("returns correct value after auth is initialized", () => {
+      it("succeeds and returns active core contract after auth contract is initialized", () => {
         // arrange
         const sender = accounts.get("wallet_1")!;
         const target = core.address;
@@ -1053,7 +1053,7 @@ describe("[CityCoin Auth]", () => {
     });
 
     describe("initialize-contracts()", () => {
-      it("throws ERR_UNAUTHORIZED if not called by CONTRACT_OWNER", () => {
+      it("fails with ERR_UNAUTHORIZED if not called by CONTRACT_OWNER", () => {
         // arrange
         const sender = accounts.get("wallet_2")!;
         const target = core.address;
@@ -1069,7 +1069,7 @@ describe("[CityCoin Auth]", () => {
           .expectUint(AuthModel.ErrCode.ERR_UNAUTHORIZED);
       });
 
-      it("throws ERR_UNAUTHORIZED if auth is already initialized", () => {
+      it("fails with ERR_UNAUTHORIZED if auth contract is already initialized", () => {
         // arrange
         const sender = accounts.get("deployer")!;
         const target = core.address;
@@ -1115,7 +1115,7 @@ describe("[CityCoin Auth]", () => {
     });
 
     describe("upgrade-core-contract()", () => {
-      it("throws ERR_CORE_CONTRACT_NOT_FOUND if principal not found in core contracts map", () => {
+      it("fails with ERR_CORE_CONTRACT_NOT_FOUND if principal not found in core contracts map", () => {
         // arrange
         const sender = accounts.get("wallet_1")!;
         const oldContract = core.address;
@@ -1131,7 +1131,7 @@ describe("[CityCoin Auth]", () => {
           .expectErr()
           .expectUint(AuthModel.ErrCode.ERR_CORE_CONTRACT_NOT_FOUND);
       });
-      it("throws ERR_UNAUTHORIZED if old and new contract are the same", () => {
+      it("fails with ERR_UNAUTHORIZED if old and new contract are the same", () => {
         // arrange
         const sender = accounts.get("wallet_1")!;
         const oldContract = core.address;
@@ -1153,7 +1153,7 @@ describe("[CityCoin Auth]", () => {
           .expectErr()
           .expectUint(AuthModel.ErrCode.ERR_UNAUTHORIZED);
       });
-      it("throws ERR_UNAUTHORIZED if not called by city wallet", () => {
+      it("fails with ERR_UNAUTHORIZED if not called by city wallet", () => {
         // arrange
         const sender = accounts.get("wallet_1")!;
         const oldContract = core.address;
@@ -1317,7 +1317,7 @@ describe("[CityCoin Auth]", () => {
       });
     });
     describe("set-city-wallet()", () => {
-      it("throws ERR_CORE_CONTRACT_NOT_FOUND if principal not found in core contracts map", () => {
+      it("fails with ERR_CORE_CONTRACT_NOT_FOUND if principal not found in core contracts map", () => {
         // arrange
         const cityWallet = accounts.get("city_wallet")!;
         const newCityWallet = accounts.get("wallet_2")!;
@@ -1335,7 +1335,7 @@ describe("[CityCoin Auth]", () => {
           .expectUint(AuthModel.ErrCode.ERR_CORE_CONTRACT_NOT_FOUND);
       });
 
-      it("throws ERR_UNAUTHORIZED if not called by city wallet", () => {
+      it("fails with ERR_UNAUTHORIZED if not called by city wallet", () => {
         // arrange
         const sender = accounts.get("wallet_1")!;
         const newCityWallet = accounts.get("wallet_2")!;
@@ -1356,7 +1356,7 @@ describe("[CityCoin Auth]", () => {
           .expectUint(AuthModel.ErrCode.ERR_UNAUTHORIZED);
       });
 
-      it("throws ERR_UNAUTHORIZED if not called by the active core contract", () => {
+      it("fails with ERR_UNAUTHORIZED if not called by the active core contract", () => {
         // arrange
         const cityWallet = accounts.get("city_wallet")!;
         const newCityWallet = accounts.get("wallet_2")!;
@@ -1377,7 +1377,7 @@ describe("[CityCoin Auth]", () => {
           .expectUint(AuthModel.ErrCode.ERR_UNAUTHORIZED);
       });
 
-      it("successfully change city walled when called by current city wallet", () => {
+      it("succeeds and updates city wallet variable when called by current city wallet", () => {
         // arrange
         const cityWallet = accounts.get("city_wallet")!;
         const newCityWallet = accounts.get("wallet_2")!;
@@ -1407,7 +1407,7 @@ describe("[CityCoin Auth]", () => {
       });
     });
     describe("execute-set-city-wallet-job()", () => {
-      it("successfully change city wallet when called by job approver", () => {
+      it("succeeds and updates city wallet variable when called by job approver", () => {
         // arrange
         const jobId = 1;
         const sender = accounts.get("wallet_1")!;
@@ -1495,7 +1495,7 @@ describe("[CityCoin Auth]", () => {
           .expectErr()
           .expectUint(TokenModel.ErrCode.ERR_UNAUTHORIZED);
       });
-      it("succeeds and changes token uri to none if no new value is provided", () => {
+      it("succeeds and updates token uri to none if no new value is provided", () => {
         // arrange
         const sender = accounts.get("city_wallet")!;
         // act
@@ -1510,7 +1510,7 @@ describe("[CityCoin Auth]", () => {
         const result = token.getTokenUri().result;
         result.expectOk().expectNone();
       });
-      it("succeeds and changes token uri to new value if provided", () => {
+      it("succeeds and updates token uri to new value if provided", () => {
         // arrange
         const sender = accounts.get("city_wallet")!;
         const newUri = "http://something-something.com";
@@ -1535,7 +1535,7 @@ describe("[CityCoin Auth]", () => {
 
   describe("APPROVERS MANAGEMENT", () => {
     describe("execute-replace-approver-job()", () => {
-      it("successfully replace one approver with another one", () => {
+      it("succeeds and replaces one approver with a new principal", () => {
         const jobId = 1;
         const approver1 = accounts.get("wallet_1")!;
         const approver2 = accounts.get("wallet_2")!;
@@ -1579,7 +1579,7 @@ describe("[CityCoin Auth]", () => {
         auth.isApprover(newApprover).result.expectBool(true);
       });
 
-      it("replaced approver is not allowed to create nor approve jobs", () => {
+      it("fails with ERR_UNAUTHORIZED if replaced/inactive approver creates or approves jobs", () => {
         const replaceApproverJobId = 1;
         const anotherJobId = 2;
         const oldApprover = accounts.get("wallet_1")!;

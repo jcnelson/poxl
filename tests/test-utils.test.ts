@@ -16,7 +16,7 @@ beforeEach(()=>{
 
 describe("[CityCoin Test Utils]", () => {
   describe("test-wallet-attack()", () => {
-    it("throws ERR_UNAUTHORIZED when changing city wallet to a new address", () => {
+    it("fails with ERR_UNAUTHORIZED when changing city wallet to a new address", () => {
       //arrange
       const sender = accounts.get("wallet_1")!;
 
@@ -30,7 +30,7 @@ describe("[CityCoin Test Utils]", () => {
     });
   });
   describe("test-wallet-attack-as-contract()", () => {
-    it("throws ERR_UNAUTHORIZED when changing city wallet to a new address as a contract", () => {
+    it("fails with ERR_UNAUTHORIZED when changing city wallet to a new address as a contract", () => {
       //arrange
       const sender = accounts.get("wallet_1")!;
 

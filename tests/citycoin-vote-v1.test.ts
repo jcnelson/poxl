@@ -44,7 +44,7 @@ describe("[CityCoin Vote]", () => {
         // assert
         receipt.result.expectErr().expectUint(VoteModel.ErrCode.ERR_PROPOSAL_NOT_ACTIVE);
       });
-      it("fails with ERR_NOTHING_STACKED when user has no stacked tokens", () => {
+      it("fails with ERR_NOTHING_STACKED when sender has no stacked tokens", () => {
         // arrange
         const wallet = accounts.get("wallet_1")!;
         chain.mineEmptyBlock(VoteModel.VOTE_START_BLOCK + 1);
@@ -438,7 +438,7 @@ describe("[CityCoin Vote]", () => {
     });
     
     describe("get-proposal-votes()", () => {
-      it("succeeds with base proposal record with no voters", () => {
+      it("succeeds and returns base proposal record with no voters", () => {
         // arrange
         const result = vote.getProposalVotes().result;
         // TODO: refine like SendManyRecord in token model

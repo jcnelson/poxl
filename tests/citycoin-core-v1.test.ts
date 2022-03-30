@@ -25,14 +25,14 @@ describe("[CityCoin Core]", () => {
 
   describe("CITY WALLET MANAGEMENT", () => {
     describe("get-city-wallet()", () => {
-      it("returns current city wallet variable as contract address before initialization", () => {
+      it("succeeds and returns current city wallet variable as contract address before initialization", () => {
         // arrange
         const result = core.getCityWallet().result;
 
         // assert
         result.expectPrincipal(core.address);
       });
-      it("returns current city wallet variable as city wallet address after initialization", () => {
+      it("succeeds and returns current city wallet variable as city wallet address after initialization", () => {
         // arrange
         const cityWallet = accounts.get("city_wallet")!;
         chain.mineBlock([
@@ -46,7 +46,7 @@ describe("[CityCoin Core]", () => {
       });
     });
     describe("set-city-wallet()", () => {
-      it("throws ERR_UNAUTHORIZED when called by non-city wallet", () => {
+      it("fails with ERR_UNAUTHORIZED when called by non-city wallet", () => {
         // arrange
         const wallet = accounts.get("wallet_1")!;
 
@@ -69,7 +69,7 @@ describe("[CityCoin Core]", () => {
 
   describe("REGISTRATION", () => {
     describe("get-activation-block()", () => {
-      it("throws ERR_CONTRACT_NOT_ACTIVATED if called before contract is activated", () => {
+      it("fails with ERR_CONTRACT_NOT_ACTIVATED if called before contract is activated", () => {
         // act
         const result = core.getActivationBlock().result;
 
@@ -133,7 +133,7 @@ describe("[CityCoin Core]", () => {
       });
     });
     describe("register-user()", () => {
-      it("throws ERR_UNAUTHORIZED if contracts are not initialized", () => {
+      it("fails with ERR_UNAUTHORIZED if contracts are not initialized", () => {
         // arrange
         const user = accounts.get("wallet_4")!;
 
@@ -144,7 +144,7 @@ describe("[CityCoin Core]", () => {
         // assert
         receipt.result.expectErr().expectUint(CoreModel.ErrCode.ERR_UNAUTHORIZED);
       })
-      it("successfully register new user and emits print event with memo when supplied", () => {
+      it("succeeds and registers new user and emits print event with memo when supplied", () => {
         // arrange
         const user = accounts.get("wallet_5")!;
         const memo = "hello world";
@@ -172,7 +172,7 @@ describe("[CityCoin Core]", () => {
         assertEquals(receipt.events[0], expectedEvent);
       });
 
-      it("successfully register new user and do not emit any events when memo is not supplied", () => {
+      it("succeeds and registers new user and does not emit any events when memo is not supplied", () => {
         // arrange
         const user = accounts.get("wallet_4")!;
 
@@ -188,7 +188,7 @@ describe("[CityCoin Core]", () => {
         assertEquals(receipt.events.length, 0);
       });
 
-      it("throws ERR_USER_ALREADY_REGISTERED while trying to register user 2nd time", () => {
+      it("fails with ERR_USER_ALREADY_REGISTERED while trying to register user a 2nd time", () => {
         // arrange
         const user = accounts.get("wallet_4")!;
         const registerUserTx = core.registerUser(user);
@@ -206,7 +206,7 @@ describe("[CityCoin Core]", () => {
           .expectUint(CoreModel.ErrCode.ERR_USER_ALREADY_REGISTERED);
       });
 
-      it("throws ERR_ACTIVATION_THRESHOLD_REACHED error when user wants to register after reaching activation threshold", () => {
+      it("fails with ERR_ACTIVATION_THRESHOLD_REACHED when user wants to register after reaching activation threshold", () => {
         // arrange
         const user1 = accounts.get("wallet_4")!;
         const user2 = accounts.get("wallet_5")!;
@@ -301,7 +301,7 @@ describe("[CityCoin Core]", () => {
 
   describe("MINING ACTIONS", () => {
     describe("mine-tokens()", () => {
-      it("throws ERR_CONTRACT_NOT_ACTIVATED while trying to mine before reaching activation threshold", () => {
+      it("fails with ERR_CONTRACT_NOT_ACTIVATED while trying to mine before reaching activation threshold", () => {
         // arrange
         const miner = accounts.get("wallet_2")!;
         const amountUstx = 200;
@@ -317,7 +317,7 @@ describe("[CityCoin Core]", () => {
           .expectUint(CoreModel.ErrCode.ERR_CONTRACT_NOT_ACTIVATED);
       });
 
-      it("throws ERR_INSUFFICIENT_COMMITMENT while trying to mine with 0 commitment", () => {
+      it("fails with ERR_INSUFFICIENT_COMMITMENT while trying to mine with 0 commitment", () => {
         // arrange
         const miner = accounts.get("wallet_2")!;
         const amountUstx = 0;
@@ -338,7 +338,7 @@ describe("[CityCoin Core]", () => {
           .expectUint(CoreModel.ErrCode.ERR_INSUFFICIENT_COMMITMENT);
       });
 
-      it("throws ERR_INSUFFICIENT_BALANCE while trying to mine with commitment larger than current balance", () => {
+      it("fails with ERR_INSUFFICIENT_BALANCE while trying to mine with commitment larger than current balance", () => {
         // arrange
         const miner = accounts.get("wallet_2")!;
         const amountUstx = miner.balance + 1;
@@ -359,7 +359,7 @@ describe("[CityCoin Core]", () => {
           .expectUint(CoreModel.ErrCode.ERR_INSUFFICIENT_BALANCE);
       });
 
-      it("throws ERR_STACKING_NOT_AVAILABLE while trying to mine before activation period end", () => {
+      it("fails with ERR_STACKING_NOT_VAILABLE while trying to mine before the activation period ends", () => {
         // arrange
         const miner = accounts.get("wallet_2")!;
         const amountUstx = 200;
@@ -380,7 +380,7 @@ describe("[CityCoin Core]", () => {
           .expectUint(CoreModel.ErrCode.ERR_STACKING_NOT_AVAILABLE);
       });
 
-      it("succeeds and cause one stx_transfer_event to city-wallet during first cycle", () => {
+      it("succeeds and emits one stx_transfer event to city wallet during first cycle", () => {
         // arrange
         const cityWallet = accounts.get("city_wallet")!;
         const miner = accounts.get("wallet_2")!;
@@ -410,7 +410,7 @@ describe("[CityCoin Core]", () => {
         );
       });
 
-      it("succeeds and cause one stx_transfer event to city-wallet and one to stacker while mining in cycle with stackers", () => {
+      it("succeeds and emits one stx_transfer event to city wallet and one to stacker while mining in cycle with stackers", () => {
         // arrange
         const cityWallet = accounts.get("city_wallet")!;
         const miner = accounts.get("wallet_2")!;
@@ -492,7 +492,7 @@ describe("[CityCoin Core]", () => {
         assertEquals(receipt.events[0], expectedEvent);
       });
 
-      it("throws ERR_USER_ALREADY_MINED while trying to mine same block 2nd time", () => {
+      it("fails with ERR_USER_ALREADY_MINED while trying to mine same block 2nd time", () => {
         // arrange
         const miner = accounts.get("wallet_2")!;
         const amountUstx = 200;
@@ -521,7 +521,7 @@ describe("[CityCoin Core]", () => {
     });
 
     describe("mine-many()", () => {
-      it("throws ERR_CONTRACT_NOT_ACTIVATED while trying to mine before reaching activation threshold", () => {
+      it("fails with ERR_CONTRACT_NOT_ACTIVATED while trying to mine before reaching activation threshold", () => {
         // arrange
         const miner = accounts.get("wallet_2")!;
         const amounts = [1, 2, 3, 4];
@@ -536,7 +536,7 @@ describe("[CityCoin Core]", () => {
           .expectUint(CoreModel.ErrCode.ERR_CONTRACT_NOT_ACTIVATED);
       });
 
-      it("throws ERR_STACKING_NOT_AVAILABLE while trying to mine before activation period end", () => {
+      it("fails with ERR_STACKING_NOT_AVAILABLE while trying to mine before activation period ends", () => {
         // arrange
         const miner = accounts.get("wallet_1")!;
         const amounts = [1, 2, 3, 4];
@@ -556,7 +556,7 @@ describe("[CityCoin Core]", () => {
           .expectUint(CoreModel.ErrCode.ERR_STACKING_NOT_AVAILABLE);
       });
 
-      it("throws ERR_INSUFFICIENT_COMMITMENT while providing empty list of amounts", () => {
+      it("fails with ERR_INSUFFICIENT_COMMITMENT while providing empty list of amounts", () => {
         // arrange
         const miner = accounts.get("wallet_1")!;
         const amounts: number[] = [];
@@ -579,7 +579,7 @@ describe("[CityCoin Core]", () => {
           .expectUint(CoreModel.ErrCode.ERR_INSUFFICIENT_COMMITMENT);
       });
 
-      it("throws ERR_INSUFFICIENT_COMMITMENT while providing list of amounts filled with 0", () => {
+      it("fails with ERR_INSUFFICIENT_COMMITMENT while providing list of amounts filled with 0", () => {
         // arrange
         const miner = accounts.get("wallet_1")!;
         const amounts = [0, 0, 0, 0];
@@ -602,7 +602,7 @@ describe("[CityCoin Core]", () => {
           .expectUint(CoreModel.ErrCode.ERR_INSUFFICIENT_COMMITMENT);
       });
 
-      it("throws ERR_INSUFFICIENT_COMMITMENT while providing list of amounts with one or more 0s", () => {
+      it("fails with ERR_INSUFFICIENT_COMMITMENT while providing list of amounts with one or more 0s", () => {
         // arrange
         const miner = accounts.get("wallet_1")!;
         const amounts = [1, 2, 3, 4, 0, 5, 6, 7];
@@ -625,7 +625,7 @@ describe("[CityCoin Core]", () => {
           .expectUint(CoreModel.ErrCode.ERR_INSUFFICIENT_COMMITMENT);
       });
 
-      it("throws ERR_INSUFFICIENT_BALANCE when sum of all commitments > miner balance", () => {
+      it("fails with ERR_INSUFFICIENT_BALANCE when sum of all commitments > miner balance", () => {
         // arrange
         const miner = accounts.get("wallet_1")!;
         const amounts = [1, miner.balance];
@@ -648,7 +648,7 @@ describe("[CityCoin Core]", () => {
           .expectUint(CoreModel.ErrCode.ERR_INSUFFICIENT_BALANCE);
       });
 
-      it("throws ERR_USER_ALREADY_MINED when call overlaps already mined blocks", () => {
+      it("fails with ERR_USER_ALREADY_MINED when call overlaps already mined blocks", () => {
         // arrange
         const miner = accounts.get("wallet_1")!;
         const amounts = [1, 2];
@@ -672,7 +672,7 @@ describe("[CityCoin Core]", () => {
           .expectUint(CoreModel.ErrCode.ERR_USER_ALREADY_MINED);
       });
 
-      it("succeeds and cause one STX transfer event when amounts list have only one value and there are no stackers", () => {
+      it("succeeds and emits one stx_transfer event when amounts list has only one value and there are no stackers", () => {
         // arrange
         const miner = accounts.get("wallet_1")!;
         const amounts = [1];
@@ -702,7 +702,7 @@ describe("[CityCoin Core]", () => {
         );
       });
 
-      it("succeeds and cause one STX transfer event when amounts list have multiple values and there are no stackers", () => {
+      it("succeeds and emits one stx_transfer event when amounts list has multiple values and there are no stackers", () => {
         // arrange
         const miner = accounts.get("wallet_1")!;
         const amounts = [1, 2, 200, 89, 3423];
@@ -732,7 +732,7 @@ describe("[CityCoin Core]", () => {
         );
       });
 
-      it("succeeds and cause 2 stx transfers when amounts list have only one value and there is at least one stacker", () => {
+      it("succeeds and emits 2 stx_transfer events when amounts list has only one value and there is at least one stacker", () => {
         // arrange
         const miner = accounts.get("wallet_1")!;
         const amounts = [10000];
@@ -779,7 +779,7 @@ describe("[CityCoin Core]", () => {
         );
       });
 
-      it("succeeds and cause 2 stx transfers when amounts list have multiple values and there is at least one stacker", () => {
+      it("succeeds and emits 2 stx_transfer events when amounts list has multiple values and there is at least one stacker", () => {
         // arrange
         const miner = accounts.get("wallet_1")!;
         const amounts = [100, 200, 300];
@@ -826,7 +826,7 @@ describe("[CityCoin Core]", () => {
         );
       });
 
-      it("saves information that miner mined multiple consecutive blocks", () => {
+      it("succeeds and saves information that miner mined multiple consecutive blocks", () => {
         // arrange
         const miner = accounts.get("wallet_1")!;
         const amounts = [1, 2, 200, 89, 3423];
@@ -852,7 +852,7 @@ describe("[CityCoin Core]", () => {
         });
       });
 
-      it("prints tuple with firstBlock and lastBlock when mined only one block", () => {
+      it("succeeds and prints tuple with firstBlock and lastBlock when mining only one block", () => {
         const miner = accounts.get("wallet_6")!;
         const amounts = [123];
         const setupBlock = chain.mineBlock([
@@ -873,7 +873,7 @@ describe("[CityCoin Core]", () => {
         block.receipts[0].events.expectPrintEvent(core.address, expectedPrintMsg);
       });
 
-      it("prints tuple with firstBlock and lastBlock when mined multiple blocks", () => {
+      it("succeeds and prints tuple with firstBlock and lastBlock when mining multiple blocks", () => {
         const miner = accounts.get("wallet_6")!;
         const amounts = [1, 2, 5, 60];
         const setupBlock = chain.mineBlock([
@@ -902,7 +902,7 @@ describe("[CityCoin Core]", () => {
 
   describe("MINING REWARD CLAIM ACTIONS", () => {
     describe("claim-mining-reward()", () => {
-      it("throws ERR_USER_NOT_FOUND when called by non-registered user or user who didn't mine at all", () => {
+      it("fails with ERR_USER_NOT_FOUND when called by non-registered user or user who didn't mine at all", () => {
         // arrange
         const miner = accounts.get("wallet_2")!;
 
@@ -917,7 +917,7 @@ describe("[CityCoin Core]", () => {
           .expectUint(CoreModel.ErrCode.ERR_USER_ID_NOT_FOUND);
       });
 
-      it("throws ERR_NO_MINERS_AT_BLOCK when called with block-height at which nobody decided to mine", () => {
+      it("fails with ERR_NO_MINERS_AT_BLOCK when called with block height at which nobody decided to mine", () => {
         // arrange
         const miner = accounts.get("wallet_2")!;
         chain.mineBlock([])
@@ -937,7 +937,7 @@ describe("[CityCoin Core]", () => {
           .expectUint(CoreModel.ErrCode.ERR_NO_MINERS_AT_BLOCK);
       });
 
-      it("throws ERR_USER_DID_NOT_MINE_IN_BLOCK when called by user who didn't mine specific block", () => {
+      it("fails with ERR_USER_DID_NOT_MINE_IN_BLOCK when called by user who didn't mine specific block", () => {
         // arrange
         const otherMiner = accounts.get("wallet_4")!;
         const miner = accounts.get("wallet_2")!;
@@ -967,7 +967,7 @@ describe("[CityCoin Core]", () => {
           .expectUint(CoreModel.ErrCode.ERR_USER_DID_NOT_MINE_IN_BLOCK);
       });
 
-      it("throws ERR_CLAIMED_BEFORE_MATURITY when called before reward was mature to be claimed", () => {
+      it("fails with ERR_CLAIMED_BEFORE_MATURITY when called before maturity window passes", () => {
         // arrange
         const miner = accounts.get("wallet_2")!;
         const amount = 2000;
@@ -994,7 +994,7 @@ describe("[CityCoin Core]", () => {
           .expectUint(CoreModel.ErrCode.ERR_CLAIMED_BEFORE_MATURITY);
       });
 
-      it("throws ERR_REWARD_ALREADY_CLAIMED when trying to claim reward 2nd time", () => {
+      it("fails with ERR_REWARD_ALREADY_CLAIMED when trying to claim rewards a 2nd time", () => {
         // arrange
         const miner = accounts.get("wallet_2")!;
         const amount = 2000;
@@ -1023,7 +1023,7 @@ describe("[CityCoin Core]", () => {
           .expectUint(CoreModel.ErrCode.ERR_REWARD_ALREADY_CLAIMED);
       });
 
-      it("throws ERR_MINER_DID_NOT_WIN when trying to claim reward owed to someone else", () => {
+      it("fails with ERR_MINER_DID_NOT_WIN when trying to claim reward owed to someone else", () => {
         // arrange
         const miner = accounts.get("wallet_2")!;
         const otherMiner = accounts.get("wallet_3")!;
@@ -1307,7 +1307,7 @@ describe("[CityCoin Core]", () => {
     });
 
     describe("is-block-winner()", () => {
-      it("returns false when user is unknown", () => {
+      it("succeeds and returns false when user is unknown", () => {
         // arrange
         const user = accounts.get("wallet_1")!;
         const minerBlockHeight = 1;
@@ -1322,7 +1322,7 @@ describe("[CityCoin Core]", () => {
         result.expectBool(false);
       });
 
-      it("returns false when selected block has not been mined by anyone", () => {
+      it("succeeds and returns false when selected block has not been mined by anyone", () => {
         // arrange
         const user = accounts.get("wallet_1")!;
         const minerBlockHeight = 1;
@@ -1342,7 +1342,7 @@ describe("[CityCoin Core]", () => {
         result.expectBool(false);
       });
 
-      it("returns false when user didn't mine selected block", () => {
+      it("succeeds and returns false when user didn't mine selected block", () => {
         // arrange
         const user = accounts.get("wallet_1")!;
         const user2 = accounts.get("wallet_2")!;
@@ -1370,7 +1370,7 @@ describe("[CityCoin Core]", () => {
         result.expectBool(false);
       });
 
-      it("returns false when user mined selected block, but block is not mature", () => {
+      it("succeeds and returns false when user mined selected block, but maturity window has not passed", () => {
         // arrange
         const user = accounts.get("wallet_1")!;
         const setupBlock = chain.mineBlock([
@@ -1396,7 +1396,7 @@ describe("[CityCoin Core]", () => {
         result.expectBool(false);
       });
 
-      it("returns false when user mined selected block, but other user won it", () => {
+      it("succeeds and returns false when user mined selected block, but another user won it", () => {
         // arrange
         const user = accounts.get("wallet_1")!;
         const user2 = accounts.get("wallet_2")!;
@@ -1434,7 +1434,7 @@ describe("[CityCoin Core]", () => {
           .result.expectBool(true);
       });
 
-      it("returns true when user mined selected block and won it", () => {
+      it("succeeds and returns true when user mined selected block and won it", () => {
         // arrange
         const user = accounts.get("wallet_1")!;
         const user2 = accounts.get("wallet_2")!;
@@ -1471,7 +1471,7 @@ describe("[CityCoin Core]", () => {
     });
 
     describe("can-claim-mining-reward()", () => {
-      it("returns false when user is unknown", () => {
+      it("succeeds and returns false when user is unknown", () => {
         // arrange
         const user = accounts.get("wallet_1")!;
         const minerBlockHeight = 1;
@@ -1486,7 +1486,7 @@ describe("[CityCoin Core]", () => {
         result.expectBool(false);
       });
 
-      it("returns false when selected block has not been mined by anyone", () => {
+      it("succeeds and returns false when selected block has not been mined by anyone", () => {
         // arrange
         const user = accounts.get("wallet_1")!;
         const minerBlockHeight = 1;
@@ -1506,7 +1506,7 @@ describe("[CityCoin Core]", () => {
         result.expectBool(false);
       });
 
-      it("returns false when user didn't mine selected block", () => {
+      it("succeeds and returns false when user didn't mine selected block", () => {
         // arrange
         const user = accounts.get("wallet_1")!;
         const user2 = accounts.get("wallet_2")!;
@@ -1534,7 +1534,7 @@ describe("[CityCoin Core]", () => {
         result.expectBool(false);
       });
 
-      it("returns false when user mined selected block, but block is not mature", () => {
+      it("succeeds and returns false when user mined selected block, but maturity window has not passed", () => {
         // arrange
         const user = accounts.get("wallet_1")!;
         const setupBlock = chain.mineBlock([
@@ -1560,7 +1560,7 @@ describe("[CityCoin Core]", () => {
         result.expectBool(false);
       });
 
-      it("returns false when user mined selected block, but other user won it", () => {
+      it("succeeds and returns false when user mined selected block, but another user won it", () => {
         // arrange
         const user = accounts.get("wallet_1")!;
         const user2 = accounts.get("wallet_2")!;
@@ -1598,7 +1598,7 @@ describe("[CityCoin Core]", () => {
           .result.expectBool(true);
       });
 
-      it("returns false when user mined selected block, won it but already claimed the reward", () => {
+      it("succeeds and returns false when user mined selected block, won it, but already claimed the reward", () => {
         // arrange
         const user = accounts.get("wallet_1")!;
         const user2 = accounts.get("wallet_2")!;
@@ -1636,7 +1636,7 @@ describe("[CityCoin Core]", () => {
         result.expectBool(false);
       });
 
-      it("returns true when user mined selected block, won it and did not claim the reward yet", () => {
+      it("succeeds and returns true when user mined selected block, won it, and did not claim the reward yet", () => {
         // arrange
         const user = accounts.get("wallet_1")!;
         const user2 = accounts.get("wallet_2")!;
@@ -1685,7 +1685,7 @@ describe("[CityCoin Core]", () => {
 
   describe("STACKING ACTIONS", () => {
     describe("stack-tokens()", () => {
-      it("throws ERR_STACKING_NOT_AVAILABLE when stacking is not available", () => {
+      it("fails with ERR_STACKING_NOT_AVAILABLE when stacking is not available", () => {
         // arrange
         const stacker = accounts.get("wallet_2")!;
         const amountTokens = 200;
@@ -1703,7 +1703,7 @@ describe("[CityCoin Core]", () => {
           .expectUint(CoreModel.ErrCode.ERR_STACKING_NOT_AVAILABLE);
       });
 
-      it("throws ERR_CANNOT_STACK while trying to stack with lock period = 0", () => {
+      it("fails with ERR_CANNOT_STACK while trying to stack with lock period = 0", () => {
         // arrange
         const stacker = accounts.get("wallet_2")!;
         const amountTokens = 200;
@@ -1729,7 +1729,7 @@ describe("[CityCoin Core]", () => {
           .expectUint(CoreModel.ErrCode.ERR_CANNOT_STACK);
       });
 
-      it("throws ERR_CANNOT_STACK while trying to stack with lock period > 32", () => {
+      it("fails with ERR_CANNOT_STACK while trying to stack with lock period > 32", () => {
         // arrange
         const stacker = accounts.get("wallet_2")!;
         const amountTokens = 200;
@@ -1755,7 +1755,7 @@ describe("[CityCoin Core]", () => {
           .expectUint(CoreModel.ErrCode.ERR_CANNOT_STACK);
       });
 
-      it("throws ERR_CANNOT_STACK while trying to stack with amount tokens = 0", () => {
+      it("fails with ERR_CANNOT_STACK while trying to stack with 0 tokens", () => {
         // arrange
         const stacker = accounts.get("wallet_2")!;
         const amountTokens = 0;
@@ -1781,7 +1781,7 @@ describe("[CityCoin Core]", () => {
           .expectUint(CoreModel.ErrCode.ERR_CANNOT_STACK);
       });
 
-      it("throws ERR_FT_INSUFFICIENT_BALANCE while trying to stack with amount tokens > user balance", () => {
+      it("fails with ERR_FT_INSUFFICIENT_BALANCE while trying to stack with amount tokens > user balance", () => {
         // arrange
         const stacker = accounts.get("wallet_2")!;
         const amountTokens = 20;
@@ -1807,7 +1807,7 @@ describe("[CityCoin Core]", () => {
           .expectUint(CoreModel.ErrCode.ERR_FT_INSUFFICIENT_BALANCE);
       });
 
-      it("succeeds and cause one ft_transfer_event to core contract", () => {
+      it("succeeds and emits one ft_transfer event to core contract", () => {
         // arrange
         const stacker = accounts.get("wallet_2")!;
         const amountTokens = 20;
@@ -1880,7 +1880,7 @@ describe("[CityCoin Core]", () => {
         });
       });
 
-      it("remembers when tokens should be returned when locking period = 1", () => {
+      it("succeeds and returns correct number of tokens when locking period = 1", () => {
         // arrange
         const stacker = accounts.get("wallet_2")!;
         const amountTokens = 20;
@@ -1914,7 +1914,7 @@ describe("[CityCoin Core]", () => {
         });
       });
 
-      it("remembers when tokens should be returned when locking period > 1", () => {
+      it("succeeds and returns correct number of tokens when locking period > 1", () => {
         // arrange
         const stacker = accounts.get("wallet_2")!;
         const amountTokens = 20;
@@ -1950,7 +1950,7 @@ describe("[CityCoin Core]", () => {
         }
       });
 
-      it("remembers when tokens should be returned when stacking multiple times with different locking periods", () => {
+      it("succeeds and returns correct number of tokens when stacking multiple times with different locking periods", () => {
         // arrange
         const stacker = accounts.get("wallet_2")!;
         const userId = 1;
@@ -2046,7 +2046,7 @@ describe("[CityCoin Core]", () => {
         }
       });
 
-      it("prints tuple with firstCycle and lastCycle when stacked only in one cycle", () => {
+      it("succeeds and prints tuple with firstCycle and lastCycle when stacked only in one cycle", () => {
         // arrange
         const stacker = accounts.get("wallet_7")!;
         const amountTokens = 20;
@@ -2072,7 +2072,7 @@ describe("[CityCoin Core]", () => {
         receipt.events.expectPrintEvent(core.address, expectedPrintMsg);
       });
 
-      it("prints tuple with firstCycle and lastCycle when stacked in multiple cycles", () => {
+      it("succeeds and prints tuple with firstCycle and lastCycle when stacked in multiple cycles", () => {
         // arrange
         const stacker = accounts.get("wallet_7")!;
         const amountTokens = 20;
@@ -2106,7 +2106,7 @@ describe("[CityCoin Core]", () => {
 
   describe("STACKING REWARD CLAIMS", () => {
     describe("claim-stacking-reward()", () => {
-      it("throws ERR_STACKING_NOT_AVAILABLE when stacking is not yet available", () => {
+      it("fails with ERR_STACKING_NOT_AVAILABLE when stacking is not yet available", () => {
         // arrange
         const stacker = accounts.get("wallet_1")!;
         const targetCycle = 1;
@@ -2122,7 +2122,7 @@ describe("[CityCoin Core]", () => {
           .expectUint(CoreModel.ErrCode.ERR_STACKING_NOT_AVAILABLE);
       });
 
-      it("throws ERR_USER_ID_NOT_FOUND when called by unknown user", () => {
+      it("fails with ERR_USER_ID_NOT_FOUND when called by unknown user", () => {
         // arrange
         const stacker = accounts.get("wallet_1")!;
         const otherUser = accounts.get("wallet_2")!;
@@ -2147,7 +2147,7 @@ describe("[CityCoin Core]", () => {
           .expectUint(CoreModel.ErrCode.ERR_USER_ID_NOT_FOUND);
       });
 
-      it("throws ERR_REWARD_CYCLE_NOT_COMPLETED when reward cycle is not completed", () => {
+      it("fails with ERR_REWARD_CYCLE_NOT_COMPLETED when reward cycle is not completed", () => {
         // arrange
         const stacker = accounts.get("wallet_1")!;
         const targetCycle = 1;
@@ -2171,7 +2171,7 @@ describe("[CityCoin Core]", () => {
           .expectUint(CoreModel.ErrCode.ERR_REWARD_CYCLE_NOT_COMPLETED);
       });
 
-      it("throws ERR_NOTHING_TO_REDEEM when stacker didn't stack at all", () => {
+      it("fails with ERR_NOTHING_TO_REDEEM when stacker didn't stack at all", () => {
         // arrange
         const stacker = accounts.get("wallet_1")!;
         const targetCycle = 1;
@@ -2198,7 +2198,7 @@ describe("[CityCoin Core]", () => {
           .expectUint(CoreModel.ErrCode.ERR_NOTHING_TO_REDEEM);
       });
 
-      it("throws ERR_NOTHING_TO_REDEEM when stacker stacked in a cycle but miners did not mine", () => {
+      it("fails with ERR_NOTHING_TO_REDEEM when stacker stacked in a cycle but miners did not mine", () => {
         // arrange
         const stacker = accounts.get("wallet_1")!;
         const targetCycle = 1;
@@ -2226,7 +2226,7 @@ describe("[CityCoin Core]", () => {
           .expectUint(CoreModel.ErrCode.ERR_NOTHING_TO_REDEEM);
       });
 
-      it("throws ERR_NOTHING_TO_REDEEM while trying to claim reward 2nd time", () => {
+      it("fails with ERR_NOTHING_TO_REDEEM while trying to claim reward 2nd time", () => {
         // arrange
         const stacker = accounts.get("wallet_1")!;
         const targetCycle = 1;
@@ -2255,7 +2255,7 @@ describe("[CityCoin Core]", () => {
           .expectUint(CoreModel.ErrCode.ERR_NOTHING_TO_REDEEM);
       });
 
-      it("succeeds and cause stx_transfer and ft_transfer events", () => {
+      it("succeeds and emits stx_transfer and ft_transfer events", () => {
         // arrange
         const miner = accounts.get("wallet_1")!;
         const amountUstx = 1000;
@@ -2299,7 +2299,7 @@ describe("[CityCoin Core]", () => {
         );
       });
 
-      it("succeeds and cause only ft_transfer event when there was no STX reward (ie. due to no miners)", () => {
+      it("succeeds and emits only a ft_transfer event when there was no STX reward (ie. due to no miners)", () => {
         // arrange
         const stacker = accounts.get("wallet_1")!;
         const amountTokens = 20;
@@ -2334,7 +2334,7 @@ describe("[CityCoin Core]", () => {
         );
       });
 
-      it("succeeds and release tokens only for last cycle in locked period", () => {
+      it("succeeds and returns tokens only for last cycle in locked period", () => {
         // arrange
         const stacker = accounts.get("wallet_2")!;
         const userId = 1;
