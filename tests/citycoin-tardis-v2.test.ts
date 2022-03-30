@@ -168,7 +168,7 @@ describe("[CityCoin Tardis]", () => {
           amountUstx: types.uint(0)
         }
         // assert
-        assertEquals(result.expectOk().expectTuple(), expectedStats);
+        assertEquals(result.expectSome().expectTuple(), expectedStats);
       });
       it("succeeds and returns the CityCoin stacking statistics at a prior block height", () => {
         // arrange
@@ -211,8 +211,8 @@ describe("[CityCoin Tardis]", () => {
         }
 
         // assert
-        assertEquals(result1.expectOk().expectTuple(), expectedStats1);
-        assertEquals(result2.expectOk().expectTuple(), expectedStats2);
+        assertEquals(result1.expectSome().expectTuple(), expectedStats1);
+        assertEquals(result2.expectSome().expectTuple(), expectedStats2);
       });
     });
 
@@ -318,7 +318,7 @@ describe("[CityCoin Tardis]", () => {
           toReturn: types.uint(0)
         }
         // assert
-        assertEquals(result.expectOk().expectTuple(), expectedStats);
+        assertEquals(result.expectSome().expectTuple(), expectedStats);
       });
       it("succeeds and returns the CityCoin stacker statistics for a user at a prior block height", () => {
         // arrange
@@ -361,8 +361,8 @@ describe("[CityCoin Tardis]", () => {
         }
 
         // assert
-        assertEquals(result1.expectOk().expectTuple(), expectedStats1);
-        assertEquals(result2.expectOk().expectTuple(), expectedStats2);
+        assertEquals(result1.expectSome().expectTuple(), expectedStats1);
+        assertEquals(result2.expectSome().expectTuple(), expectedStats2);
       });
     });
   });
