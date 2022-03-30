@@ -20,7 +20,7 @@
 ;; get-balance MIA
 ;; Mainnet: SP466FNC0P7JWTNM2R9T199QRZN1MYEDTAR0KP27.miamicoin-token
 
-(define-read-only (get-historical-balance-mia (blockHeight uint) (address principal))
+(define-read-only (get-historical-balance (blockHeight uint) (address principal))
   (let 
     (
       (blockHash (unwrap! (get-block-hash blockHeight) (err ERR_INVALID_BLOCK)))
@@ -36,7 +36,7 @@
 ;; get-total-supply MIA
 ;; Mainnet: SP466FNC0P7JWTNM2R9T199QRZN1MYEDTAR0KP27.miamicoin-token
 
-(define-read-only (get-historical-supply-mia (blockHeight uint))
+(define-read-only (get-historical-supply (blockHeight uint))
   (let 
     (
       (blockHash (unwrap! (get-block-hash blockHeight) (err ERR_INVALID_BLOCK)))
@@ -52,7 +52,7 @@
 ;; get-stacking-stats-at-cycle MIA
 ;; Mainnet: SP466FNC0P7JWTNM2R9T199QRZN1MYEDTAR0KP27.miamicoin-core-v1
 
-(define-read-only (get-historical-stacking-stats-mia (blockHeight uint))
+(define-read-only (get-historical-stacking-stats (blockHeight uint))
   (let 
     (
       (blockHash (unwrap! (get-block-hash blockHeight) (err ERR_INVALID_BLOCK)))
@@ -69,7 +69,7 @@
 ;; get-stacker-at-cycle MIA
 ;; Mainnet: SP466FNC0P7JWTNM2R9T199QRZN1MYEDTAR0KP27.miamicoin-core-v1
 
-(define-read-only (get-historical-stacker-stats-mia (blockHeight uint) (address principal))
+(define-read-only (get-historical-stacker-stats (blockHeight uint) (address principal))
   (let 
     (
       (blockHash (unwrap! (get-block-hash blockHeight) (err ERR_INVALID_BLOCK)))

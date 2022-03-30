@@ -33,6 +33,10 @@ depends_on = ["citycoin-core-v1"]
 path = "contracts/clarinet/citycoin-tardis-v1.clar"
 depends_on = ["citycoin-core-v1"]
 
+[contracts.citycoin-tardis-v2]
+path = "contracts/clarinet/citycoin-tardis-v2.clar"
+depends_on = ["citycoin-core-v1"]
+
 # contracts listed below are used only in test suite
 
 [contracts.citycoin-core-v2]

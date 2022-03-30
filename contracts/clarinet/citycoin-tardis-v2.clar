@@ -1,7 +1,10 @@
-;; CityCoins Tardis v1
+;; CityCoins Tardis v2
 ;; A way to view historical information about MIA/NYC
 ;; to work around the API not accepting tip parameters
 ;; for specific contract functions.
+;;
+;; This version includes functions to return the default
+;; values if not found instead of generating an error.
 
 ;; ERRORS
 
@@ -63,6 +66,17 @@
   )
 )
 
+(define-read-only (get-historical-stacking-stats-or-default (blockHeight uint))
+  (let 
+    (
+      (blockHash (unwrap! (get-block-hash blockHeight) (err ERR_INVALID_BLOCK)))
+      (cycleId (unwrap! (contract-call? .citycoin-core-v1 get-reward-cycle blockHeight) (err ERR_CYCLE_NOT_FOUND)))
+      (stats (at-block blockHash (contract-call? .citycoin-core-v1 get-stacking-stats-at-cycle-or-default cycleId)))
+    )
+    (ok stats)
+  )
+)
+
 ;; get-stacking-stats-at-cycle NYC
 ;; Mainnet: SP2H8PY27SEZ03MWRKS5XABZYQN17ETGQS3527SA5.newyorkcitycoin-core-v1
 
@@ -76,6 +90,18 @@
       (userId (unwrap! (contract-call? .citycoin-core-v1 get-user-id address) (err ERR_USER_NOT_FOUND)))
       (cycleId (unwrap! (contract-call? .citycoin-core-v1 get-reward-cycle blockHeight) (err ERR_CYCLE_NOT_FOUND)))
       (stacker (unwrap! (at-block blockHash (contract-call? .citycoin-core-v1 get-stacker-at-cycle cycleId userId)) (err ERR_CYCLE_NOT_FOUND)))
+    )
+    (ok stacker)
+  )
+)
+
+(define-read-only (get-historical-stacker-stats-or-default (blockHeight uint) (address principal))
+  (let 
+    (
+      (blockHash (unwrap! (get-block-hash blockHeight) (err ERR_INVALID_BLOCK)))
+      (userId (unwrap! (contract-call? .citycoin-core-v1 get-user-id address) (err ERR_USER_NOT_FOUND)))
+      (cycleId (unwrap! (contract-call? .citycoin-core-v1 get-reward-cycle blockHeight) (err ERR_CYCLE_NOT_FOUND)))
+      (stacker (at-block blockHash (contract-call? .citycoin-core-v1 get-stacker-at-cycle-or-default cycleId userId)))
     )
     (ok stacker)
   )
