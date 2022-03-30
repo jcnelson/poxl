@@ -35,8 +35,8 @@
 ;; CONSTANTS
 
 ;; TODO: update block heights
-(define-constant VOTE_START_BLOCK u6500)
-(define-constant VOTE_END_BLOCK u8500) ;; test voting period: 2000 blocks
+(define-constant VOTE_START_BLOCK u8500)
+(define-constant VOTE_END_BLOCK u10600) ;; test voting period: 2100 blocks
 (define-constant VOTE_PROPOSAL_ID u0)
 (define-constant VOTE_SCALE_FACTOR (pow u10 u16)) ;; 16 decimal places
 
@@ -217,17 +217,14 @@
   ;; returns (some uint) or (none)
   (let
     (
-      (userIdMia (default-to u0 (contract-call? .citycoin-core-v1 get-user-id user)))
-      ;; TODO: update to mainnet cycles
-      (userCycle12 (contract-call? .citycoin-core-v1 get-stacker-at-cycle-or-default u2 userIdMia))
+      ;; TODO: update to mainnet block heights
+      (userCycle12 (try! (contract-call? .citycoin-tardis-v2 get-historical-stacker-stats-or-default u4500 user)))
       (stackedCycle12 (get amountStacked userCycle12))
-      (userCycle13 (contract-call? .citycoin-core-v1 get-stacker-at-cycle-or-default u3 userIdMia))
+      (userCycle13 (try! (contract-call? .citycoin-tardis-v2 get-historical-stacker-stats-or-default u6600 user)))
       (stackedCycle13 (get amountStacked userCycle13))
       (avgStackedMia (/ (+ (scale-up stackedCycle12) (scale-up stackedCycle13)) u2))
       (scaledMiaVote (/ (* avgStackedMia MIA_SCALE_FACTOR) MIA_SCALE_BASE))
     )
-    ;; check if user was found
-    (asserts! (> userIdMia u0) none)
     ;; check if there is a positive value
     (asserts! (or (>= stackedCycle12 u0) (>= stackedCycle13 u0)) none)
     ;; return the value
@@ -240,16 +237,13 @@
   ;; returns (some uint) or (none)
   (let
     (
-      (userIdNyc (default-to u0 (contract-call? .citycoin-core-v1 get-user-id user)))
-      ;; TODO: update to mainnet cycles
-      (userCycle6 (contract-call? .citycoin-core-v1 get-stacker-at-cycle-or-default u2 userIdNyc))
+      ;; TODO: update to mainnet block heights
+      (userCycle6 (try! (contract-call? .citycoin-tardis-v2 get-historical-stacker-stats-or-default u4500 user)))
       (stackedCycle6 (get amountStacked userCycle6))
-      (userCycle7 (contract-call? .citycoin-core-v1 get-stacker-at-cycle-or-default u3 userIdNyc))
+      (userCycle7 (try! (contract-call? .citycoin-tardis-v2 get-historical-stacker-stats-or-default u6600 user)))
       (stackedCycle7 (get amountStacked userCycle7))
       (nycVote (/ (+ (scale-up stackedCycle6) (scale-up stackedCycle7)) u2))
     )
-    ;; check if user was found
-    (asserts! (> userIdNyc u0) none)
     ;; check if there is a positive value
     (asserts! (or (>= stackedCycle6 u0) (>= stackedCycle7 u0)) none)
     ;; return the value

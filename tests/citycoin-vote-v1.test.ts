@@ -78,11 +78,11 @@ describe("[CityCoin Vote]", () => {
   
         // stack in cycles 2-3
         chain.mineEmptyBlock(CoreModel.REWARD_CYCLE_LENGTH);
-        chain.mineBlock([
+        const stack1 = chain.mineBlock([
           core.stackTokens(amountCycle1, lockPeriod, wallet),
         ]);
         chain.mineEmptyBlock(CoreModel.REWARD_CYCLE_LENGTH);
-        chain.mineBlock([
+        const stack2 = chain.mineBlock([
           core.stackTokens(amountCycle2, lockPeriod, wallet),
         ]);
         chain.mineEmptyBlock(CoreModel.REWARD_CYCLE_LENGTH);
