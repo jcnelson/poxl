@@ -122,7 +122,7 @@
 
 (define-public (initialize-contract (startHeight uint) (endHeight uint))
   (begin
-    (asserts! (not (var-get initialized)) ERR_UNAUTHORIZED)
+    (asserts! (not (is-initialized)) ERR_UNAUTHORIZED)
     (asserts! (is-deployer) ERR_UNAUTHORIZED)
     (asserts! (and
       (< block-height startHeight)
@@ -147,7 +147,7 @@
       (proposalRecord (unwrap! (get-proposal-votes) ERR_PROPOSAL_NOT_FOUND))
     )
     ;; assert proposal is active
-    (asserts! (var-get initialized) ERR_UNAUTHORIZED)
+    (asserts! (is-initialized) ERR_UNAUTHORIZED)
     (asserts! (and 
       (>= block-height (var-get voteStartBlock))
       (<= block-height (var-get voteEndBlock)))
@@ -279,9 +279,13 @@
 
 ;; GETTERS
 
+(define-read-only (is-initialized)
+  (var-get initialized)
+)
+
 (define-read-only (get-vote-blocks)
   (begin
-    (asserts! (var-get initialized) ERR_CONTRACT_NOT_INITIALIZED)
+    (asserts! (is-initialized) ERR_CONTRACT_NOT_INITIALIZED)
     (ok {
       startBlock: (var-get voteStartBlock),
       endBlock: (var-get voteEndBlock)
@@ -291,14 +295,14 @@
 
 (define-read-only (get-vote-start-block)
   (begin
-    (asserts! (var-get initialized) ERR_CONTRACT_NOT_INITIALIZED)
+    (asserts! (is-initialized) ERR_CONTRACT_NOT_INITIALIZED)
     (ok (var-get voteStartBlock))
   )
 )
 
 (define-read-only (get-vote-end-block)
   (begin
-    (asserts! (var-get initialized) ERR_CONTRACT_NOT_INITIALIZED)
+    (asserts! (is-initialized) ERR_CONTRACT_NOT_INITIALIZED)
     (ok (var-get voteEndBlock))
   )
 )

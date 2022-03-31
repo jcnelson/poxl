@@ -822,8 +822,6 @@ describe("[CityCoin Vote]", () => {
       });
     });
   })
-  
-
 });
 
 run();
