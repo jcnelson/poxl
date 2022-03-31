@@ -98,6 +98,12 @@ describe("[CityCoin Vote]", () => {
       it("fails with ERR_PROPOSAL_NOT_ACTIVE when called before proposal is active", () => {
         // arrange
         const wallet = accounts.get("wallet_1")!;
+        const deployer = accounts.get("deployer")!;
+        const startHeight = 8500;
+        const endHeight = 10600;
+        chain.mineBlock([
+          vote.initializeContract(startHeight, endHeight, deployer)
+        ]);
         // act
         const receipt = chain.mineBlock([
           vote.voteOnProposal(true, wallet)
@@ -108,6 +114,12 @@ describe("[CityCoin Vote]", () => {
       it("fails with ERR_PROPOSAL_NOT_ACTIVE when called after proposal is active", () => {
         // arrange
         const wallet = accounts.get("wallet_1")!;
+        const deployer = accounts.get("deployer")!;
+        const startHeight = 8500;
+        const endHeight = 10600;
+        chain.mineBlock([
+          vote.initializeContract(startHeight, endHeight, deployer)
+        ]);
         chain.mineEmptyBlock(VoteModel.VOTE_START_BLOCK + VoteModel.VOTE_END_BLOCK + 1);
         // act
         const receipt = chain.mineBlock([
@@ -119,6 +131,12 @@ describe("[CityCoin Vote]", () => {
       it("fails with ERR_NOTHING_STACKED when sender has no stacked tokens", () => {
         // arrange
         const wallet = accounts.get("wallet_1")!;
+        const deployer = accounts.get("deployer")!;
+        const startHeight = 8500;
+        const endHeight = 10600;
+        chain.mineBlock([
+          vote.initializeContract(startHeight, endHeight, deployer)
+        ]);
         chain.mineEmptyBlock(VoteModel.VOTE_START_BLOCK + 1);
         // act
         const receipt = chain.mineBlock([
@@ -147,6 +165,14 @@ describe("[CityCoin Vote]", () => {
         const activationBlockHeight =
           block.height + CoreModel.ACTIVATION_DELAY - 1;
         chain.mineEmptyBlockUntil(activationBlockHeight);
+
+        // initialize the vote contract
+        const deployer = accounts.get("deployer")!;
+        const startHeight = 8500;
+        const endHeight = 10600;
+        chain.mineBlock([
+          vote.initializeContract(startHeight, endHeight, deployer)
+        ]);
   
         // stack in cycles 2-3
         chain.mineEmptyBlock(CoreModel.REWARD_CYCLE_LENGTH);
@@ -218,6 +244,14 @@ describe("[CityCoin Vote]", () => {
         const activationBlockHeight =
           setupBlock.height + CoreModel.ACTIVATION_DELAY - 1;
         chain.mineEmptyBlockUntil(activationBlockHeight);
+
+        // initialize the vote contract
+        const deployer = accounts.get("deployer")!;
+        const startHeight = 8500;
+        const endHeight = 10600;
+        chain.mineBlock([
+          vote.initializeContract(startHeight, endHeight, deployer)
+        ]);
   
         // stack in cycles 2-3
         chain.mineEmptyBlock(CoreModel.REWARD_CYCLE_LENGTH);
@@ -310,6 +344,14 @@ describe("[CityCoin Vote]", () => {
         const activationBlockHeight =
           block.height + CoreModel.ACTIVATION_DELAY - 1;
         chain.mineEmptyBlockUntil(activationBlockHeight);
+
+        // initialize the vote contract
+        const deployer = accounts.get("deployer")!;
+        const startHeight = 8500;
+        const endHeight = 10600;
+        chain.mineBlock([
+          vote.initializeContract(startHeight, endHeight, deployer)
+        ]);
   
         // stack in cycles 2-3
         chain.mineEmptyBlock(CoreModel.REWARD_CYCLE_LENGTH);
@@ -359,6 +401,14 @@ describe("[CityCoin Vote]", () => {
         const activationBlockHeight =
           block.height + CoreModel.ACTIVATION_DELAY - 1;
         chain.mineEmptyBlockUntil(activationBlockHeight);
+
+        // initialize the vote contract
+        const deployer = accounts.get("deployer")!;
+        const startHeight = 8500;
+        const endHeight = 10600;
+        chain.mineBlock([
+          vote.initializeContract(startHeight, endHeight, deployer)
+        ]);
   
         // stack in cycles 2-3
         chain.mineEmptyBlock(CoreModel.REWARD_CYCLE_LENGTH);
@@ -438,6 +488,14 @@ describe("[CityCoin Vote]", () => {
         const activationBlockHeight =
           setupBlock.height + CoreModel.ACTIVATION_DELAY - 1;
         chain.mineEmptyBlockUntil(activationBlockHeight);
+
+        // initialize the vote contract
+        const deployer = accounts.get("deployer")!;
+        const startHeight = 8500;
+        const endHeight = 10600;
+        chain.mineBlock([
+          vote.initializeContract(startHeight, endHeight, deployer)
+        ]);
   
         // stack in cycles 2-3
         chain.mineEmptyBlock(CoreModel.REWARD_CYCLE_LENGTH);
@@ -528,20 +586,40 @@ describe("[CityCoin Vote]", () => {
 
   describe("VOTE INFO", () => {
     describe("get-vote-start-block()", () => {
-      it("succeeds and returns the starting Stacks block for the vote", () => {
-        // arrange
+      it("fails with ERR_CONTRACT_NOT_INITIALIZED if called before contract is initialized", () => {
+        // act
         const result = vote.getVoteStartBlock().result;
         // assert
-        result.expectUint(VoteModel.VOTE_START_BLOCK);
+        result.expectErr().expectUint(VoteModel.ErrCode.ERR_CONTRACT_NOT_INITIALIZED);
+      })
+      it("succeeds and returns the starting Stacks block for the vote", () => {
+        // arrange
+        const deployer = accounts.get("deployer")!;
+        const startHeight = 8500;
+        const endHeight = 10600;
+        chain.mineBlock([
+          vote.initializeContract(startHeight, endHeight, deployer)
+        ]);
+        // act
+        const result = vote.getVoteStartBlock().result;
+        // assert
+        result.expectOk().expectUint(VoteModel.VOTE_START_BLOCK);
       });
     });
 
     describe("get-vote-end-block()", () => {
       it("succeeds and returns the ending Stacks block for the vote", () => {
         // arrange
+        const deployer = accounts.get("deployer")!;
+        const startHeight = 8500;
+        const endHeight = 10600;
+        chain.mineBlock([
+          vote.initializeContract(startHeight, endHeight, deployer)
+        ]);
+        // act
         const result = vote.getVoteEndBlock().result;
         // assert
-        result.expectUint(VoteModel.VOTE_END_BLOCK);
+        result.expectOk().expectUint(VoteModel.VOTE_END_BLOCK);
       });
     });
 
@@ -549,6 +627,7 @@ describe("[CityCoin Vote]", () => {
       it("succeeds and returns u0 if voter ID is not found", () => {
         // arrange
         const wallet = accounts.get("wallet_1")!;
+        // act
         const result = vote.getVoteAmount(wallet).result;
         // assert
         result.expectUint(0);
@@ -588,13 +667,6 @@ describe("[CityCoin Vote]", () => {
         chain.mineEmptyBlockUntil(VoteModel.VOTE_START_BLOCK + 1);
 
         // act
-        
-        // vote yes
-        chain.mineBlock([
-          vote.voteOnProposal(true, wallet)
-        ]);
-
-        // get vote amount
         const result = vote.getVoteAmount(wallet).result;
 
         // assert
@@ -652,6 +724,14 @@ describe("[CityCoin Vote]", () => {
         const activationBlockHeight =
           block.height + CoreModel.ACTIVATION_DELAY - 1;
         chain.mineEmptyBlockUntil(activationBlockHeight);
+
+        // initialize the vote contract
+        const deployer = accounts.get("deployer")!;
+        const startHeight = 8500;
+        const endHeight = 10600;
+        chain.mineBlock([
+          vote.initializeContract(startHeight, endHeight, deployer)
+        ]);
   
         // stack in cycles 2-3
         chain.mineEmptyBlock(CoreModel.REWARD_CYCLE_LENGTH);
@@ -699,6 +779,14 @@ describe("[CityCoin Vote]", () => {
         const activationBlockHeight =
           block.height + CoreModel.ACTIVATION_DELAY - 1;
         chain.mineEmptyBlockUntil(activationBlockHeight);
+
+        // initialize the vote contract
+        const deployer = accounts.get("deployer")!;
+        const startHeight = 8500;
+        const endHeight = 10600;
+        chain.mineBlock([
+          vote.initializeContract(startHeight, endHeight, deployer)
+        ]);
   
         // stack in cycles 2-3
         chain.mineEmptyBlock(CoreModel.REWARD_CYCLE_LENGTH);

@@ -17,10 +17,6 @@
 ;; CONSTANTS
 
 (define-constant DEPLOYER tx-sender)
-
-;; TODO: update block heights
-(define-constant VOTE_START_BLOCK u8500)
-(define-constant VOTE_END_BLOCK u10600) ;; test voting period: 2100 blocks
 (define-constant VOTE_PROPOSAL_ID u0)
 (define-constant VOTE_SCALE_FACTOR (pow u10 u16)) ;; 16 decimal places
 
@@ -33,7 +29,7 @@
 
 (define-data-var initialized bool false)
 (define-data-var voteStartBlock uint u0) ;; u8500 used in tests
-(define-data-var voteEndlock uint u0)    ;; u10600 used in tests
+(define-data-var voteEndBlock uint u0)   ;; u10600 used in tests
 
 ;; PROPOSALS
 
@@ -134,7 +130,7 @@
       ERR_UNAUTHORIZED
     )
     (var-set voteStartBlock startHeight)
-    (var-set voteEndlock endHeight)
+    (var-set voteEndBlock endHeight)
     (var-set initialized true)
     (ok true)
   )
@@ -151,9 +147,10 @@
       (proposalRecord (unwrap! (get-proposal-votes) ERR_PROPOSAL_NOT_FOUND))
     )
     ;; assert proposal is active
+    (asserts! (var-get initialized) ERR_UNAUTHORIZED)
     (asserts! (and 
-      (>= block-height VOTE_START_BLOCK)
-      (<= block-height VOTE_END_BLOCK))
+      (>= block-height (var-get voteStartBlock))
+      (<= block-height (var-get voteEndBlock)))
       ERR_PROPOSAL_NOT_ACTIVE)
     ;; determine if vote record exists already
     (match voterRecord record
@@ -216,8 +213,7 @@
         })
         ;; update the proposal record
         (if vote
-          (map-set ProposalVotes
-            VOTE_PROPOSAL_ID
+          (map-set ProposalVotes VOTE_PROPOSAL_ID
             (merge proposalRecord {
               yesCount: (+ (get yesCount proposalRecord) u1),
               yesMia: (+ (get yesMia proposalRecord) voteMia),
@@ -225,8 +221,7 @@
               yesTotal: (+ (get yesTotal proposalRecord) voteTotal),
             })
           )
-          (map-set ProposalVotes
-            VOTE_PROPOSAL_ID
+          (map-set ProposalVotes VOTE_PROPOSAL_ID
             (merge proposalRecord {
               noCount: (+ (get noCount proposalRecord) u1),
               noMia: (+ (get noMia proposalRecord) voteMia),
@@ -237,7 +232,8 @@
         )
       )
     )
-    ;; TODO: print all information
+    (print (map-get? ProposalVotes VOTE_PROPOSAL_ID))
+    (print (map-get? Votes voterId))
     (ok true)
   )
 )
@@ -283,12 +279,28 @@
 
 ;; GETTERS
 
+(define-read-only (get-vote-blocks)
+  (begin
+    (asserts! (var-get initialized) ERR_CONTRACT_NOT_INITIALIZED)
+    (ok {
+      startBlock: (var-get voteStartBlock),
+      endBlock: (var-get voteEndBlock)
+    })
+  )
+)
+
 (define-read-only (get-vote-start-block)
-  VOTE_START_BLOCK
+  (begin
+    (asserts! (var-get initialized) ERR_CONTRACT_NOT_INITIALIZED)
+    (ok (var-get voteStartBlock))
+  )
 )
 
 (define-read-only (get-vote-end-block)
-  VOTE_END_BLOCK
+  (begin
+    (asserts! (var-get initialized) ERR_CONTRACT_NOT_INITIALIZED)
+    (ok (var-get voteEndBlock))
+  )
 )
 
 (define-read-only (get-vote-amount (voter principal))
