@@ -253,6 +253,14 @@
 
 ;; GETTERS
 
+(define-read-only (get-vote-start-block)
+  VOTE_START_BLOCK
+)
+
+(define-read-only (get-vote-end-block)
+  VOTE_END_BLOCK
+)
+
 (define-read-only (get-vote-amount (voter principal))
   (let
     (

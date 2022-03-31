@@ -452,7 +452,27 @@ describe("[CityCoin Vote]", () => {
         assertEquals(voterRecord_3.expectOk().expectTuple(), expectedVoterRecord_3);
       });
     });
-    
+  });
+
+  describe("VOTE INFO", () => {
+    describe("get-vote-start-block()", () => {
+      it("succeeds and returns the starting Stacks block for the vote", () => {
+        // arrange
+        const result = vote.getVoteStartBlock().result;
+        // assert
+        result.expectUint(VoteModel.VOTE_START_BLOCK);
+      });
+    });
+
+    describe("get-vote-end-block()", () => {
+      it("succeeds and returns the ending Stacks block for the vote", () => {
+        // arrange
+        const result = vote.getVoteEndBlock().result;
+        // assert
+        result.expectUint(VoteModel.VOTE_END_BLOCK);
+      });
+    });
+
     describe("get-vote-amount()", () => {
       it("succeeds and returns u0 if voter ID is not found", () => {
         // arrange

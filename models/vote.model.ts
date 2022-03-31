@@ -27,6 +27,14 @@ export class VoteModel extends Model {
     );
   }
 
+  getVoteStartBlock(): ReadOnlyFn {
+    return this.callReadOnly("get-vote-start-block");
+  }
+
+  getVoteEndBlock(): ReadOnlyFn {
+    return this.callReadOnly("get-vote-end-block");
+  }
+
   getVoteAmount(voter: Account): ReadOnlyFn {
     return this.callReadOnly("get-vote-amount", [types.principal(voter.address)]);
   }
