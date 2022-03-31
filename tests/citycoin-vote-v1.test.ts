@@ -22,6 +22,78 @@ beforeEach(() => {
 
 describe("[CityCoin Vote]", () => {
   describe("VOTE ACTIONS", () => {
+    describe("intialize-contract()", () => {
+      it("fails with ERR_UNAUTHORIZED if the contract is already initialized", () => {
+        // arrange
+        const wallet = accounts.get("deployer")!;
+        const startHeight = 8500;
+        const endHeight = 10600;
+        // act
+        chain.mineBlock([
+          vote.initializeContract(startHeight, endHeight, wallet)
+        ]);
+        const receipt = chain.mineBlock([
+          vote.initializeContract(startHeight, endHeight, wallet)
+        ]).receipts[0];
+        // assert
+        receipt.result.expectErr().expectUint(VoteModel.ErrCode.ERR_UNAUTHORIZED);
+      });
+      it("fails with ERR_UNAUTHORIZED if the sender is not the deployer", () => {
+        // arrange
+        const wallet = accounts.get("wallet_1")!;
+        const startHeight = 8500;
+        const endHeight = 10600;
+        // act
+        const receipt = chain.mineBlock([
+          vote.initializeContract(startHeight, endHeight, wallet)
+        ]).receipts[0];
+        // assert
+        receipt.result.expectErr().expectUint(VoteModel.ErrCode.ERR_UNAUTHORIZED);
+      });
+      it("fails with ERR_UNAUTHORIZED if the start height is before the current height", () => {
+        // arrange
+        const wallet = accounts.get("deployer")!;
+        const startHeight = 8500;
+        const endHeight = 10600;
+        // act
+        chain.mineEmptyBlockUntil(startHeight + 1);
+        chain.mineBlock([
+          vote.initializeContract(startHeight, endHeight, wallet)
+        ]);
+        const receipt = chain.mineBlock([
+          vote.initializeContract(startHeight, endHeight, wallet)
+        ]).receipts[0];
+        // assert
+        receipt.result.expectErr().expectUint(VoteModel.ErrCode.ERR_UNAUTHORIZED);
+      });
+      it("fails with ERR_UNAUTHORIZED if the end height is before the start height", () => {
+        // arrange
+        const wallet = accounts.get("deployer")!;
+        const startHeight = 8500;
+        const endHeight = 8400;
+        // act
+        chain.mineBlock([
+          vote.initializeContract(startHeight, endHeight, wallet)
+        ]);
+        const receipt = chain.mineBlock([
+          vote.initializeContract(startHeight, endHeight, wallet)
+        ]).receipts[0];
+        // assert
+        receipt.result.expectErr().expectUint(VoteModel.ErrCode.ERR_UNAUTHORIZED);
+      });
+      it("succeeds and updates the start and end block height variables", () => {
+        // arrange
+        const wallet = accounts.get("deployer")!;
+        const startHeight = 8500;
+        const endHeight = 10600;
+        // act
+        const receipt = chain.mineBlock([
+          vote.initializeContract(startHeight, endHeight, wallet)
+        ]).receipts[0];
+        // assert
+        receipt.result.expectOk();
+      });
+    })
     describe("vote-on-proposal()", () => {
       it("fails with ERR_PROPOSAL_NOT_ACTIVE when called before proposal is active", () => {
         // arrange

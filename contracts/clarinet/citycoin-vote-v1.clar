@@ -11,6 +11,29 @@
 (define-constant ERR_PROPOSAL_NOT_ACTIVE (err u8003))
 (define-constant ERR_VOTE_ALREADY_CAST (err u8004))
 (define-constant ERR_NOTHING_STACKED (err u8005))
+(define-constant ERR_CONTRACT_NOT_INITIALIZED (err u8006))
+(define-constant ERR_UNAUTHORIZED (err u8007))
+
+;; CONSTANTS
+
+(define-constant DEPLOYER tx-sender)
+
+;; TODO: update block heights
+(define-constant VOTE_START_BLOCK u8500)
+(define-constant VOTE_END_BLOCK u10600) ;; test voting period: 2100 blocks
+(define-constant VOTE_PROPOSAL_ID u0)
+(define-constant VOTE_SCALE_FACTOR (pow u10 u16)) ;; 16 decimal places
+
+;; scale MIA votes to make 1 MIA = 1 NYC
+;; full calculation available in CCIP-011
+(define-constant MIA_SCALE_FACTOR u6987) ;; 0.6987 or 69.87%
+(define-constant MIA_SCALE_BASE u10000)
+
+;; VARIABLES
+
+(define-data-var initialized bool false)
+(define-data-var voteStartBlock uint u0) ;; u8500 used in tests
+(define-data-var voteEndlock uint u0)    ;; u10600 used in tests
 
 ;; PROPOSALS
 
@@ -31,19 +54,6 @@
   link: "TODO",
   hash: "TODO"
 })
-
-;; CONSTANTS
-
-;; TODO: update block heights
-(define-constant VOTE_START_BLOCK u8500)
-(define-constant VOTE_END_BLOCK u10600) ;; test voting period: 2100 blocks
-(define-constant VOTE_PROPOSAL_ID u0)
-(define-constant VOTE_SCALE_FACTOR (pow u10 u16)) ;; 16 decimal places
-
-;; scale MIA votes to make 1 MIA = 1 NYC
-;; full calculation available in CCIP-011
-(define-constant MIA_SCALE_FACTOR u6987) ;; 0.6987 or 69.87%
-(define-constant MIA_SCALE_BASE u10000)
 
 (define-map ProposalVotes
   uint ;; proposalId
@@ -107,6 +117,26 @@
       (var-set voterIndex newId)
       newId
     )
+  )
+)
+
+;; INITIALIZATION
+;; one-time function to set the start and end
+;; block heights for voting
+
+(define-public (initialize-contract (startHeight uint) (endHeight uint))
+  (begin
+    (asserts! (not (var-get initialized)) ERR_UNAUTHORIZED)
+    (asserts! (is-deployer) ERR_UNAUTHORIZED)
+    (asserts! (and
+      (< block-height startHeight)
+      (< startHeight endHeight))
+      ERR_UNAUTHORIZED
+    )
+    (var-set voteStartBlock startHeight)
+    (var-set voteEndlock endHeight)
+    (var-set initialized true)
+    (ok true)
   )
 )
 
@@ -304,4 +334,8 @@
 
 (define-private (scale-down (a uint))
   (/ a VOTE_SCALE_FACTOR)
+)
+
+(define-private (is-deployer)
+  (is-eq contract-caller DEPLOYER)
 )

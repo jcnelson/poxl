@@ -8,6 +8,8 @@ enum ErrCode {
   ERR_PROPOSAL_NOT_ACTIVE,
   ERR_VOTE_ALREADY_CAST,
   ERR_NOTHING_STACKED,
+  ERR_CONTRACT_NOT_INITIALIZED,
+  ERR_UNAUTHORIZED
 }
 
 export class VoteModel extends Model {
@@ -18,6 +20,14 @@ export class VoteModel extends Model {
   static readonly VOTE_PROPOSAL_ID = 0;
   static readonly VOTE_SCALE_FACTOR = 10 ** 16; // 16 decimal places
   static readonly MIA_SCALE_FACTOR = 0.6987; // 0.6987 or 69.87%
+
+  initializeContract(startHeight: number, endHeight: number, sender: Account): Tx {
+    return this.callPublic(
+      "initialize-contract",
+      [types.uint(startHeight), types.uint(endHeight)],
+      sender.address
+    );
+  }
 
   voteOnProposal(vote: boolean, sender: Account): Tx {
     return this.callPublic(
