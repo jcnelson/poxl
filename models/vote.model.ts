@@ -41,6 +41,10 @@ export class VoteModel extends Model {
     return this.callReadOnly("get-proposals");
   }
 
+  getVoteBlocks(): ReadOnlyFn {
+    return this.callReadOnly("get-vote-blocks");
+  }
+
   getVoteStartBlock(): ReadOnlyFn {
     return this.callReadOnly("get-vote-start-block");
   }

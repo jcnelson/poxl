@@ -595,12 +595,38 @@ describe("[CityCoin Vote]", () => {
           vote.initializeContract(startHeight, endHeight, deployer)
         ]);
         const expectedResult = {
-          CCIP_008: '{hash: "7438ad926d6094e241ea6586eed398378cf09041", link: "https://github.com/citycoins/governance/blob/feat/community-upgrade-1/ccips/ccip-008/ccip-008-citycoins-sip-010-token-v2.md", name: "CityCoins SIP-010 Token v2"}',
+          CCIP_008: '{hash: "6313738548af393a93f1184f459aa2300fc7a37f", link: "https://github.com/citycoins/governance/blob/feat/community-upgrade-1/ccips/ccip-008/ccip-008-citycoins-sip-010-token-v2.md", name: "CityCoins SIP-010 Token v2"}',
           CCIP_009: '{hash: "7438ad926d6094e241ea6586eed398378cf09041", link: "https://github.com/citycoins/governance/blob/feat/community-upgrade-1/ccips/ccip-009/ccip-009-citycoins-vrf-v2.md", name: "CityCoins VRF v2"}',
           CCIP_010: '{hash: "7438ad926d6094e241ea6586eed398378cf09041", link: "https://github.com/citycoins/governance/blob/feat/community-upgrade-1/ccips/ccip-010/ccip-010-citycoins-auth-v2.md", name: "CityCoins Auth v2"}'
         }
         // act
         const result = vote.getProposals().result;
+        // assert
+        assertEquals(result.expectOk().expectTuple(), expectedResult);
+      });
+    });
+
+    describe("get-vote-blocks()", () => {
+      it("fails with ERR_CONTRACT_NOT_INITIALIZED if called before contract is initialized", () => {
+        // act
+        const result = vote.getVoteBlocks().result;
+        // assert
+        result.expectErr().expectUint(VoteModel.ErrCode.ERR_CONTRACT_NOT_INITIALIZED);
+      })
+      it("succeeds and returns the starting Stacks block for the vote", () => {
+        // arrange
+        const deployer = accounts.get("deployer")!;
+        const startHeight = 8500;
+        const endHeight = 10600;
+        const expectedResult = {
+          startBlock: types.uint(startHeight),
+          endBlock: types.uint(endHeight)
+        }
+        chain.mineBlock([
+          vote.initializeContract(startHeight, endHeight, deployer)
+        ]);
+        // act
+        const result = vote.getVoteBlocks().result;
         // assert
         assertEquals(result.expectOk().expectTuple(), expectedResult);
       });

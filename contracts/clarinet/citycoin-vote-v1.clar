@@ -2,6 +2,8 @@
 ;; A voting mechanism inspired by SIP-012 for Stacks,
 ;; defined in CCIP-011 and used to vote on ratifying
 ;; CCIP-008, CCIP-009, and CCIP-010.
+;;
+;; External Link: https://github.com/citycoins/governance
 
 ;; ERRORS
 
@@ -36,7 +38,7 @@
 (define-constant CCIP_008 {
   name: "CityCoins SIP-010 Token v2",
   link: "https://github.com/citycoins/governance/blob/feat/community-upgrade-1/ccips/ccip-008/ccip-008-citycoins-sip-010-token-v2.md",
-  hash: "7438ad926d6094e241ea6586eed398378cf09041"
+  hash: "6313738548af393a93f1184f459aa2300fc7a37f"
 })
 
 (define-constant CCIP_009 {
