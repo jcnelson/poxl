@@ -35,20 +35,20 @@
 
 (define-constant CCIP_008 {
   name: "CityCoins SIP-010 Token v2",
-  link: "TODO",
-  hash: "TODO"
+  link: "https://github.com/citycoins/governance/blob/feat/community-upgrade-1/ccips/ccip-008/ccip-008-citycoins-sip-010-token-v2.md",
+  hash: "7438ad926d6094e241ea6586eed398378cf09041"
 })
 
 (define-constant CCIP_009 {
   name: "CityCoins VRF v2",
-  link: "TODO",
-  hash: "TODO"
+  link: "https://github.com/citycoins/governance/blob/feat/community-upgrade-1/ccips/ccip-009/ccip-009-citycoins-vrf-v2.md",
+  hash: "7438ad926d6094e241ea6586eed398378cf09041"
 })
 
 (define-constant CCIP_010 {
   name: "CityCoins Auth v2",
-  link: "TODO",
-  hash: "TODO"
+  link: "https://github.com/citycoins/governance/blob/feat/community-upgrade-1/ccips/ccip-010/ccip-010-citycoins-auth-v2.md",
+  hash: "7438ad926d6094e241ea6586eed398378cf09041"
 })
 
 (define-map ProposalVotes
@@ -240,7 +240,7 @@
 
 ;; MIA HELPER
 (define-private (get-mia-vote-amount (user principal) (voterId uint))
-  ;; returns (some uint) or (none)
+  ;; returns (some uint) or (none){hash: "TODO", link: "TODO", name: "CityCoins Auth v2"}
   (let
     (
       ;; TODO: update to mainnet block heights
