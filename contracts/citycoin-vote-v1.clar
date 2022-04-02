@@ -33,19 +33,19 @@
 
 ;; PROPOSALS
 
-(define-constant CCIP-008 {
+(define-constant CCIP_008 {
   name: "CityCoins SIP-010 Token v2",
   link: "TODO",
   hash: "TODO"
 })
 
-(define-constant CCIP-009 {
+(define-constant CCIP_009 {
   name: "CityCoins VRF v2",
   link: "TODO",
   hash: "TODO"
 })
 
-(define-constant CCIP-010 {
+(define-constant CCIP_010 {
   name: "CityCoins Auth v2",
   link: "TODO",
   hash: "TODO"
@@ -281,6 +281,14 @@
 
 (define-read-only (is-initialized)
   (var-get initialized)
+)
+
+(define-read-only (get-proposals)
+  (ok {
+    CCIP_008: CCIP_008,
+    CCIP_009: CCIP_009,
+    CCIP_010: CCIP_010
+  })
 )
 
 (define-read-only (get-vote-blocks)

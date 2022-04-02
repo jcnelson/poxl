@@ -585,6 +585,27 @@ describe("[CityCoin Vote]", () => {
   });
 
   describe("VOTE INFO", () => {
+    describe("get-proposals()", () => {
+      it("succeeds and returns the proposed CCIPs being voted on", () => {
+        // arrange
+        const deployer = accounts.get("deployer")!;
+        const startHeight = 8500;
+        const endHeight = 10600;
+        chain.mineBlock([
+          vote.initializeContract(startHeight, endHeight, deployer)
+        ]);
+        const expectedResult = {
+          CCIP_008: '{hash: "TODO", link: "TODO", name: "CityCoins SIP-010 Token v2"}',
+          CCIP_009: '{hash: "TODO", link: "TODO", name: "CityCoins VRF v2"}',
+          CCIP_010: '{hash: "TODO", link: "TODO", name: "CityCoins Auth v2"}'
+        }
+        // act
+        const result = vote.getProposals().result;
+        // assert
+        assertEquals(result.expectOk().expectTuple(), expectedResult);
+      });
+    });
+
     describe("get-vote-start-block()", () => {
       it("fails with ERR_CONTRACT_NOT_INITIALIZED if called before contract is initialized", () => {
         // act
