@@ -21,7 +21,6 @@
 (define-constant DEPLOYER tx-sender)
 (define-constant VOTE_PROPOSAL_ID u0)
 (define-constant VOTE_SCALE_FACTOR (pow u10 u16)) ;; 16 decimal places
-
 ;; scale MIA votes to make 1 MIA = 1 NYC
 ;; full calculation available in CCIP-011
 (define-constant MIA_SCALE_FACTOR u6987) ;; 0.6987 or 69.87%
@@ -103,6 +102,7 @@
   }
 )
 
+;; obtains the voter ID or creates a new one
 (define-private (get-or-create-voter-id (user principal))
   (match (map-get? VoterIds user) value
     value
@@ -119,9 +119,9 @@
 )
 
 ;; INITIALIZATION
+
 ;; one-time function to set the start and end
 ;; block heights for voting
-
 (define-public (initialize-contract (startHeight uint) (endHeight uint))
   (begin
     (asserts! (not (is-initialized)) ERR_UNAUTHORIZED)
@@ -143,8 +143,7 @@
 (define-public (vote-on-proposal (vote bool))
   (let
     (
-      ;; TODO: allow tx-sender instead?
-      (voterId (get-or-create-voter-id contract-caller))
+      (voterId (get-or-create-voter-id tx-sender))
       (voterRecord (map-get? Votes voterId))
       (proposalRecord (unwrap! (get-proposal-votes) ERR_PROPOSAL_NOT_FOUND))
     )
@@ -196,9 +195,8 @@
       ;; vote record doesn't exist
       (let
         (
-          ;; TODO: allow tx-sender instead?
-          (scaledVoteMia (default-to u0 (get-mia-vote-amount contract-caller voterId)))
-          (scaledVoteNyc (default-to u0 (get-nyc-vote-amount contract-caller voterId)))
+          (scaledVoteMia (default-to u0 (get-mia-vote-amount tx-sender voterId)))
+          (scaledVoteNyc (default-to u0 (get-nyc-vote-amount tx-sender voterId)))
           (scaledVoteTotal (/ (+ scaledVoteMia scaledVoteNyc) u2))
           (voteMia (scale-down scaledVoteMia))
           (voteNyc (scale-down scaledVoteNyc))
@@ -241,8 +239,8 @@
 )
 
 ;; MIA HELPER
+;; returns (some uint) or (none)
 (define-private (get-mia-vote-amount (user principal) (voterId uint))
-  ;; returns (some uint) or (none){hash: "TODO", link: "TODO", name: "CityCoins Auth v2"}
   (let
     (
       ;; TODO: update to mainnet block heights
@@ -260,9 +258,9 @@
   )
 )
 
-;; NYC HELPERS
+;; NYC HELPER
+;; returns (some uint) or (none)
 (define-private (get-nyc-vote-amount (user principal) (voterId uint))
-  ;; returns (some uint) or (none)
   (let
     (
       ;; TODO: update to mainnet block heights
@@ -281,10 +279,12 @@
 
 ;; GETTERS
 
+;; returns if the start/end block heights are set
 (define-read-only (is-initialized)
   (var-get initialized)
 )
 
+;; returns the list of proposals being voted on
 (define-read-only (get-proposals)
   (ok {
     CCIP_008: CCIP_008,
@@ -293,6 +293,7 @@
   })
 )
 
+;; returns the start/end block heights, if set
 (define-read-only (get-vote-blocks)
   (begin
     (asserts! (is-initialized) ERR_CONTRACT_NOT_INITIALIZED)
@@ -303,6 +304,7 @@
   )
 )
 
+;; returns the start block height, if set
 (define-read-only (get-vote-start-block)
   (begin
     (asserts! (is-initialized) ERR_CONTRACT_NOT_INITIALIZED)
@@ -310,6 +312,7 @@
   )
 )
 
+;; returns the end block height, if set
 (define-read-only (get-vote-end-block)
   (begin
     (asserts! (is-initialized) ERR_CONTRACT_NOT_INITIALIZED)
@@ -317,6 +320,7 @@
   )
 )
 
+;; returns the total vote for a given principal
 (define-read-only (get-vote-amount (voter principal))
   (let
     (
@@ -332,18 +336,22 @@
   )
 )
 
+;; returns the vote totals for the proposal
 (define-read-only (get-proposal-votes)
   (map-get? ProposalVotes VOTE_PROPOSAL_ID)
 )
 
+;; returns the voter principal for a given voter ID
 (define-read-only (get-voter (voterId uint))
   (map-get? Voters voterId)
 )
 
+;; returns the voter ID for a given principal
 (define-read-only (get-voter-id (voter principal))
   (map-get? VoterIds voter)
 )
 
+;; returns the vote totals for a given principal
 (define-read-only (get-voter-info (voter principal))
   (ok (unwrap!
     (map-get? Votes (unwrap! (get-voter-id voter) ERR_USER_NOT_FOUND))
