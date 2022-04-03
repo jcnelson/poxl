@@ -244,9 +244,9 @@
   (let
     (
       ;; TODO: update to mainnet block heights
-      (userCycle12 (try! (contract-call? .citycoin-tardis-v2 get-historical-stacker-stats-or-default u4500 user)))
+      (userCycle12 (try! (contract-call? 'SP2NS7CNBBN3S9J6M4JJHT7WNBETRSBZ9KPVRENBJ.citycoin-tardis-v2 get-historical-stacker-stats-or-default u4500 user)))
       (stackedCycle12 (get amountStacked userCycle12))
-      (userCycle13 (try! (contract-call? .citycoin-tardis-v2 get-historical-stacker-stats-or-default u6600 user)))
+      (userCycle13 (try! (contract-call? 'SP2NS7CNBBN3S9J6M4JJHT7WNBETRSBZ9KPVRENBJ.citycoin-tardis-v2 get-historical-stacker-stats-or-default u6600 user)))
       (stackedCycle13 (get amountStacked userCycle13))
       (avgStackedMia (/ (+ (scale-up stackedCycle12) (scale-up stackedCycle13)) u2))
       (scaledMiaVote (/ (* avgStackedMia MIA_SCALE_FACTOR) MIA_SCALE_BASE))
@@ -264,9 +264,9 @@
   (let
     (
       ;; TODO: update to mainnet block heights
-      (userCycle6 (try! (contract-call? .citycoin-tardis-v2 get-historical-stacker-stats-or-default u4500 user)))
+      (userCycle6 (try! (contract-call? 'SP2NS7CNBBN3S9J6M4JJHT7WNBETRSBZ9KPVRENBJ.citycoin-tardis-v2 get-historical-stacker-stats-or-default u4500 user)))
       (stackedCycle6 (get amountStacked userCycle6))
-      (userCycle7 (try! (contract-call? .citycoin-tardis-v2 get-historical-stacker-stats-or-default u6600 user)))
+      (userCycle7 (try! (contract-call? 'SP2NS7CNBBN3S9J6M4JJHT7WNBETRSBZ9KPVRENBJ.citycoin-tardis-v2 get-historical-stacker-stats-or-default u6600 user)))
       (stackedCycle7 (get amountStacked userCycle7))
       (nycVote (/ (+ (scale-up stackedCycle6) (scale-up stackedCycle7)) u2))
     )
