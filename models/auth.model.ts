@@ -18,6 +18,9 @@ enum ErrCode {
   ERR_ARGUMENT_ALREADY_EXISTS,
   ERR_NO_ACTIVE_CORE_CONTRACT,
   ERR_CORE_CONTRACT_NOT_FOUND,
+  ERR_UNKNOWN_ARGUMENT,
+  ERR_INCORRECT_CONTRACT_STATE,
+  ERR_CONTRACT_ALREADY_EXISTS,
 }
 
 export class AuthModel extends Model {
@@ -253,6 +256,14 @@ export class AuthModel extends Model {
     return this.callPublic(
       "test-set-active-core-contract",
       [],
+      sender.address
+    );
+  }
+
+  testSetCoreContractState(targetContract: string, state: number, sender: Account): Tx {
+    return this.callPublic(
+      "test-set-core-contract-state",
+      [types.principal(targetContract), types.uint(state)],
       sender.address
     );
   }

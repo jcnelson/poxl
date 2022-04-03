@@ -1,4 +1,5 @@
 ;; MIAMICOIN CORE CONTRACT
+;; CityCoins Protocol Version 1.0.2
 
 ;; GENERAL CONFIGURATION
 
@@ -28,6 +29,7 @@
 (define-constant ERR_NOTHING_TO_REDEEM u1018)
 (define-constant ERR_UNABLE_TO_FIND_CITY_WALLET u1019)
 (define-constant ERR_CLAIM_IN_WRONG_CONTRACT u1020)
+(define-constant ERR_BLOCK_HEIGHT_IN_PAST u1021)
 
 ;; CITY WALLET MANAGEMENT
 
@@ -299,6 +301,10 @@
           false
         )
         (try! (stx-transfer? (get toCity okReturn) tx-sender (var-get cityWallet)))
+        (print { 
+          firstBlock: block-height,
+          lastBlock: (- (+ block-height (len amounts)) u1)
+        })
         (ok true)
       )
       errReturn (err errReturn)
@@ -670,6 +676,10 @@
       (err ERR_CANNOT_STACK))
     (asserts! (> amountTokens u0) (err ERR_CANNOT_STACK))
     (try! (contract-call? 'SP466FNC0P7JWTNM2R9T199QRZN1MYEDTAR0KP27.miamicoin-token transfer amountTokens tx-sender (as-contract tx-sender) none))
+    (print {
+      firstCycle: targetCycle, 
+      lastCycle: (- (+ targetCycle lockPeriod) u1)
+    })
     (match (fold stack-tokens-closure REWARD_CYCLE_INDEXES (ok commitment))
       okValue (ok true)
       errValue (err errValue)
@@ -874,6 +884,8 @@
 ;; in preparation for a core upgrade
 (define-public (shutdown-contract (stacksHeight uint))
   (begin
+    ;; make sure block height is in the future
+    (asserts! (>= stacksHeight block-height) (err ERR_BLOCK_HEIGHT_IN_PAST))
     ;; only allow shutdown request from AUTH
     (asserts! (is-authorized-auth) (err ERR_UNAUTHORIZED))
     ;; set variables to disable mining/stacking in CORE

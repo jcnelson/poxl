@@ -1,5 +1,8 @@
 [project]
 name = "citycoin"
+requirements = []
+costs_version = 2
+analysis = ["all"]
 
 [contracts.citycoin-vrf]
 path = "contracts/clarinet/citycoin-vrf.clar"
@@ -40,6 +43,10 @@ depends_on = ["citycoin-core-v1"]
 # contracts listed below are used only in test suite
 
 [contracts.citycoin-core-v2]
+path = "contracts/clarinet/citycoin-core-v2.clar"
+depends_on = ["citycoin-auth", "citycoin-token", "citycoin-vrf", "citycoin-core-trait"]
+
+[contracts.citycoin-core-v3]
 path = "contracts/clarinet/citycoin-core-v2.clar"
 depends_on = ["citycoin-auth", "citycoin-token", "citycoin-vrf", "citycoin-core-trait"]
 
