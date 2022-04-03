@@ -12,8 +12,3 @@
 (define-public (test-wallet-attack-as-contract)
   (contract-call? .citycoin-core-v1 set-city-wallet (as-contract tx-sender))
 )
-
-;; TODO: simulate setup of multiple miners
-(define-public (test-multiple-miners)
-  (ok true)
-)

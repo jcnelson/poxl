@@ -17,7 +17,6 @@ beforeEach(() => {
   core = ctx.models.get(CoreModel);
 })
 
-
 describe("[CityCoin Token]", () => {
   describe("SIP-010 FUNCTIONS", () => {
     describe("transfer()", () => {
@@ -125,7 +124,7 @@ describe("[CityCoin Token]", () => {
     });
 
     describe("get-name()", () => {
-      it("returns 'citycoins'", () => {
+      it("succeeds and returns 'citycoins'", () => {
         const result = token.getName().result;
 
         result.expectOk().expectAscii("citycoins");
@@ -133,7 +132,7 @@ describe("[CityCoin Token]", () => {
     });
 
     describe("get-symbol()", () => {
-      it("returns 'CYCN'", () => {
+      it("succeeds and returns 'CYCN'", () => {
         const result = token.getSymbol().result;
 
         result.expectOk().expectAscii("CYCN");
@@ -141,7 +140,7 @@ describe("[CityCoin Token]", () => {
     });
 
     describe("get-decimals()", () => {
-      it("returns 0", () => {
+      it("succeeds and returns 0", () => {
         const result = token.getDecimals().result;
 
         result.expectOk().expectUint(0);
@@ -149,14 +148,14 @@ describe("[CityCoin Token]", () => {
     });
 
     describe("get-balance()", () => {
-      it("returns 0 when no tokens are minted", () => {
+      it("succeeds and returns 0 when no tokens are minted", () => {
         const wallet_1 = accounts.get("wallet_1")!;
         const result = token.getBalance(wallet_1).result;
 
         result.expectOk().expectUint(0);
       });
 
-      it("returns 100 after 100 tokens are minted to a wallet", () => {
+      it("succeeds and returns 100 after 100 tokens are minted to a wallet", () => {
         const wallet_1 = accounts.get("wallet_1")!;
         chain.mineBlock([token.ftMint(100, wallet_1)]);
 
@@ -167,13 +166,13 @@ describe("[CityCoin Token]", () => {
     });
 
     describe("get-total-supply()", () => {
-      it("returns 0 when no tokens are minted", () => {
+      it("succeeds and returns 0 when no tokens are minted", () => {
         const result = token.getTotalSupply().result;
 
         result.expectOk().expectUint(0);
       });
 
-      it("returns 100 after 100 tokens are minted", () => {
+      it("succeeds and returns 100 after 100 tokens are minted", () => {
         const wallet_1 = accounts.get("wallet_1")!;
         chain.mineBlock([token.ftMint(100, wallet_1)]);
 
@@ -183,7 +182,7 @@ describe("[CityCoin Token]", () => {
       });
     });
     describe("get-token-uri()", () => {
-      it("returns correct uri", () => {
+      it("succeds and returns correct uri", () => {
         const result = token.getTokenUri().result;
         const tokenUri = "https://cdn.citycoins.co/metadata/citycoin.json";
 
@@ -193,7 +192,7 @@ describe("[CityCoin Token]", () => {
     });
 
     describe("burn()", () => {
-      it("throws ERR_UNAUTHORIZED when owner is different than transaction sender", () => {
+      it("fails with ERR_UNAUTHORIZED when owner is different than transaction sender", () => {
         // arrange
         const owner = accounts.get("wallet_1")!;
         const sender = accounts.get("wallet_2")!;
@@ -209,7 +208,7 @@ describe("[CityCoin Token]", () => {
           .expectUint(TokenModel.ErrCode.ERR_UNAUTHORIZED);
       });
 
-      it("fails when owner is trying to burn more tokens than he owns", () => {
+      it("fails with u1 when sender is trying to burn more tokens than they own", () => {
         const owner = accounts.get("wallet_5")!;
         const amount = 8888912313;
 
@@ -221,7 +220,7 @@ describe("[CityCoin Token]", () => {
         receipt.result.expectErr().expectUint(1); // 1 is standard ft-burn error code
       })
 
-      it("succeeds when called by tokens owner and burns correct amount of  tokens", () => {
+      it("succeeds when called by token owner and burns correct amount of tokens", () => {
         // arrange
         const owner = accounts.get("wallet_1")!;
         const amount = 300;
@@ -250,7 +249,7 @@ describe("[CityCoin Token]", () => {
 
   describe("UTILITIES", () => {
     describe("mint()", () => {
-      it("fails with ERR_CORE_CONTRACT_NOT_FOUND when called by someone who is not a trusted caller", () => {
+      it("fails with ERR_CORE_CONTRACT_NOT_FOUND if called by an unapproved sender", () => {
         const wallet_2 = accounts.get("wallet_2")!;
         let block = chain.mineBlock([
           token.mint(200, wallet_2, wallet_2),

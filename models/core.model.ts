@@ -179,6 +179,16 @@ export class CoreModel extends Model {
     ]);
   }
 
+  getFirstStacksBlockInRewardCycle(rewardCycle: number): ReadOnlyFn {
+    return this.callReadOnly("get-first-stacks-block-in-reward-cycle", [
+      types.uint(rewardCycle),
+    ]);
+  }
+
+  getRewardCycle(blockHeight: number): ReadOnlyFn {
+    return this.callReadOnly("get-reward-cycle", [types.uint(blockHeight)]);
+  }
+
   //////////////////////////////////////////////////
   // STACKING ACTIONS
   //////////////////////////////////////////////////

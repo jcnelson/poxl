@@ -28,6 +28,20 @@ depends_on = ["sip-010-trait", "citycoin-auth", "citycoin-token-trait"]
 path = "contracts/clarinet/citycoin-core-v1.clar"
 depends_on = ["citycoin-auth", "citycoin-token", "citycoin-vrf", "citycoin-core-trait"]
 
+[contracts.citycoin-vote-v1]
+path = "contracts/clarinet/citycoin-vote-v1.clar"
+depends_on = ["citycoin-core-v1"]
+
+[contracts.citycoin-tardis-v1]
+path = "contracts/clarinet/citycoin-tardis-v1.clar"
+depends_on = ["citycoin-core-v1"]
+
+[contracts.citycoin-tardis-v2]
+path = "contracts/clarinet/citycoin-tardis-v2.clar"
+depends_on = ["citycoin-core-v1"]
+
+# contracts listed below are used only in test suite
+
 [contracts.citycoin-core-v2]
 path = "contracts/clarinet/citycoin-core-v2.clar"
 depends_on = ["citycoin-auth", "citycoin-token", "citycoin-vrf", "citycoin-core-trait"]
@@ -35,10 +49,6 @@ depends_on = ["citycoin-auth", "citycoin-token", "citycoin-vrf", "citycoin-core-
 [contracts.citycoin-core-v3]
 path = "contracts/clarinet/citycoin-core-v2.clar"
 depends_on = ["citycoin-auth", "citycoin-token", "citycoin-vrf", "citycoin-core-trait"]
-
-#
-# contracts listed below are used only in test suite
-#
 
 [contracts.sip-010-trait]
 path = "contracts/clarinet/sip-10-ft-standard.clar"

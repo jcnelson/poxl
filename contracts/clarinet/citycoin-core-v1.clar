@@ -939,6 +939,7 @@
 
 (define-public (test-initialize-core (coreContract <coreTrait>))
   (begin
+    (var-set activationThreshold u1)
     (try! (contract-call? .citycoin-auth test-initialize-contracts coreContract))
     (ok true)
   )
