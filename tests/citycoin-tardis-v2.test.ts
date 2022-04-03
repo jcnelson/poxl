@@ -28,7 +28,6 @@ describe("[CityCoin Tardis]", () => {
         const wallet_1 = accounts.get("wallet_1")!;
         const mintAmount = 100;
 
-        // act
         chain.mineEmptyBlock(100);
         chain.mineBlock([
           token.ftMint(mintAmount, wallet_1)
@@ -38,6 +37,7 @@ describe("[CityCoin Tardis]", () => {
           token.ftMint(mintAmount, wallet_1)
         ]);
 
+        // act
         const result1 = tardis.getHistoricalBalance(1, wallet_1).result;
         const result2 = tardis.getHistoricalBalance(101, wallet_1).result;
         const result3 = token.getBalance(wallet_1).result;
@@ -55,16 +55,16 @@ describe("[CityCoin Tardis]", () => {
         const wallet_1 = accounts.get("wallet_1")!;
         const mintAmount = 100;
 
+        chain.mineEmptyBlock(100);
+        chain.mineBlock([
+          token.ftMint(mintAmount, wallet_1)
+        ]);
+        chain.mineEmptyBlock(100);
+        chain.mineBlock([
+          token.ftMint(mintAmount, wallet_1)
+        ]);
+        
         // act
-        chain.mineEmptyBlock(100);
-        chain.mineBlock([
-          token.ftMint(mintAmount, wallet_1)
-        ]);
-        chain.mineEmptyBlock(100);
-        chain.mineBlock([
-          token.ftMint(mintAmount, wallet_1)
-        ]);
-
         const result1 = tardis.getHistoricalSupply(1).result;
         const result2 = tardis.getHistoricalSupply(101).result;
         const result3 = token.getTotalSupply().result;

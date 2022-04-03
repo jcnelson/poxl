@@ -120,7 +120,7 @@ describe("[CityCoin Vote]", () => {
         chain.mineBlock([
           vote.initializeContract(startHeight, endHeight, deployer)
         ]);
-        chain.mineEmptyBlock(VoteModel.VOTE_START_BLOCK + VoteModel.VOTE_END_BLOCK + 1);
+        chain.mineEmptyBlockUntil(VoteModel.VOTE_END_BLOCK + 1);
         // act
         const receipt = chain.mineBlock([
           vote.voteOnProposal(true, wallet)
