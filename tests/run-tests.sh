@@ -34,9 +34,8 @@ for contract_test in $(ls ./test-*.clar); do
    test_dir="/tmp/vm-poxl-$(basename "$contract_test").db"
    test -d "$test_dir" && rm -rf "$test_dir"
 
-   mkdir -p "$test_dir"
-
-   clarity-cli initialize "$initial_allocations" "$test_dir"
+   # need --testnet because the mainnet block limit is too low for unit tests
+   clarity-cli initialize --testnet "$initial_allocations" "$test_dir"
 
    echo "Tests begin at line $(wc -l "$contract" | cut -d ' ' -f 1)"
    cat "$contract" "$contract_test" > "$test_dir/contract-with-tests.clar"
@@ -46,8 +45,9 @@ for contract_test in $(ls ./test-*.clar); do
 
    echo "Run tests"
    tests="$(clarity-cli execute "$test_dir" "$contract_id" "list-tests" "$tx_sender" 2>&1 | \
-      grep 'Transaction executed and committed. Returned: ' | \
-      sed -r -e 's/Transaction executed and committed. Returned: \((.+)\)/\1/g' -e 's/"//g')"
+      grep 'INFO' | \
+      grep 'test: ' | \
+      sed -r 's/^.+ "test: ([^ "]+)"$/\1/g')"
 
    echo "$tests"
    set -- $tests

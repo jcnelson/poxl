@@ -5,17 +5,16 @@
 
 (define-public (list-tests)
     (begin
-       (ok (list
-           "unit-tests"
-           "block-4"
-           "block-5"
-           "block-6"
-           "block-7"
-           "block-8"
-           "block-9"
-           "block-10"
-           "block-11"
-       ))
+       (print "test: block-4")
+       (print "test: block-5")
+       (print "test: block-6")
+       (print "test: block-7")
+       (print "test: block-8")
+       (print "test: block-9")
+       (print "test: block-10")
+       (print "test: block-11")
+       (print "test: unit-tests")
+       (ok true)
     )
 )
 
